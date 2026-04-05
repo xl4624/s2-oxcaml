@@ -28,6 +28,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 (* -- Quickcheck generators ------------------------------------------------ *)
 
@@ -181,7 +182,7 @@ let test_constructors fixture () =
         let input = float_or_infinity_of_json_exn (member "input_radians" c) in
         S2.S1_chord_angle.of_radians input
       | "from_length2" ->
-        S2.S1_chord_angle.of_length2 (float_of_json_exn (member "input" c))
+        S2.S1_chord_angle.of_length2 (float_u_of_json_exn (member "input" c))
       | "zero" -> S2.S1_chord_angle.zero
       | "right" -> S2.S1_chord_angle.right
       | "straight" -> S2.S1_chord_angle.straight
@@ -210,7 +211,7 @@ let test_constructors fixture () =
     match member "is_infinity" c with
     | `Null -> ()
     | j ->
-      Alcotest.(check bool)
+      (check bool)
         (op ^ " is_infinity")
         (bool_of_json_exn j)
         (S2.S1_chord_angle.is_infinity result))
@@ -243,23 +244,23 @@ let test_predicates fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let angle = chord_angle_of_name name in
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_zero")
       (bool_of_json_exn (member "is_zero" c))
       (S2.S1_chord_angle.is_zero angle);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_negative")
       (bool_of_json_exn (member "is_negative" c))
       (S2.S1_chord_angle.is_negative angle);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_infinity")
       (bool_of_json_exn (member "is_infinity" c))
       (S2.S1_chord_angle.is_infinity angle);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_special")
       (bool_of_json_exn (member "is_special" c))
       (S2.S1_chord_angle.is_special angle);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_valid")
       (bool_of_json_exn (member "is_valid" c))
       (S2.S1_chord_angle.is_valid angle))
@@ -270,11 +271,11 @@ let test_comparison fixture () =
   List.iter cases ~f:(fun c ->
     let a = chord_angle_of_name (string_of_json_exn (member "a" c)) in
     let b = chord_angle_of_name (string_of_json_exn (member "b" c)) in
-    Alcotest.(check int)
+    (check int)
       "compare"
       (int_of_json_exn (member "compare" c))
       (S2.S1_chord_angle.compare a b);
-    Alcotest.(check bool)
+    (check bool)
       "equal"
       (bool_of_json_exn (member "equal" c))
       (S2.S1_chord_angle.equal a b))
@@ -294,7 +295,7 @@ let test_to_angle fixture () =
       (name ^ " degrees")
       (member "degrees" c)
       (S2.S1_angle.degrees result);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_inf")
       (bool_of_json_exn (member "is_inf" c))
       (S2.S1_angle.is_inf result))
@@ -324,7 +325,7 @@ let test_successor_chain fixture () =
     let angle =
       if Float.( = ) current (-1.0)
       then S2.S1_chord_angle.negative
-      else S2.S1_chord_angle.of_length2 current
+      else S2.S1_chord_angle.of_length2 (Float_u.of_float current)
     in
     let result = S2.S1_chord_angle.successor angle in
     check_float_u_exact
@@ -340,7 +341,7 @@ let test_predecessor_chain fixture () =
     let angle =
       match current with
       | `Null -> S2.S1_chord_angle.infinity
-      | j -> S2.S1_chord_angle.of_length2 (float_of_json_exn j)
+      | j -> S2.S1_chord_angle.of_length2 (float_u_of_json_exn j)
     in
     let result = S2.S1_chord_angle.predecessor angle in
     check_float_u_or_infinity
@@ -410,7 +411,7 @@ let test_plus_error fixture () =
       let length2 = member "length2" c in
       match length2 with
       | `Null -> S2.S1_chord_angle.infinity
-      | j -> S2.S1_chord_angle.of_length2 (float_of_json_exn j)
+      | j -> S2.S1_chord_angle.of_length2 (float_u_of_json_exn j)
     in
     let error = float_of_json_exn (member "error" c) in
     let result = S2.S1_chord_angle.plus_error angle error in
@@ -423,7 +424,7 @@ let test_plus_error fixture () =
 let test_error_bounds fixture () =
   let cases = to_list (member "error_bounds" fixture) in
   List.iter cases ~f:(fun c ->
-    let angle = S2.S1_chord_angle.of_length2 (float_of_json_exn (member "length2" c)) in
+    let angle = S2.S1_chord_angle.of_length2 (float_u_of_json_exn (member "length2" c)) in
     check_float
       (sprintf
          "error_bounds length2=%g point"
@@ -442,40 +443,31 @@ let () =
   let fixture = load_fixture "s1chordangle.json" in
   Alcotest.run
     "S1_chord_angle"
-    [ ( "constructors"
-      , [ Alcotest.test_case "Constructors" `Quick (test_constructors fixture) ] )
-    ; ( "convenience"
-      , [ Alcotest.test_case "Convenience" `Quick (test_convenience fixture) ] )
-    ; "predicates", [ Alcotest.test_case "Predicates" `Quick (test_predicates fixture) ]
-    ; "comparison", [ Alcotest.test_case "Comparison" `Quick (test_comparison fixture) ]
-    ; "to_angle", [ Alcotest.test_case "ToAngle" `Quick (test_to_angle fixture) ]
+    [ "constructors", [ test_case "Constructors" `Quick (test_constructors fixture) ]
+    ; "convenience", [ test_case "Convenience" `Quick (test_convenience fixture) ]
+    ; "predicates", [ test_case "Predicates" `Quick (test_predicates fixture) ]
+    ; "comparison", [ test_case "Comparison" `Quick (test_comparison fixture) ]
+    ; "to_angle", [ test_case "ToAngle" `Quick (test_to_angle fixture) ]
     ; ( "successor_predecessor"
-      , [ Alcotest.test_case
-            "SuccessorPredecessor"
-            `Quick
-            (test_successor_predecessor fixture)
-        ] )
+      , [ test_case "SuccessorPredecessor" `Quick (test_successor_predecessor fixture) ] )
     ; ( "successor_chain"
-      , [ Alcotest.test_case "SuccessorChain" `Quick (test_successor_chain fixture) ] )
+      , [ test_case "SuccessorChain" `Quick (test_successor_chain fixture) ] )
     ; ( "predecessor_chain"
-      , [ Alcotest.test_case "PredecessorChain" `Quick (test_predecessor_chain fixture) ]
-      )
-    ; "arithmetic", [ Alcotest.test_case "Arithmetic" `Quick (test_arithmetic fixture) ]
-    ; ( "trigonometry"
-      , [ Alcotest.test_case "Trigonometry" `Quick (test_trigonometry fixture) ] )
-    ; "plus_error", [ Alcotest.test_case "PlusError" `Quick (test_plus_error fixture) ]
-    ; ( "error_bounds"
-      , [ Alcotest.test_case "ErrorBounds" `Quick (test_error_bounds fixture) ] )
+      , [ test_case "PredecessorChain" `Quick (test_predecessor_chain fixture) ] )
+    ; "arithmetic", [ test_case "Arithmetic" `Quick (test_arithmetic fixture) ]
+    ; "trigonometry", [ test_case "Trigonometry" `Quick (test_trigonometry fixture) ]
+    ; "plus_error", [ test_case "PlusError" `Quick (test_plus_error fixture) ]
+    ; "error_bounds", [ test_case "ErrorBounds" `Quick (test_error_bounds fixture) ]
     ; ( "quickcheck"
-      , [ Alcotest.test_case "add_commutative" `Quick quickcheck_add_commutative
-        ; Alcotest.test_case "monotone_with_angle" `Quick quickcheck_monotone_with_angle
-        ; Alcotest.test_case
+      , [ test_case "add_commutative" `Quick quickcheck_add_commutative
+        ; test_case "monotone_with_angle" `Quick quickcheck_monotone_with_angle
+        ; test_case
             "successor_predecessor_inverse"
             `Quick
             quickcheck_successor_predecessor_inverse
-        ; Alcotest.test_case "of_angle_roundtrip" `Quick quickcheck_of_angle_roundtrip
-        ; Alcotest.test_case "sin2_cos2_identity" `Quick quickcheck_sin2_cos2_identity
-        ; Alcotest.test_case "compare_consistent" `Quick quickcheck_compare_consistent
+        ; test_case "of_angle_roundtrip" `Quick quickcheck_of_angle_roundtrip
+        ; test_case "sin2_cos2_identity" `Quick quickcheck_sin2_cos2_identity
+        ; test_case "compare_consistent" `Quick quickcheck_compare_consistent
         ] )
     ]
 ;;

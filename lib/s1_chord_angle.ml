@@ -27,13 +27,11 @@ let[@inline] [@zero_alloc] rec of_angle angle =
   else
     let open Float_u.O in
     let l = #2.0 * Float_u.sin (#0.5 * radians) in
-    of_length2_u (l * l)
+    of_length2 (l * l)
 
-and[@inline] [@zero_alloc] of_length2_u length2 =
+and[@inline] [@zero_alloc] of_length2 length2 =
   if Float_u.(length2 > max_length2) then straight else length2
 ;;
-
-let[@inline] [@zero_alloc] of_length2 length2 = of_length2_u (Float_u.of_float length2)
 
 let[@inline] [@zero_alloc] of_radians radians =
   of_angle (S1_angle.of_radians (Float_u.of_float radians))

@@ -24,21 +24,16 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 let test_constants fixture () =
   let c = member "constants" fixture in
-  Alcotest.(check int)
+  (check int)
     "max_cell_level"
     (int_of_json_exn (member "max_cell_level" c))
     S2.S2_coords.max_cell_level;
-  Alcotest.(check int)
-    "limit_ij"
-    (int_of_json_exn (member "limit_ij" c))
-    S2.S2_coords.limit_ij;
-  Alcotest.(check int)
-    "max_si_ti"
-    (int_of_json_exn (member "max_si_ti" c))
-    S2.S2_coords.max_si_ti;
+  (check int) "limit_ij" (int_of_json_exn (member "limit_ij" c)) S2.S2_coords.limit_ij;
+  (check int) "max_si_ti" (int_of_json_exn (member "max_si_ti" c)) S2.S2_coords.max_si_ti;
   check_float_exact
     "max_xyz_to_uv_error"
     ~expected:(float_of_json_exn (member "max_xyz_to_uv_error" c))
@@ -83,7 +78,7 @@ let test_st_to_ij fixture () =
     let input = float_of_json_exn (member "input" c) in
     let expected = int_of_json_exn (member "expected" c) in
     let actual = S2.S2_coords.st_to_ij input in
-    Alcotest.(check int) (sprintf "st_to_ij(%g)" input) expected actual)
+    (check int) (sprintf "st_to_ij(%g)" input) expected actual)
 ;;
 
 let test_si_ti_to_st fixture () =
@@ -101,7 +96,7 @@ let test_st_to_si_ti fixture () =
     let input = float_of_json_exn (member "input_st" c) in
     let expected_si = int_of_json_exn (member "si_ti" c) in
     let actual_si = S2.S2_coords.st_to_si_ti input in
-    Alcotest.(check int) (sprintf "st_to_si_ti(%g)" input) expected_si actual_si;
+    (check int) (sprintf "st_to_si_ti(%g)" input) expected_si actual_si;
     let expected_rt = float_of_json_exn (member "roundtrip_st" c) in
     let actual_rt = S2.S2_coords.si_ti_to_st actual_si in
     check_float_exact
@@ -304,18 +299,18 @@ let test_uvw_face fixture () =
     let expected_pos = int_of_json_exn (member "uvw_face_pos" c) in
     let expected_neg_from_get = int_of_json_exn (member "neg_face" c) in
     let expected_pos_from_get = int_of_json_exn (member "pos_face" c) in
-    Alcotest.(check int)
+    (check int)
       (sprintf "uvw_face_neg(%d,%d) consistency" face axis)
       expected_neg_from_get
       expected_neg;
-    Alcotest.(check int)
+    (check int)
       (sprintf "uvw_face_pos(%d,%d) consistency" face axis)
       expected_pos_from_get
       expected_pos;
     let actual_neg = S2.S2_coords.get_uvw_face face axis 0 in
     let actual_pos = S2.S2_coords.get_uvw_face face axis 1 in
-    Alcotest.(check int) (sprintf "uvw_face(%d,%d,0)" face axis) expected_neg actual_neg;
-    Alcotest.(check int) (sprintf "uvw_face(%d,%d,1)" face axis) expected_pos actual_pos)
+    (check int) (sprintf "uvw_face(%d,%d,0)" face axis) expected_neg actual_neg;
+    (check int) (sprintf "uvw_face(%d,%d,1)" face axis) expected_pos actual_pos)
 ;;
 
 let test_face_xyz_to_uv fixture () =
@@ -349,7 +344,7 @@ let test_get_face fixture () =
     let point = r3_vector_of_json (member "point" c) in
     let expected = int_of_json_exn (member "face" c) in
     let actual = S2.S2_coords.get_face point in
-    Alcotest.(check int)
+    (check int)
       (sprintf
          "get_face(%g,%g,%g)"
          (Float_u.to_float (S2.R3_vector.x point))
@@ -367,7 +362,7 @@ let test_xyz_to_face_uv fixture () =
     let expected_u = float_of_json_exn (member "u" c) in
     let expected_v = float_of_json_exn (member "v" c) in
     let actual_face, actual_u, actual_v = S2.S2_coords.xyz_to_face_uv point in
-    Alcotest.(check int) "xyz_to_face_uv face" expected_face actual_face;
+    (check int) "xyz_to_face_uv face" expected_face actual_face;
     check_float_exact "xyz_to_face_uv u" ~expected:expected_u ~actual:actual_u;
     check_float_exact "xyz_to_face_uv v" ~expected:expected_v ~actual:actual_v)
 ;;
@@ -376,26 +371,21 @@ let () =
   let fixture = load_fixture "s2coords.json" in
   Alcotest.run
     "S2_coords"
-    [ "constants", [ Alcotest.test_case "Constants" `Quick (test_constants fixture) ]
+    [ "constants", [ test_case "Constants" `Quick (test_constants fixture) ]
     ; ( "st_uv_conversions"
-      , [ Alcotest.test_case "ST_UV_Conversions" `Quick (test_st_uv_conversions fixture) ]
-      )
-    ; "st_to_ij", [ Alcotest.test_case "STtoIJ" `Quick (test_st_to_ij fixture) ]
-    ; "si_ti_to_st", [ Alcotest.test_case "SiTitoST" `Quick (test_si_ti_to_st fixture) ]
-    ; "st_to_si_ti", [ Alcotest.test_case "STtoSiTi" `Quick (test_st_to_si_ti fixture) ]
-    ; ( "ij_to_st_min"
-      , [ Alcotest.test_case "IJtoSTMin" `Quick (test_ij_to_st_min fixture) ] )
-    ; ( "face_uv_to_xyz"
-      , [ Alcotest.test_case "FaceUVtoXYZ" `Quick (test_face_uv_to_xyz fixture) ] )
+      , [ test_case "ST_UV_Conversions" `Quick (test_st_uv_conversions fixture) ] )
+    ; "st_to_ij", [ test_case "STtoIJ" `Quick (test_st_to_ij fixture) ]
+    ; "si_ti_to_st", [ test_case "SiTitoST" `Quick (test_si_ti_to_st fixture) ]
+    ; "st_to_si_ti", [ test_case "STtoSiTi" `Quick (test_st_to_si_ti fixture) ]
+    ; "ij_to_st_min", [ test_case "IJtoSTMin" `Quick (test_ij_to_st_min fixture) ]
+    ; "face_uv_to_xyz", [ test_case "FaceUVtoXYZ" `Quick (test_face_uv_to_xyz fixture) ]
     ; ( "face_xyz_to_uvw"
-      , [ Alcotest.test_case "FaceXYZtoUVW" `Quick (test_face_xyz_to_uvw fixture) ] )
-    ; "uv_norms", [ Alcotest.test_case "UVNorms" `Quick (test_uv_norms fixture) ]
-    ; "uvw_axis", [ Alcotest.test_case "UVWAxis" `Quick (test_uvw_axis fixture) ]
-    ; "uvw_face", [ Alcotest.test_case "UVWFace" `Quick (test_uvw_face fixture) ]
-    ; ( "face_xyz_to_uv"
-      , [ Alcotest.test_case "FaceXYZtoUV" `Quick (test_face_xyz_to_uv fixture) ] )
-    ; "get_face", [ Alcotest.test_case "GetFace" `Quick (test_get_face fixture) ]
-    ; ( "xyz_to_face_uv"
-      , [ Alcotest.test_case "XYZtoFaceUV" `Quick (test_xyz_to_face_uv fixture) ] )
+      , [ test_case "FaceXYZtoUVW" `Quick (test_face_xyz_to_uvw fixture) ] )
+    ; "uv_norms", [ test_case "UVNorms" `Quick (test_uv_norms fixture) ]
+    ; "uvw_axis", [ test_case "UVWAxis" `Quick (test_uvw_axis fixture) ]
+    ; "uvw_face", [ test_case "UVWFace" `Quick (test_uvw_face fixture) ]
+    ; "face_xyz_to_uv", [ test_case "FaceXYZtoUV" `Quick (test_face_xyz_to_uv fixture) ]
+    ; "get_face", [ test_case "GetFace" `Quick (test_get_face fixture) ]
+    ; "xyz_to_face_uv", [ test_case "XYZtoFaceUV" `Quick (test_xyz_to_face_uv fixture) ]
     ]
 ;;

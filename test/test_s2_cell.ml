@@ -24,6 +24,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module Cell_id_int = struct
   type t = Int64.t [@@deriving sexp_of]
@@ -98,15 +99,15 @@ let test_faces fixture () =
   List.iteri cases ~f:(fun i c ->
     let label = sprintf "face %d" i in
     let cell = cell_of_token_json (member "id" c) in
-    Alcotest.(check int)
+    (check int)
       (label ^ " face")
       (int_of_json_exn (member "face" c))
       (S2.S2_cell.face cell);
-    Alcotest.(check int)
+    (check int)
       (label ^ " level")
       (int_of_json_exn (member "level" c))
       (S2.S2_cell.level cell);
-    Alcotest.(check int)
+    (check int)
       (label ^ " orientation")
       (int_of_json_exn (member "orientation" c))
       (S2.S2_cell.orientation cell);
@@ -164,19 +165,19 @@ let test_subdivide fixture () =
   List.iteri children ~f:(fun i child ->
     let c = List.nth_exn cases i in
     let label = sprintf "child %d" i in
-    Alcotest.(check string)
+    (check string)
       (label ^ " id")
       (string_of_json_exn (member "id" c))
       (S2.S2_cell_id.to_token (S2.S2_cell.id child));
-    Alcotest.(check int)
+    (check int)
       (label ^ " face")
       (int_of_json_exn (member "face" c))
       (S2.S2_cell.face child);
-    Alcotest.(check int)
+    (check int)
       (label ^ " level")
       (int_of_json_exn (member "level" c))
       (S2.S2_cell.level child);
-    Alcotest.(check int)
+    (check int)
       (label ^ " orientation")
       (int_of_json_exn (member "orientation" c))
       (S2.S2_cell.orientation child);
@@ -213,7 +214,7 @@ let test_distance_to_point fixture () =
     let label = sprintf "distance case %d" i in
     let cell = cell_of_token_json (member "cell_id" c) in
     let target = r3_vector_of_json (member "target" c) in
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " contains")
       (bool_of_json_exn (member "contains" c))
       (S2.S2_cell.contains_point cell target);
@@ -240,7 +241,7 @@ let test_edge_coords fixture () =
   List.iteri cases ~f:(fun i c ->
     let label = sprintf "edge_coords %d" i in
     let cell = cell_of_token_json (member "id" c) in
-    Alcotest.(check int)
+    (check int)
       (label ^ " size_ij")
       (int_of_json_exn (member "size_ij" c))
       (S2.S2_cell_id.size_ij (S2.S2_cell.level cell));
@@ -254,7 +255,7 @@ let test_edge_coords fixture () =
     List.iteri
       (to_list (member "ij_coords" c))
       ~f:(fun k ij ->
-        Alcotest.(check int)
+        (check int)
           (sprintf "%s ij_coord_%d" label k)
           (int_of_json_exn ij)
           (S2.S2_cell.ij_coord_of_edge cell k)))
@@ -266,7 +267,7 @@ let test_contains_examples fixture () =
     let label = sprintf "contains example %d" i in
     let cell = cell_of_token_json (member "cell_id" c) in
     let target = r3_vector_of_json (member "target" c) in
-    Alcotest.(check bool)
+    (check bool)
       label
       (bool_of_json_exn (member "contains" c))
       (S2.S2_cell.contains_point cell target))
@@ -301,33 +302,29 @@ let () =
   let fixture = load_fixture "s2cell.json" in
   Alcotest.run
     "S2_cell"
-    [ "faces", [ Alcotest.test_case "TestFaces" `Quick (test_faces fixture) ]
-    ; "subdivide", [ Alcotest.test_case "TestSubdivide" `Quick (test_subdivide fixture) ]
-    ; "areas", [ Alcotest.test_case "Areas" `Quick (test_areas fixture) ]
+    [ "faces", [ test_case "TestFaces" `Quick (test_faces fixture) ]
+    ; "subdivide", [ test_case "TestSubdivide" `Quick (test_subdivide fixture) ]
+    ; "areas", [ test_case "Areas" `Quick (test_areas fixture) ]
     ; ( "distance_to_point"
-      , [ Alcotest.test_case "GetDistanceToPoint" `Quick (test_distance_to_point fixture)
-        ] )
+      , [ test_case "GetDistanceToPoint" `Quick (test_distance_to_point fixture) ] )
     ; ( "edge_coords"
-      , [ Alcotest.test_case "GetUVCoordOfEdge" `Quick (test_edge_coords fixture)
-        ; Alcotest.test_case "GetSizeIJAgreesWithCellId" `Quick (test_edge_coords fixture)
-        ; Alcotest.test_case "GetIJCoordOfEdge" `Quick (test_edge_coords fixture)
+      , [ test_case "GetUVCoordOfEdge" `Quick (test_edge_coords fixture)
+        ; test_case "GetSizeIJAgreesWithCellId" `Quick (test_edge_coords fixture)
+        ; test_case "GetIJCoordOfEdge" `Quick (test_edge_coords fixture)
         ] )
     ; ( "contains_examples"
-      , [ Alcotest.test_case
+      , [ test_case
             "ConsistentWithS2CellIdFromPointExample1"
             `Quick
             (test_contains_examples fixture)
-        ; Alcotest.test_case
-            "AmbiguousContainsPoint"
-            `Quick
-            (test_contains_examples fixture)
+        ; test_case "AmbiguousContainsPoint" `Quick (test_contains_examples fixture)
         ] )
     ; ( "quickcheck"
-      , [ Alcotest.test_case
+      , [ test_case
             "subdivide_matches_cell_id_hierarchy"
             `Quick
             quickcheck_subdivide_matches_cell_id_hierarchy
-        ; Alcotest.test_case
+        ; test_case
             "center_and_vertices_contained"
             `Quick
             quickcheck_center_and_vertices_contained

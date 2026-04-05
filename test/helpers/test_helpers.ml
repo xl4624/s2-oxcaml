@@ -131,7 +131,7 @@ let r3_vector_of_json j =
 ;;
 
 (** Chord angle from squared length. *)
-let s1_chord_angle_of_json j = S2.S1_chord_angle.of_length2 (float_of_json_exn j)
+let s1_chord_angle_of_json j = S2.S1_chord_angle.of_length2 (float_u_of_json_exn j)
 
 (** Hex string cell id from golden data. C++ [std::to_string] on [uint64_t] can exceed
     [max_int] of signed [Int64]. *)

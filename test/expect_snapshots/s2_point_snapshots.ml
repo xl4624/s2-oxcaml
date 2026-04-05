@@ -54,10 +54,10 @@ let%expect_test "chord_angle_between" =
   let b = S2.S2_point.of_coords ~x:#0.0 ~y:#1.0 ~z:#0.0 in
   let ca = S2.S2_point.chord_angle_between a b in
   printf
-    "length2=%.17g degrees=%.17g\n"
-    (Float_u.to_float (S2.S1_chord_angle.length2 ca))
+    "length2=%s degrees=%.17g\n"
+    (Float_u.to_string (S2.S1_chord_angle.length2 ca))
     (S2.S1_chord_angle.degrees ca);
-  [%expect {| length2=2 degrees=90.000000000000014 |}]
+  [%expect {| length2=2. degrees=90.000000000000014 |}]
 ;;
 
 let%expect_test "rotate_around_z_axis" =

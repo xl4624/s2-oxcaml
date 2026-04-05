@@ -31,8 +31,9 @@ let[@inline] [@zero_alloc] is_unit_length t =
 ;;
 
 let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) a b =
+  let max_error = Float_u.of_float max_error in
   let angle = R3_vector.angle a b in
-  S1_angle.compare angle (S1_angle.of_radians (Float_u.of_float max_error)) <= 0
+  S1_angle.compare angle (S1_angle.of_radians max_error) <= 0
 ;;
 
 let[@inline] [@zero_alloc] ortho a =
@@ -88,11 +89,8 @@ let[@inline] [@zero_alloc] stable_angle a b =
     Float_u.O.(#2.0 * Float_u.atan2 (R3_vector.norm diff) (R3_vector.norm sum))
 ;;
 
-let[@zero_alloc ignore] chord_angle_between a b =
-  R3_vector.sub a b
-  |> R3_vector.norm2
-  |> Float_u.to_float (* TODO: remove this *)
-  |> S1_chord_angle.of_length2
+let[@inline] [@zero_alloc] chord_angle_between a b =
+  R3_vector.sub a b |> R3_vector.norm2 |> S1_chord_angle.of_length2
 ;;
 
 let[@inline] [@zero_alloc] rotate p ~axis ~angle =

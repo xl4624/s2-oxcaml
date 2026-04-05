@@ -257,7 +257,7 @@ let v_edge_is_closest t p u_end =
 let edge_distance dir_ij uv =
   let pq2 = dir_ij *. dir_ij /. (1.0 +. (uv *. uv)) in
   let qr = 1.0 -. Float.sqrt (1.0 -. pq2) in
-  S1_chord_angle.of_length2 (pq2 +. (qr *. qr))
+  S1_chord_angle.of_length2 (Float_u.of_float (pq2 +. (qr *. qr)))
 ;;
 
 let distance_to_point_internal t target_xyz to_interior =

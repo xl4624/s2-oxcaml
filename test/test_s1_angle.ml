@@ -13,9 +13,6 @@
    -  TEST(S1Angle, E6VsE7)                        - full parity (e6_vs_e7, PRNG seed 12345)
    -  TEST(S1Angle, DegreesVsRadians)              - full parity (degrees_vs_radians)
 
-   Alcotest test_case names match the gtest TEST(S1Angle, Name) cases above (see
-   also test/gen/s1angle.cc section headers).
-
    Deliberately omitted (other modules / I/O / benchmarks):
    -  TEST(S1Angle, ConstructorsThatMeasureAngles) - [S2Point] / [S2LatLng]; use [R3_vector]
    -  TEST(S1Angle, TestFormatting), TEST(S1Angle, RoundtripEncodingSucceeds),
@@ -24,6 +21,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module S1_angle_only = struct
   type t = { radians : float } [@@deriving sexp_of]
@@ -167,15 +165,15 @@ let test_to_e5_e6_e7 fixture () =
     let degu = float_u_of_json_exn (member "degrees" c) in
     let angle = S2.S1_angle.of_degrees degu in
     let label = Float_u.to_string degu in
-    Alcotest.(check int)
+    (check int)
       (label ^ " e5")
       (int_of_json_exn (member "e5" c))
       (S2.S1_angle.e5_exn angle);
-    Alcotest.(check int)
+    (check int)
       (label ^ " e6")
       (int_of_json_exn (member "e6" c))
       (S2.S1_angle.e6_exn angle);
-    Alcotest.(check int)
+    (check int)
       (label ^ " e7")
       (int_of_json_exn (member "e7" c))
       (S2.S1_angle.e7_exn angle))
@@ -187,7 +185,7 @@ let test_special_values fixture () =
     "zero"
     ~expected:(float_u_of_json_exn (member "zero_radians" sv))
     ~actual:(S2.S1_angle.radians S2.S1_angle.zero);
-  Alcotest.(check bool) "infinity is inf" true (S2.S1_angle.is_inf S2.S1_angle.infinity)
+  (check bool) "infinity is inf" true (S2.S1_angle.is_inf S2.S1_angle.infinity)
 ;;
 
 let test_arithmetic fixture () =
@@ -276,7 +274,7 @@ let test_degrees_vs_e6 fixture () =
     let n = int_of_json_exn (member "n" c) in
     let from_deg = S2.S1_angle.of_degrees (Float_u.of_float (Float.of_int n)) in
     let from_e6 = S2.S1_angle.of_e6 (1000000 * n) in
-    Alcotest.(check bool)
+    (check bool)
       (sprintf "deg(%d) == e6(%d)" n (1000000 * n))
       (bool_of_json_exn (member "equal" c))
       (S2.S1_angle.equal from_deg from_e6))
@@ -288,7 +286,7 @@ let test_degrees_vs_e7 fixture () =
     let n = int_of_json_exn (member "n" c) in
     let from_deg = S2.S1_angle.of_degrees (Float_u.of_float (Float.of_int n)) in
     let from_e7 = S2.S1_angle.of_e7 (10000000 * n) in
-    Alcotest.(check bool)
+    (check bool)
       (sprintf "deg(%d) == e7(%d)" n (10000000 * n))
       (bool_of_json_exn (member "equal" c))
       (S2.S1_angle.equal from_deg from_e7))
@@ -302,7 +300,7 @@ let test_degrees_vs_radians fixture () =
     let from_rad =
       S2.S1_angle.of_radians (Float_u.of_float (Float.of_int k *. Float.pi /. 4.0))
     in
-    Alcotest.(check bool)
+    (check bool)
       (sprintf "deg(45*%d) == rad(%d*pi/4)" k k)
       (bool_of_json_exn (member "equal" c))
       (S2.S1_angle.equal from_deg from_rad);
@@ -333,7 +331,7 @@ let test_e6_vs_e7 fixture () =
   let cases = to_list (member "e6_vs_e7" fixture) in
   List.iter cases ~f:(fun c ->
     let i = int_of_json_exn (member "e6_input" c) in
-    Alcotest.(check bool)
+    (check bool)
       (sprintf "E6(%d)==E7(10*%d)" i i)
       (bool_of_json_exn (member "equal" c))
       (S2.S1_angle.equal (S2.S1_angle.of_e6 i) (S2.S1_angle.of_e7 (10 * i))))
@@ -344,46 +342,34 @@ let () =
   Alcotest.run
     "S1_angle"
     [ ( "constructors"
-      , [ Alcotest.test_case "DefaultConstructor" `Quick (test_constructors fixture) ] )
+      , [ test_case "DefaultConstructor" `Quick (test_constructors fixture) ] )
     ; ( "to_e5_e6_e7"
-      , [ Alcotest.test_case "E5E6E7Representations" `Quick (test_to_e5_e6_e7 fixture) ] )
-    ; ( "special_values"
-      , [ Alcotest.test_case "Infinity" `Quick (test_special_values fixture) ] )
+      , [ test_case "E5E6E7Representations" `Quick (test_to_e5_e6_e7 fixture) ] )
+    ; "special_values", [ test_case "Infinity" `Quick (test_special_values fixture) ]
     ; ( "arithmetic"
-      , [ Alcotest.test_case
-            "ArithmeticOperationsOnAngles"
-            `Quick
-            (test_arithmetic fixture)
-        ] )
+      , [ test_case "ArithmeticOperationsOnAngles" `Quick (test_arithmetic fixture) ] )
     ; ( "normalized"
-      , [ Alcotest.test_case
+      , [ test_case
             "NormalizeCorrectlyCanonicalizesAngles"
             `Quick
             (test_normalized fixture)
         ] )
-    ; ( "trigonometry"
-      , [ Alcotest.test_case "Trigonometry" `Quick (test_trigonometry fixture) ] )
-    ; ( "degrees_vs_e6"
-      , [ Alcotest.test_case "DegreesVsE6" `Quick (test_degrees_vs_e6 fixture) ] )
-    ; ( "degrees_vs_e7"
-      , [ Alcotest.test_case "DegreesVsE7" `Quick (test_degrees_vs_e7 fixture) ] )
+    ; "trigonometry", [ test_case "Trigonometry" `Quick (test_trigonometry fixture) ]
+    ; "degrees_vs_e6", [ test_case "DegreesVsE6" `Quick (test_degrees_vs_e6 fixture) ]
+    ; "degrees_vs_e7", [ test_case "DegreesVsE7" `Quick (test_degrees_vs_e7 fixture) ]
     ; ( "degrees_vs_radians"
-      , [ Alcotest.test_case "DegreesVsRadians" `Quick (test_degrees_vs_radians fixture) ]
-      )
-    ; "sin_cos", [ Alcotest.test_case "Trigonometry" `Quick (test_sin_cos fixture) ]
-    ; "e6_vs_e7", [ Alcotest.test_case "E6VsE7" `Quick (test_e6_vs_e7 fixture) ]
+      , [ test_case "DegreesVsRadians" `Quick (test_degrees_vs_radians fixture) ] )
+    ; "sin_cos", [ test_case "Trigonometry" `Quick (test_sin_cos fixture) ]
+    ; "e6_vs_e7", [ test_case "E6VsE7" `Quick (test_e6_vs_e7 fixture) ]
     ; ( "quickcheck"
-      , [ Alcotest.test_case "add_commutative" `Quick quickcheck_add_commutative
-        ; Alcotest.test_case "neg_involution" `Quick quickcheck_neg_involution
-        ; Alcotest.test_case
-            "normalized_idempotent"
-            `Quick
-            quickcheck_normalized_idempotent
-        ; Alcotest.test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
-        ; Alcotest.test_case "abs_nonneg" `Quick quickcheck_abs_nonneg
-        ; Alcotest.test_case "mul_identity" `Quick quickcheck_mul_identity
-        ; Alcotest.test_case "div_self_one" `Quick quickcheck_div_self_one
-        ; Alcotest.test_case "degrees_radians" `Quick quickcheck_degrees_radians_roundtrip
+      , [ test_case "add_commutative" `Quick quickcheck_add_commutative
+        ; test_case "neg_involution" `Quick quickcheck_neg_involution
+        ; test_case "normalized_idempotent" `Quick quickcheck_normalized_idempotent
+        ; test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
+        ; test_case "abs_nonneg" `Quick quickcheck_abs_nonneg
+        ; test_case "mul_identity" `Quick quickcheck_mul_identity
+        ; test_case "div_self_one" `Quick quickcheck_div_self_one
+        ; test_case "degrees_radians" `Quick quickcheck_degrees_radians_roundtrip
         ] )
     ]
 ;;

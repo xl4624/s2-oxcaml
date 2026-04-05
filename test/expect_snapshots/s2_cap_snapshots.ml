@@ -42,10 +42,10 @@ let%expect_test "of_point_contains_center" =
   let p = S2.S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0 in
   let cap = S2.S2_cap.of_point p in
   printf
-    "contains: %b height: %.17g\n"
+    "contains: %b height: %s\n"
     (S2.S2_cap.contains_point cap p)
-    (S2.S2_cap.height cap);
-  [%expect {| contains: true height: 0 |}]
+    (Float_u.to_string (S2.S2_cap.height cap));
+  [%expect {| contains: true height: 0. |}]
 ;;
 
 let%expect_test "hemisphere_height" =
@@ -54,7 +54,7 @@ let%expect_test "hemisphere_height" =
       (S2.S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0)
       (S2.S1_angle.of_degrees #90.0)
   in
-  printf "height=%.17g\n" (S2.S2_cap.height cap);
+  printf "height=%s\n" (Float_u.to_string (S2.S2_cap.height cap));
   [%expect {| height=0.99999999999999978 |}]
 ;;
 

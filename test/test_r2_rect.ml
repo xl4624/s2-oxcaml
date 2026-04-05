@@ -16,6 +16,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module R2_rect_pair = struct
   type t =
@@ -149,7 +150,7 @@ let quickcheck_union_superset () =
 ;;
 
 let test_empty_sexp () =
-  Alcotest.(check string)
+  (check string)
     "sexp_of empty"
     "((x((lo 1)(hi 0)))(y((lo 1)(hi 0))))"
     (Sexp.to_string_mach (S2.R2_rect.sexp_of_t S2.R2_rect.empty))
@@ -180,15 +181,15 @@ let check_rect msg (expected : S2.R2_rect.t) actual =
 
 let test_empty_rect fixture () =
   let c = member "empty_rect" fixture in
-  Alcotest.(check bool)
+  (check bool)
     "is_valid"
     (bool_of_json_exn (member "is_valid" c))
     (S2.R2_rect.is_valid S2.R2_rect.empty);
-  Alcotest.(check bool)
+  (check bool)
     "is_empty"
     (bool_of_json_exn (member "is_empty" c))
     (S2.R2_rect.is_empty S2.R2_rect.empty);
-  Alcotest.(check bool)
+  (check bool)
     "equal_self"
     (bool_of_json_exn (member "equal_self" c))
     (S2.R2_rect.equal S2.R2_rect.empty S2.R2_rect.empty)
@@ -263,11 +264,11 @@ let test_accessors fixture () =
       (name ^ " size")
       ~expected:(r2_point_of_json (member "size" c))
       ~actual:(S2.R2_rect.size r);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_empty")
       (bool_of_json_exn (member "is_empty" c))
       (S2.R2_rect.is_empty r);
-    Alcotest.(check bool)
+    (check bool)
       (name ^ " is_valid")
       (bool_of_json_exn (member "is_valid" c))
       (S2.R2_rect.is_valid r);
@@ -295,11 +296,11 @@ let test_contains_point fixture () =
     let r = r2_rect_of_json (member "rect" c) in
     let p = r2_point_of_json (member "p" c) in
     let label = S2.R2_point.to_string p in
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " contains")
       (bool_of_json_exn (member "contains" c))
       (S2.R2_rect.contains_point r p);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " interior_contains")
       (bool_of_json_exn (member "interior_contains" c))
       (S2.R2_rect.interior_contains_point r p))
@@ -320,7 +321,7 @@ let test_ccw_vertices _fixture () =
     let dx = Float_u.(S2.R2_point.x c - S2.R2_point.x a) in
     let dy = Float_u.(S2.R2_point.y c - S2.R2_point.y a) in
     let cross = Float_u.((ortho_x * dx) + (ortho_y * dy)) in
-    Alcotest.(check bool) (sprintf "ccw k=%d" k) true Float_u.(cross > #0.0)
+    (check bool) (sprintf "ccw k=%d" k) true Float_u.(cross > #0.0)
   done
 ;;
 
@@ -332,19 +333,19 @@ let test_interval_ops fixture () =
     let label =
       sprintf "pair %d: %s vs %s" i (S2.R2_rect.to_string x) (S2.R2_rect.to_string y)
     in
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " contains")
       (bool_of_json_exn (member "contains" c))
       (S2.R2_rect.contains_rect x y);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " interior_contains")
       (bool_of_json_exn (member "interior_contains" c))
       (S2.R2_rect.interior_contains_rect x y);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " intersects")
       (bool_of_json_exn (member "intersects" c))
       (S2.R2_rect.intersects x y);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " interior_intersects")
       (bool_of_json_exn (member "interior_intersects" c))
       (S2.R2_rect.interior_intersects x y);
@@ -361,11 +362,11 @@ let test_interval_ops fixture () =
       (r2_rect_of_json (member "add_rect" c))
       (S2.R2_rect.add_rect x y);
     (* C++ invariants *)
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " contains_iff_union_eq")
       (bool_of_json_exn (member "contains" c))
       (S2.R2_rect.equal (S2.R2_rect.union x y) x);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " intersects_iff_nonempty_intersection")
       (bool_of_json_exn (member "intersects" c))
       (not (S2.R2_rect.is_empty (S2.R2_rect.intersection x y))))
@@ -393,7 +394,7 @@ let test_add_point fixture () =
       ~lo:(S2.R2_point.create ~x:#0.0 ~y:#0.25)
       ~hi:(S2.R2_point.create ~x:#0.5 ~y:#0.75)
   in
-  Alcotest.(check bool) "final rect equals target" true (S2.R2_rect.equal acc.r target)
+  (check bool) "final rect equals target" true (S2.R2_rect.equal acc.r target)
 ;;
 
 let test_project fixture () =
@@ -422,11 +423,11 @@ let test_expanded fixture () =
         let margin = r2_point_of_json (member "margin" c) in
         S2.R2_rect.expanded r margin
     in
-    Alcotest.(check bool) "is_empty" expected_empty (S2.R2_rect.is_empty result);
+    (check bool) "is_empty" expected_empty (S2.R2_rect.is_empty result);
     if not expected_empty
     then (
       let expected = r2_rect_of_json (member "expected" c) in
-      Alcotest.(check bool) "approx_equal" true (S2.R2_rect.approx_equal expected result)))
+      (check bool) "approx_equal" true (S2.R2_rect.approx_equal expected result)))
 ;;
 
 let test_approx_equal fixture () =
@@ -435,40 +436,35 @@ let test_approx_equal fixture () =
     let r1 = r2_rect_of_json (member "r1" c) in
     let r2 = r2_rect_of_json (member "r2" c) in
     let expected = bool_of_json_exn (member "expected" c) in
-    Alcotest.(check bool) "approx_equal" expected (S2.R2_rect.approx_equal r1 r2))
+    (check bool) "approx_equal" expected (S2.R2_rect.approx_equal r1 r2))
 ;;
 
 let () =
   let fixture = load_fixture "r2rect.json" in
   Alcotest.run
     "R2_rect"
-    [ ( "empty_rect"
-      , [ Alcotest.test_case "EmptyRectangles" `Quick (test_empty_rect fixture) ] )
+    [ "empty_rect", [ test_case "EmptyRectangles" `Quick (test_empty_rect fixture) ]
     ; ( "constructors"
-      , [ Alcotest.test_case "ConstructorsAndAccessors" `Quick (test_constructors fixture)
-        ] )
+      , [ test_case "ConstructorsAndAccessors" `Quick (test_constructors fixture) ] )
     ; ( "accessors"
-      , [ Alcotest.test_case "ConstructorsAndAccessors" `Quick (test_accessors fixture) ]
-      )
+      , [ test_case "ConstructorsAndAccessors" `Quick (test_accessors fixture) ] )
     ; ( "contains_point"
-      , [ Alcotest.test_case "SimplePredicates" `Quick (test_contains_point fixture) ] )
-    ; ( "ccw_vertices"
-      , [ Alcotest.test_case "SimplePredicates" `Quick (test_ccw_vertices fixture) ] )
+      , [ test_case "SimplePredicates" `Quick (test_contains_point fixture) ] )
+    ; "ccw_vertices", [ test_case "SimplePredicates" `Quick (test_ccw_vertices fixture) ]
     ; ( "interval_ops"
-      , [ Alcotest.test_case "IntervalOperations" `Quick (test_interval_ops fixture) ] )
-    ; "add_point", [ Alcotest.test_case "AddPoint" `Quick (test_add_point fixture) ]
-    ; "project", [ Alcotest.test_case "Project" `Quick (test_project fixture) ]
-    ; "expanded", [ Alcotest.test_case "Expanded" `Quick (test_expanded fixture) ]
-    ; ( "approx_equal"
-      , [ Alcotest.test_case "ApproxEquals" `Quick (test_approx_equal fixture) ] )
-    ; "sexp", [ Alcotest.test_case "empty" `Quick test_empty_sexp ]
+      , [ test_case "IntervalOperations" `Quick (test_interval_ops fixture) ] )
+    ; "add_point", [ test_case "AddPoint" `Quick (test_add_point fixture) ]
+    ; "project", [ test_case "Project" `Quick (test_project fixture) ]
+    ; "expanded", [ test_case "Expanded" `Quick (test_expanded fixture) ]
+    ; "approx_equal", [ test_case "ApproxEquals" `Quick (test_approx_equal fixture) ]
+    ; "sexp", [ test_case "empty" `Quick test_empty_sexp ]
     ; ( "quickcheck"
-      , [ Alcotest.test_case "intersection_subset" `Quick quickcheck_intersection_subset
-        ; Alcotest.test_case "union_superset" `Quick quickcheck_union_superset
-        ; Alcotest.test_case "add_point_contains" `Quick quickcheck_add_point_contains
-        ; Alcotest.test_case "expanded_contains" `Quick quickcheck_expanded_contains
-        ; Alcotest.test_case "volume_nonneg" `Quick quickcheck_volume_nonneg
-        ; Alcotest.test_case "project_in_rect" `Quick quickcheck_project_in_rect
+      , [ test_case "intersection_subset" `Quick quickcheck_intersection_subset
+        ; test_case "union_superset" `Quick quickcheck_union_superset
+        ; test_case "add_point_contains" `Quick quickcheck_add_point_contains
+        ; test_case "expanded_contains" `Quick quickcheck_expanded_contains
+        ; test_case "volume_nonneg" `Quick quickcheck_volume_nonneg
+        ; test_case "project_in_rect" `Quick quickcheck_project_in_rect
         ] )
     ]
 ;;

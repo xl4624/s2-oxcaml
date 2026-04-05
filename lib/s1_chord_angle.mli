@@ -70,8 +70,9 @@ val negative : t
     angles larger than pi map to [straight]. *)
 val of_angle : S1_angle.t -> t
 
-(** Construct from a squared chord length. The argument is clamped to at most 4.0. *)
-val of_length2 : float -> t
+(** Construct from an unboxed squared chord length. The argument is clamped to at most
+    4.0. *)
+val of_length2 : float# -> t
 
 (** Convenience constructors via {!S1_angle.t}. *)
 

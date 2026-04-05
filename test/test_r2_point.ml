@@ -14,6 +14,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module R2_pair = struct
   type t =
@@ -341,19 +342,19 @@ let test_equality fixture () =
     let p2 = r2_point_of_json (member "p2" c) in
     let expected = bool_of_json_exn (member "equal" c) in
     let label = sprintf "%s = %s" (S2.R2_point.to_string p1) (S2.R2_point.to_string p2) in
-    Alcotest.(check bool) label expected (S2.R2_point.equal p1 p2))
+    (check bool) label expected (S2.R2_point.equal p1 p2))
 ;;
 
 let test_sexp () =
   let p = S2.R2_point.create ~x:#1. ~y:#2. in
-  Alcotest.(check string)
+  (check string)
     "sexp_of sample point"
     "((x 1)(y 2))"
     (Sexp.to_string_mach (S2.R2_point.sexp_of_t p))
 ;;
 
 let test_zero_sexp () =
-  Alcotest.(check string)
+  (check string)
     "sexp_of zero"
     "((x 0)(y 0))"
     (Sexp.to_string_mach (S2.R2_point.sexp_of_t S2.R2_point.zero))
@@ -364,35 +365,31 @@ let () =
   Alcotest.run
     "R2_point"
     [ ( "constructors"
-      , [ Alcotest.test_case "GoldenConstructors" `Quick (test_constructors fixture) ] )
-    ; "arithmetic", [ Alcotest.test_case "TestDot" `Quick (test_arithmetic fixture) ]
-    ; "mul", [ Alcotest.test_case "GoldenMul" `Quick (test_mul fixture) ]
-    ; "div", [ Alcotest.test_case "GoldenDiv" `Quick (test_div fixture) ]
-    ; "neg", [ Alcotest.test_case "GoldenNeg" `Quick (test_neg fixture) ]
-    ; "ortho", [ Alcotest.test_case "TestOrtho" `Quick (test_ortho fixture) ]
-    ; "norm", [ Alcotest.test_case "TestNorm" `Quick (test_norm fixture) ]
-    ; "normalize", [ Alcotest.test_case "TestNormalize" `Quick (test_normalize fixture) ]
-    ; "angle", [ Alcotest.test_case "GoldenAngle" `Quick (test_angle fixture) ]
-    ; "fabs", [ Alcotest.test_case "GoldenFabs" `Quick (test_fabs fixture) ]
-    ; "equality", [ Alcotest.test_case "GoldenEquality" `Quick (test_equality fixture) ]
+      , [ test_case "GoldenConstructors" `Quick (test_constructors fixture) ] )
+    ; "arithmetic", [ test_case "TestDot" `Quick (test_arithmetic fixture) ]
+    ; "mul", [ test_case "GoldenMul" `Quick (test_mul fixture) ]
+    ; "div", [ test_case "GoldenDiv" `Quick (test_div fixture) ]
+    ; "neg", [ test_case "GoldenNeg" `Quick (test_neg fixture) ]
+    ; "ortho", [ test_case "TestOrtho" `Quick (test_ortho fixture) ]
+    ; "norm", [ test_case "TestNorm" `Quick (test_norm fixture) ]
+    ; "normalize", [ test_case "TestNormalize" `Quick (test_normalize fixture) ]
+    ; "angle", [ test_case "GoldenAngle" `Quick (test_angle fixture) ]
+    ; "fabs", [ test_case "GoldenFabs" `Quick (test_fabs fixture) ]
+    ; "equality", [ test_case "GoldenEquality" `Quick (test_equality fixture) ]
     ; ( "sexp"
-      , [ Alcotest.test_case "SexpOf_t" `Quick test_sexp
-        ; Alcotest.test_case "zero" `Quick test_zero_sexp
-        ] )
+      , [ test_case "SexpOf_t" `Quick test_sexp; test_case "zero" `Quick test_zero_sexp ]
+      )
     ; ( "quickcheck"
-      , [ Alcotest.test_case "add_commutative" `Quick quickcheck_add_commutative
-        ; Alcotest.test_case "dot_commutative" `Quick quickcheck_dot_commutative
-        ; Alcotest.test_case "ortho_perpendicular" `Quick quickcheck_ortho_perpendicular
-        ; Alcotest.test_case "norm2_mul" `Quick quickcheck_norm2_mul
-        ; Alcotest.test_case "neg_involution" `Quick quickcheck_neg_involution
-        ; Alcotest.test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
-        ; Alcotest.test_case "norm_nonneg" `Quick quickcheck_norm_nonneg
-        ; Alcotest.test_case
-            "normalize_unit_or_zero"
-            `Quick
-            quickcheck_normalize_unit_or_zero
-        ; Alcotest.test_case "cross_antisymmetric" `Quick quickcheck_cross_antisymmetric
-        ; Alcotest.test_case "fabs_nonneg" `Quick quickcheck_fabs_nonneg
+      , [ test_case "add_commutative" `Quick quickcheck_add_commutative
+        ; test_case "dot_commutative" `Quick quickcheck_dot_commutative
+        ; test_case "ortho_perpendicular" `Quick quickcheck_ortho_perpendicular
+        ; test_case "norm2_mul" `Quick quickcheck_norm2_mul
+        ; test_case "neg_involution" `Quick quickcheck_neg_involution
+        ; test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
+        ; test_case "norm_nonneg" `Quick quickcheck_norm_nonneg
+        ; test_case "normalize_unit_or_zero" `Quick quickcheck_normalize_unit_or_zero
+        ; test_case "cross_antisymmetric" `Quick quickcheck_cross_antisymmetric
+        ; test_case "fabs_nonneg" `Quick quickcheck_fabs_nonneg
         ] )
     ]
 ;;

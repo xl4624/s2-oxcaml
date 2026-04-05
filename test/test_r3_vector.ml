@@ -17,6 +17,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module R3_pair = struct
   type t =
@@ -171,11 +172,11 @@ let test_accessors fixture () =
       (name ^ " norm2")
       ~expected:(float_u_of_json_exn (member "norm2" c))
       ~actual:(S2.R3_vector.norm2 v);
-    Alcotest.(check int)
+    (check int)
       (name ^ " largest_abs_component")
       (int_of_json_exn (member "largest_abs_component" c))
       (S2.R3_vector.largest_abs_component v);
-    Alcotest.(check int)
+    (check int)
       (name ^ " smallest_abs_component")
       (int_of_json_exn (member "smallest_abs_component" c))
       (S2.R3_vector.smallest_component v))
@@ -268,7 +269,7 @@ let test_normalization fixture () =
       (label ^ " normalized")
       ~expected:(r3_vector_of_json (member "normalized" c))
       ~actual:(S2.R3_vector.normalize v);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " is_unit")
       (bool_of_json_exn (member "is_unit" c))
       (let n = S2.R3_vector.normalize v in
@@ -303,7 +304,7 @@ let test_approx_equal fixture () =
     let a = r3_vector_of_json (member "a" c) in
     let b = r3_vector_of_json (member "b" c) in
     let margin = float_of_json_exn (member "margin" c) in
-    Alcotest.(check bool)
+    (check bool)
       "approx_equal vs C++ aequal"
       (bool_of_json_exn (member "aequal" c))
       (S2.R3_vector.approx_equal ~max_error:margin a b))
@@ -317,11 +318,11 @@ let test_compare_equal fixture () =
     let label =
       sprintf "cmp %s %s" (S2.R3_vector.to_string a) (S2.R3_vector.to_string b)
     in
-    Alcotest.(check int)
+    (check int)
       (label ^ " compare")
       (int_of_json_exn (member "compare" c))
       (S2.R3_vector.compare a b);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " equal")
       (bool_of_json_exn (member "equal" c))
       (S2.R3_vector.equal a b))
@@ -331,27 +332,22 @@ let () =
   let fixture = load_fixture "r3vector.json" in
   Alcotest.run
     "R3_vector"
-    [ ( "constructors"
-      , [ Alcotest.test_case "Constructors" `Quick (test_constructors fixture) ] )
-    ; "accessors", [ Alcotest.test_case "Accessors" `Quick (test_accessors fixture) ]
-    ; "arithmetic", [ Alcotest.test_case "Arithmetic" `Quick (test_arithmetic fixture) ]
-    ; ( "component_wise"
-      , [ Alcotest.test_case "ComponentWise" `Quick (test_component_wise fixture) ] )
-    ; ( "normalization"
-      , [ Alcotest.test_case "Normalization" `Quick (test_normalization fixture) ] )
-    ; "ortho", [ Alcotest.test_case "Ortho" `Quick (test_ortho fixture) ]
-    ; ( "approx_equal"
-      , [ Alcotest.test_case "ApproxEquals" `Quick (test_approx_equal fixture) ] )
-    ; ( "compare_equal"
-      , [ Alcotest.test_case "CompareEqual" `Quick (test_compare_equal fixture) ] )
+    [ "constructors", [ test_case "Constructors" `Quick (test_constructors fixture) ]
+    ; "accessors", [ test_case "Accessors" `Quick (test_accessors fixture) ]
+    ; "arithmetic", [ test_case "Arithmetic" `Quick (test_arithmetic fixture) ]
+    ; "component_wise", [ test_case "ComponentWise" `Quick (test_component_wise fixture) ]
+    ; "normalization", [ test_case "Normalization" `Quick (test_normalization fixture) ]
+    ; "ortho", [ test_case "Ortho" `Quick (test_ortho fixture) ]
+    ; "approx_equal", [ test_case "ApproxEquals" `Quick (test_approx_equal fixture) ]
+    ; "compare_equal", [ test_case "CompareEqual" `Quick (test_compare_equal fixture) ]
     ; ( "quickcheck"
-      , [ Alcotest.test_case "dot_commutative" `Quick quickcheck_dot_commutative
-        ; Alcotest.test_case "cross_antisymmetric" `Quick quickcheck_cross_antisymmetric
-        ; Alcotest.test_case "norm2_nonneg" `Quick quickcheck_norm2_nonneg
-        ; Alcotest.test_case "add_commutative" `Quick quickcheck_add_commutative
-        ; Alcotest.test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
-        ; Alcotest.test_case "neg_involution" `Quick quickcheck_neg_involution
-        ; Alcotest.test_case "abs_nonneg" `Quick quickcheck_fabs_nonneg
+      , [ test_case "dot_commutative" `Quick quickcheck_dot_commutative
+        ; test_case "cross_antisymmetric" `Quick quickcheck_cross_antisymmetric
+        ; test_case "norm2_nonneg" `Quick quickcheck_norm2_nonneg
+        ; test_case "add_commutative" `Quick quickcheck_add_commutative
+        ; test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
+        ; test_case "neg_involution" `Quick quickcheck_neg_involution
+        ; test_case "abs_nonneg" `Quick quickcheck_fabs_nonneg
         ] )
     ]
 ;;

@@ -20,6 +20,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 let of_degrees ~lat ~lng =
   S2.S2_latlng.of_degrees ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng)
@@ -427,33 +428,26 @@ let () =
   let fixture = load_fixture "s2latlng.json" in
   Alcotest.run
     "S2_latlng"
-    [ ( "constructors"
-      , [ Alcotest.test_case "Constructors" `Quick (test_constructors fixture) ] )
-    ; "is_valid", [ Alcotest.test_case "IsValid" `Quick (test_is_valid fixture) ]
-    ; "normalized", [ Alcotest.test_case "Normalized" `Quick (test_normalized fixture) ]
-    ; "arithmetic", [ Alcotest.test_case "Arithmetic" `Quick (test_arithmetic fixture) ]
-    ; "conversion", [ Alcotest.test_case "Conversion" `Quick (test_conversion fixture) ]
+    [ "constructors", [ test_case "Constructors" `Quick (test_constructors fixture) ]
+    ; "is_valid", [ test_case "IsValid" `Quick (test_is_valid fixture) ]
+    ; "normalized", [ test_case "Normalized" `Quick (test_normalized fixture) ]
+    ; "arithmetic", [ test_case "Arithmetic" `Quick (test_arithmetic fixture) ]
+    ; "conversion", [ test_case "Conversion" `Quick (test_conversion fixture) ]
     ; ( "lat_lng_from_point"
-      , [ Alcotest.test_case "LatLngFromPoint" `Quick (test_lat_lng_from_point fixture) ]
-      )
-    ; ( "negative_zeros"
-      , [ Alcotest.test_case "NegativeZeros" `Quick (test_negative_zeros fixture) ] )
-    ; "distance", [ Alcotest.test_case "Distance" `Quick (test_distance fixture) ]
-    ; ( "approx_equal"
-      , [ Alcotest.test_case "ApproxEquals" `Quick (test_approx_equal fixture) ] )
+      , [ test_case "LatLngFromPoint" `Quick (test_lat_lng_from_point fixture) ] )
+    ; "negative_zeros", [ test_case "NegativeZeros" `Quick (test_negative_zeros fixture) ]
+    ; "distance", [ test_case "Distance" `Quick (test_distance fixture) ]
+    ; "approx_equal", [ test_case "ApproxEquals" `Quick (test_approx_equal fixture) ]
     ; ( "e_constructors"
-      , [ Alcotest.test_case "E_Constructors" `Quick (test_e_constructors fixture) ] )
-    ; "to_point", [ Alcotest.test_case "ToPoint" `Quick (test_to_point fixture) ]
+      , [ test_case "E_Constructors" `Quick (test_e_constructors fixture) ] )
+    ; "to_point", [ test_case "ToPoint" `Quick (test_to_point fixture) ]
     ; ( "quickcheck"
-      , [ Alcotest.test_case "add_commutative" `Quick quickcheck_add_commutative
-        ; Alcotest.test_case "point_roundtrip" `Quick quickcheck_point_roundtrip
-        ; Alcotest.test_case "normalized_is_valid" `Quick quickcheck_normalized_is_valid
-        ; Alcotest.test_case
-            "normalized_idempotent"
-            `Quick
-            quickcheck_normalized_idempotent
-        ; Alcotest.test_case "distance_nonneg" `Quick quickcheck_distance_nonneg
-        ; Alcotest.test_case "distance_symmetric" `Quick quickcheck_distance_symmetric
+      , [ test_case "add_commutative" `Quick quickcheck_add_commutative
+        ; test_case "point_roundtrip" `Quick quickcheck_point_roundtrip
+        ; test_case "normalized_is_valid" `Quick quickcheck_normalized_is_valid
+        ; test_case "normalized_idempotent" `Quick quickcheck_normalized_idempotent
+        ; test_case "distance_nonneg" `Quick quickcheck_distance_nonneg
+        ; test_case "distance_symmetric" `Quick quickcheck_distance_symmetric
         ] )
     ]
 ;;

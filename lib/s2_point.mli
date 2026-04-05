@@ -67,7 +67,6 @@ val stable_angle : t -> t -> S1_angle.t
 
 (** [chord_angle_between a b] returns the chord angle between [a] and [b]. *)
 val chord_angle_between : t -> t -> S1_chord_angle.t
-[@@zero_alloc ignore]
 
 (** [rotate p ~axis ~angle] rotates the point [p] about the given [axis] by the given
     [angle]. *)

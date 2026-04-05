@@ -90,14 +90,14 @@ val of_center_height : S2_point.t -> float -> t
 
 (** [area] is surface area on the unit sphere (solid angle). Negative yields empty;
     [area >= 4 * pi] yields full. *)
-val of_center_area : S2_point.t -> float -> t
+val of_center_area : S2_point.t -> float# -> t
 [@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
 val center : t -> S2_point.t
 val radius_chord : t -> S1_chord_angle.t
-val height : t -> float [@@zero_alloc ignore]
+val height : t -> float# [@@zero_alloc]
 
 (** Angular radius (may differ slightly from the angle passed to {!of_center_angle}). *)
 val radius_angle : t -> S1_angle.t

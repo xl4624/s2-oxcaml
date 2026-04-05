@@ -9,6 +9,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module R1_pair = struct
   type t =
@@ -214,11 +215,11 @@ let test_contains_point fixture () =
     let i = named_interval name in
     let pu = float_u_of_json_exn (member "point" c) in
     let label = sprintf "%s contains %s" name (Float_u.to_string pu) in
-    Alcotest.(check bool)
+    (check bool)
       label
       (bool_of_json_exn (member "contains" c))
       (S2.R1_interval.contains i pu);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " interior")
       (bool_of_json_exn (member "interior_contains" c))
       (S2.R1_interval.interior_contains i pu))
@@ -239,19 +240,19 @@ let test_interval_ops fixture () =
         yn
         (S2.R1_interval.to_string y)
     in
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " contains")
       (bool_of_json_exn (member "contains" c))
       (S2.R1_interval.contains_interval x y);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " interior_contains")
       (bool_of_json_exn (member "interior_contains" c))
       (S2.R1_interval.interior_contains_interval x y);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " intersects")
       (bool_of_json_exn (member "intersects" c))
       (S2.R1_interval.intersects x y);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " interior_intersects")
       (bool_of_json_exn (member "interior_intersects" c))
       (S2.R1_interval.interior_intersects x y);
@@ -262,11 +263,11 @@ let test_interval_ops fixture () =
     let ai = S2.R1_interval.intersection x y in
     check_r1_interval_exact (label ^ " intersection") ~expected:ei ~actual:ai;
     (* C++ TestIntervalOps: Contains(y) <=> Union(x,y)==x; Intersects <=> non-empty intersection. *)
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " invariant contains_interval/union")
       (bool_of_json_exn (member "contains" c))
       (S2.R1_interval.equal (S2.R1_interval.union x y) x);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " invariant intersects/intersection")
       (bool_of_json_exn (member "intersects" c))
       (not (S2.R1_interval.is_empty (S2.R1_interval.intersection x y))))
@@ -321,7 +322,7 @@ let test_expanded fixture () =
       (label ^ " hi")
       ~expected:(S2.R1_interval.hi expected)
       ~actual:(S2.R1_interval.hi result);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " is_empty")
       (bool_of_json_exn (member "result_is_empty" c))
       (S2.R1_interval.is_empty result))
@@ -341,10 +342,7 @@ let test_directed_hausdorff fixture () =
     in
     match member "distance" c with
     | `Null ->
-      Alcotest.(check bool)
-        (label ^ " infinity")
-        true
-        (Float.is_inf (Float_u.to_float result))
+      (check bool) (label ^ " infinity") true (Float.is_inf (Float_u.to_float result))
     | j -> check_float_u_exact label ~expected:(float_u_of_json_exn j) ~actual:result)
 ;;
 
@@ -354,7 +352,7 @@ let test_approx_equal fixture () =
     let x = r1_interval_of_json (member "x" c) in
     let y = r1_interval_of_json (member "y" c) in
     let expected = bool_of_json_exn (member "approx_equal" c) in
-    Alcotest.(check bool)
+    (check bool)
       (sprintf
          "approx %s vs %s"
          (S2.R1_interval.to_string x)
@@ -377,7 +375,7 @@ let test_approx_equal_custom fixture () =
         (S2.R1_interval.to_string x)
         (S2.R1_interval.to_string y)
     in
-    Alcotest.(check bool) label expected (S2.R1_interval.approx_equal ~max_error:me x y))
+    (check bool) label expected (S2.R1_interval.approx_equal ~max_error:me x y))
 ;;
 
 let test_equal fixture () =
@@ -386,7 +384,7 @@ let test_equal fixture () =
     let x = r1_interval_of_json (member "x" c) in
     let y = r1_interval_of_json (member "y" c) in
     let expected = bool_of_json_exn (member "equal" c) in
-    Alcotest.(check bool)
+    (check bool)
       (sprintf "equal %s vs %s" (S2.R1_interval.to_string x) (S2.R1_interval.to_string y))
       expected
       (S2.R1_interval.equal x y))
@@ -415,7 +413,7 @@ let test_expanded_chain fixture () =
       (label ^ " mid hi")
       ~expected:(S2.R1_interval.hi expected_mid)
       ~actual:(S2.R1_interval.hi after_first);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " mid is_empty")
       (bool_of_json_exn (member "after_first_empty" c))
       (S2.R1_interval.is_empty after_first);
@@ -429,7 +427,7 @@ let test_expanded_chain fixture () =
       (label ^ " final hi")
       ~expected:(S2.R1_interval.hi expected_final)
       ~actual:(S2.R1_interval.hi final);
-    Alcotest.(check bool)
+    (check bool)
       (label ^ " final is_empty")
       (bool_of_json_exn (member "final_empty" c))
       (S2.R1_interval.is_empty final))
@@ -437,14 +435,14 @@ let test_expanded_chain fixture () =
 
 let test_sexp () =
   let i = S2.R1_interval.create ~lo:#0. ~hi:#1. in
-  Alcotest.(check string)
+  (check string)
     "sexp_of unit interval"
     "((lo 0)(hi 1))"
     (Sexp.to_string_mach (S2.R1_interval.sexp_of_t i))
 ;;
 
 let test_empty_sexp () =
-  Alcotest.(check string)
+  (check string)
     "sexp_of empty"
     "((lo 1)(hi 0))"
     (Sexp.to_string_mach (S2.R1_interval.sexp_of_t S2.R1_interval.empty))
@@ -454,46 +452,33 @@ let () =
   let fixture = load_fixture "r1interval.json" in
   Alcotest.run
     "R1_interval"
-    [ ( "constructors"
-      , [ Alcotest.test_case "TestBasic" `Quick (test_constructors fixture) ] )
-    ; "accessors", [ Alcotest.test_case "TestBasic" `Quick (test_accessors fixture) ]
-    ; ( "contains_point"
-      , [ Alcotest.test_case "TestBasic" `Quick (test_contains_point fixture) ] )
-    ; ( "interval_ops"
-      , [ Alcotest.test_case "TestBasic" `Quick (test_interval_ops fixture) ] )
-    ; "add_point", [ Alcotest.test_case "TestBasic" `Quick (test_add_point fixture) ]
-    ; "project", [ Alcotest.test_case "TestBasic" `Quick (test_project fixture) ]
-    ; "expanded", [ Alcotest.test_case "TestBasic" `Quick (test_expanded fixture) ]
-    ; ( "expanded_chain"
-      , [ Alcotest.test_case "TestBasic" `Quick (test_expanded_chain fixture) ] )
+    [ "constructors", [ test_case "TestBasic" `Quick (test_constructors fixture) ]
+    ; "accessors", [ test_case "TestBasic" `Quick (test_accessors fixture) ]
+    ; "contains_point", [ test_case "TestBasic" `Quick (test_contains_point fixture) ]
+    ; "interval_ops", [ test_case "TestBasic" `Quick (test_interval_ops fixture) ]
+    ; "add_point", [ test_case "TestBasic" `Quick (test_add_point fixture) ]
+    ; "project", [ test_case "TestBasic" `Quick (test_project fixture) ]
+    ; "expanded", [ test_case "TestBasic" `Quick (test_expanded fixture) ]
+    ; "expanded_chain", [ test_case "TestBasic" `Quick (test_expanded_chain fixture) ]
     ; ( "directed_hausdorff"
-      , [ Alcotest.test_case "DirectedHausdorff" `Quick (test_directed_hausdorff fixture)
-        ] )
-    ; ( "approx_equal"
-      , [ Alcotest.test_case "ApproxEquals" `Quick (test_approx_equal fixture) ] )
+      , [ test_case "DirectedHausdorff" `Quick (test_directed_hausdorff fixture) ] )
+    ; "approx_equal", [ test_case "ApproxEquals" `Quick (test_approx_equal fixture) ]
     ; ( "approx_equal_custom"
-      , [ Alcotest.test_case
-            "ApproxEqualsCustom"
-            `Quick
-            (test_approx_equal_custom fixture)
-        ] )
-    ; "equal", [ Alcotest.test_case "TestBasic" `Quick (test_equal fixture) ]
+      , [ test_case "ApproxEqualsCustom" `Quick (test_approx_equal_custom fixture) ] )
+    ; "equal", [ test_case "TestBasic" `Quick (test_equal fixture) ]
     ; ( "sexp"
-      , [ Alcotest.test_case "SexpOf_t" `Quick test_sexp
-        ; Alcotest.test_case "empty" `Quick test_empty_sexp
+      , [ test_case "SexpOf_t" `Quick test_sexp
+        ; test_case "empty" `Quick test_empty_sexp
         ] )
     ; ( "quickcheck"
-      , [ Alcotest.test_case "intersection_subset" `Quick quickcheck_intersection_subset
-        ; Alcotest.test_case "union_superset" `Quick quickcheck_union_superset
-        ; Alcotest.test_case "add_point_contains" `Quick quickcheck_add_point_contains
-        ; Alcotest.test_case
-            "from_point_pair_contains"
-            `Quick
-            quickcheck_from_point_pair_contains
-        ; Alcotest.test_case "project_in_range" `Quick quickcheck_project_in_range
-        ; Alcotest.test_case "expanded_contains" `Quick quickcheck_expanded_contains
-        ; Alcotest.test_case "length_nonneg" `Quick quickcheck_length_nonneg
-        ; Alcotest.test_case "equal_reflexive" `Quick quickcheck_equal_reflexive
+      , [ test_case "intersection_subset" `Quick quickcheck_intersection_subset
+        ; test_case "union_superset" `Quick quickcheck_union_superset
+        ; test_case "add_point_contains" `Quick quickcheck_add_point_contains
+        ; test_case "from_point_pair_contains" `Quick quickcheck_from_point_pair_contains
+        ; test_case "project_in_range" `Quick quickcheck_project_in_range
+        ; test_case "expanded_contains" `Quick quickcheck_expanded_contains
+        ; test_case "length_nonneg" `Quick quickcheck_length_nonneg
+        ; test_case "equal_reflexive" `Quick quickcheck_equal_reflexive
         ] )
     ]
 ;;

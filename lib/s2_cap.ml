@@ -77,34 +77,25 @@ let of_center_angle center angle =
 
 let of_center_chord_angle center radius = #{ center; radius }
 
-(* TODO: zero_alloc blocked on S1_chord_angle *)
 let[@zero_alloc ignore] of_center_height center height =
-  #{ center; radius = S1_chord_angle.of_length2 (2.0 *. height) }
+  #{ center; radius = S1_chord_angle.of_length2 (Float_u.of_float (2.0 *. height)) }
 ;;
 
-(* TODO: zero_alloc blocked on S1_chord_angle *)
 let[@zero_alloc ignore] of_center_area center area =
-  #{ center; radius = S1_chord_angle.of_length2 (area /. Float.pi) }
+  #{ center; radius = S1_chord_angle.of_length2 Float_u.(area / Float_u.pi ()) }
 ;;
 
 let center t = t.#center
 let radius_chord t = t.#radius
-
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] height t =
-  0.5 *. Float_u.to_float (S1_chord_angle.length2 t.#radius)
-;;
-
+let[@inline] [@zero_alloc] height t = Float_u.(#0.5 * S1_chord_angle.length2 t.#radius)
 let radius_angle t = S1_chord_angle.to_angle t.#radius
 
-(* TODO: zero_alloc blocked on [height] *)
-let[@zero_alloc ignore] area t =
+let[@inline] [@zero_alloc] area t =
   let open Float_u.O in
-  let h = Float_u.of_float (height t) in
-  #2.0 * Float_u.pi () * Float_u.max #0.0 h
+  #2.0 * Float_u.pi () * Float_u.max #0.0 (height t)
 ;;
 
-let is_empty t = S1_chord_angle.is_negative t.#radius
+let[@inline] [@zero_alloc] is_empty t = S1_chord_angle.is_negative t.#radius
 let is_full t = Float_u.O.(S1_chord_angle.length2 t.#radius = #4.0)
 
 let is_valid t =
@@ -113,19 +104,17 @@ let is_valid t =
   && Float_u.(S1_chord_angle.length2 t.#radius <= #4.0)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
 let[@zero_alloc ignore] centroid t =
   let open Float_u.O in
   if is_empty t
   then R3_vector.zero
   else (
-    let r = #1.0 - (#0.5 * Float_u.of_float (height t)) in
+    let r = #1.0 - (#0.5 * height t) in
     let a = area t in
     R3_vector.mul t.#center (r * a))
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] complement t =
+let[@inline] [@zero_alloc] complement t =
   if is_full t
   then empty
   else if is_empty t
@@ -133,12 +122,11 @@ let[@zero_alloc ignore] complement t =
   else (
     let l2 = S1_chord_angle.length2 t.#radius in
     #{ center = R3_vector.neg t.#center
-     ; radius = S1_chord_angle.of_length2 (4.0 -. Float_u.to_float l2)
+     ; radius = S1_chord_angle.of_length2 Float_u.(#4.0 - l2)
      })
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] contains_cap t other =
+let[@inline] [@zero_alloc] contains_cap t other =
   if is_full t || is_empty other
   then true
   else (
@@ -147,8 +135,7 @@ let[@zero_alloc ignore] contains_cap t other =
     S1_chord_angle.compare t.#radius sum >= 0)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] intersects t other =
+let[@inline] [@zero_alloc] intersects t other =
   if is_empty t || is_empty other
   then false
   else (
@@ -159,7 +146,7 @@ let[@zero_alloc ignore] intersects t other =
 
 (* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
 let[@zero_alloc ignore] interior_intersects t other =
-  if Float_u.O.(S1_chord_angle.length2 t.#radius <= #0.0) || is_empty other
+  if Float_u.(S1_chord_angle.length2 t.#radius <= #0.0) || is_empty other
   then false
   else (
     let dist = S2_point.chord_angle_between t.#center other.#center in
@@ -393,7 +380,7 @@ let decode s =
         ~y:(Float_u.of_float y)
         ~z:(Float_u.of_float z)
     in
-    let radius = S1_chord_angle.of_length2 l2 in
+    let radius = S1_chord_angle.of_length2 (Float_u.of_float l2) in
     let t = #{ center; radius } in
     if not (is_valid t) then Option.none else Option.some t)
 ;;
