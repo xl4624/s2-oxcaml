@@ -44,7 +44,7 @@ val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 (** {1 Constants} *)
 
 (** Maximum relative error when summing two chord angles. *)
-val relative_sum_error : float
+val relative_sum_error : float#
 
 (** {1 Constructors} *)
 
@@ -147,14 +147,14 @@ val tan : t -> float#
 
 (** Adjust by [error] (positive or negative), clamping to [0, 4]. Special angles are
     unchanged. *)
-val plus_error : t -> float -> t
+val plus_error : t -> float# -> t
 
 (** Maximum error in [length2] for a chord angle constructed from two unit-length points. *)
-val max_point_error : t -> float
+val max_point_error : t -> float#
 [@@zero_alloc ignore]
 
 (** Maximum error in [length2] for a chord angle constructed from an S1Angle. *)
-val max_angle_error : t -> float
+val max_angle_error : t -> float#
 [@@zero_alloc ignore]
 
 (** {1 Comparison} *)

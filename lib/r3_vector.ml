@@ -122,7 +122,9 @@ let[@inline] [@zero_alloc] compare a b =
   | n -> n
 ;;
 
-let[@inline] [@zero_alloc] equal a b = Float_u.(a.#x = b.#x && a.#y = b.#y && a.#z = b.#z)
+let[@inline] [@zero_alloc] equal a b =
+  Float_u.O.(a.#x = b.#x && a.#y = b.#y && a.#z = b.#z)
+;;
 
 let[@zero_alloc ignore] approx_equal ?(max_error = 1e-16) a b =
   let max_error = Float_u.of_float max_error in

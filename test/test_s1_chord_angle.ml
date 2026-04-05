@@ -413,7 +413,7 @@ let test_plus_error fixture () =
       | `Null -> S2.S1_chord_angle.infinity
       | j -> S2.S1_chord_angle.of_length2 (float_u_of_json_exn j)
     in
-    let error = float_of_json_exn (member "error" c) in
+    let error = float_u_of_json_exn (member "error" c) in
     let result = S2.S1_chord_angle.plus_error angle error in
     check_float_u_or_infinity
       (name ^ " result_length2")
@@ -425,17 +425,17 @@ let test_error_bounds fixture () =
   let cases = to_list (member "error_bounds" fixture) in
   List.iter cases ~f:(fun c ->
     let angle = S2.S1_chord_angle.of_length2 (float_u_of_json_exn (member "length2" c)) in
-    check_float
+    check_float_u
       (sprintf
          "error_bounds length2=%g point"
          (Float_u.to_float (S2.S1_chord_angle.length2 angle)))
-      ~expected:(float_of_json_exn (member "max_point_error" c))
+      ~expected:(float_u_of_json_exn (member "max_point_error" c))
       ~actual:(S2.S1_chord_angle.max_point_error angle);
-    check_float
+    check_float_u
       (sprintf
          "error_bounds length2=%g angle"
          (Float_u.to_float (S2.S1_chord_angle.length2 angle)))
-      ~expected:(float_of_json_exn (member "max_angle_error" c))
+      ~expected:(float_u_of_json_exn (member "max_angle_error" c))
       ~actual:(S2.S1_chord_angle.max_angle_error angle))
 ;;
 

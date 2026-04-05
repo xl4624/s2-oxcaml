@@ -22,16 +22,16 @@ let empty = #{ lo = #1.0; hi = #0.0 }
 let[@inline] [@zero_alloc] from_point p = #{ lo = p; hi = p }
 
 let[@inline] [@zero_alloc] from_point_pair p1 p2 =
-  if Float_u.(p1 <= p2) then #{ lo = p1; hi = p2 } else #{ lo = p2; hi = p1 }
+  if Float_u.O.(p1 <= p2) then #{ lo = p1; hi = p2 } else #{ lo = p2; hi = p1 }
 ;;
 
 let[@inline] [@zero_alloc] lo t = t.#lo
 let[@inline] [@zero_alloc] hi t = t.#hi
-let[@inline] [@zero_alloc] is_empty t = Float_u.(t.#lo > t.#hi)
-let[@inline] [@zero_alloc] center t = Float_u.(#0.5 * (t.#lo + t.#hi))
-let[@inline] [@zero_alloc] length t = Float_u.(t.#hi - t.#lo)
-let[@inline] [@zero_alloc] contains t p = Float_u.(p >= t.#lo && p <= t.#hi)
-let[@inline] [@zero_alloc] interior_contains t p = Float_u.(t.#lo < p && p < t.#hi)
+let[@inline] [@zero_alloc] is_empty t = Float_u.O.(t.#lo > t.#hi)
+let[@inline] [@zero_alloc] center t = Float_u.O.(#0.5 * (t.#lo + t.#hi))
+let[@inline] [@zero_alloc] length t = Float_u.O.(t.#hi - t.#lo)
+let[@inline] [@zero_alloc] contains t p = Float_u.O.(p >= t.#lo && p <= t.#hi)
+let[@inline] [@zero_alloc] interior_contains t p = Float_u.O.(t.#lo < p && p < t.#hi)
 
 let[@inline] [@zero_alloc] contains_interval t y =
   if is_empty y then true else y.#lo >= t.#lo && y.#hi <= t.#hi

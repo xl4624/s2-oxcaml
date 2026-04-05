@@ -235,4 +235,4 @@ let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) a b =
   Float_u.abs (a.#lat - b.#lat) <= max_error && Float_u.abs (a.#lng - b.#lng) <= max_error
 ;;
 
-let[@inline] [@zero_alloc] equal a b = Float_u.(a.#lat = b.#lat && a.#lng = b.#lng)
+let[@inline] [@zero_alloc] equal a b = Float_u.O.(a.#lat = b.#lat && a.#lng = b.#lng)

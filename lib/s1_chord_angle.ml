@@ -8,7 +8,7 @@ let[@zero_alloc ignore] sexp_of_t t =
   Sexp.List [ Sexp.List [ Sexp.Atom "length2"; Float.sexp_of_t (Float_u.to_float t) ] ]
 ;;
 
-let relative_sum_error = 2.02 *. Float.epsilon_float
+let relative_sum_error = Float_u.O.(#2.02 * Float_u.epsilon_float ())
 let max_length2 = #4.0
 let zero = #0.0
 let right = #2.0
@@ -30,7 +30,7 @@ let[@inline] [@zero_alloc] rec of_angle angle =
     of_length2 (l * l)
 
 and[@inline] [@zero_alloc] of_length2 length2 =
-  if Float_u.(length2 > max_length2) then straight else length2
+  if Float_u.O.(length2 > max_length2) then straight else length2
 ;;
 
 let[@inline] [@zero_alloc] of_radians radians =
@@ -133,22 +133,17 @@ let[@inline] [@zero_alloc] tan t = Float_u.O.(sin t / cos t)
 let[@inline] [@zero_alloc] plus_error t error =
   if is_special t
   then t
-  else
-    let open Float_u.O in
-    let error = Float_u.of_float error in
-    Float_u.max #0.0 (Float_u.min max_length2 (t + error))
+  else Float_u.max #0.0 (Float_u.min max_length2 Float_u.O.(t + error))
 ;;
 
 let[@inline] [@zero_alloc ignore] max_point_error t =
-  let open Float_u.O in
-  let eps = Float_u.of_float Float.epsilon_float in
-  Float_u.to_float ((#4.5 * eps * t) + (#16.0 * eps * eps))
+  let eps = Float_u.epsilon_float () in
+  Float_u.O.((#4.5 * eps * t) + (#16.0 * eps * eps))
 ;;
 
 let[@inline] [@zero_alloc ignore] max_angle_error t =
   let open Float_u.O in
-  let eps = Float_u.of_float Float.epsilon_float in
-  Float_u.to_float (#1.5 * eps * t)
+  #1.5 * Float_u.epsilon_float () * t
 ;;
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare a b

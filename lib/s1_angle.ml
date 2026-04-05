@@ -58,7 +58,9 @@ let[@inline] [@zero_alloc] degrees t =
   #180.0 / Float_u.pi () * t
 ;;
 
-let[@inline] [@zero_alloc ignore] e5 t = Float_u.iround_nearest Float_u.(#1e5 * degrees t)
+let[@inline] [@zero_alloc ignore] e5 t =
+  Float_u.iround_nearest Float_u.O.(#1e5 * degrees t)
+;;
 
 let[@zero_alloc ignore] e5_exn t =
   match e5 t with
@@ -68,7 +70,9 @@ let[@zero_alloc ignore] e5_exn t =
     raise_s [%message "S1Angle.e5_exn: angle overflows int" ~degrees:(d : float)]
 ;;
 
-let[@inline] [@zero_alloc ignore] e6 t = Float_u.iround_nearest Float_u.(#1e6 * degrees t)
+let[@inline] [@zero_alloc ignore] e6 t =
+  Float_u.iround_nearest Float_u.O.(#1e6 * degrees t)
+;;
 
 let[@zero_alloc ignore] e6_exn t =
   match e6 t with
@@ -78,7 +82,9 @@ let[@zero_alloc ignore] e6_exn t =
     raise_s [%message "S1Angle.e6_exn: angle overflows int" ~degrees:(d : float)]
 ;;
 
-let[@inline] [@zero_alloc ignore] e7 t = Float_u.iround_nearest Float_u.(#1e7 * degrees t)
+let[@inline] [@zero_alloc ignore] e7 t =
+  Float_u.iround_nearest Float_u.O.(#1e7 * degrees t)
+;;
 
 let[@zero_alloc ignore] e7_exn t =
   match e7 t with
@@ -89,14 +95,14 @@ let[@zero_alloc ignore] e7_exn t =
 ;;
 
 let[@inline] [@zero_alloc] is_inf t = Float_u.is_inf (radians t)
-let[@inline] [@zero_alloc] is_zero t = Float_u.(radians t = #0.0)
+let[@inline] [@zero_alloc] is_zero t = Float_u.O.(radians t = #0.0)
 let[@inline] [@zero_alloc] abs t = Float_u.abs t
 let[@inline] [@zero_alloc] neg t = Float_u.neg t
-let[@inline] [@zero_alloc] add a b = Float_u.(a + b)
-let[@inline] [@zero_alloc] sub a b = Float_u.(a - b)
-let[@inline] [@zero_alloc] mul t m = Float_u.(t * m)
-let[@inline] [@zero_alloc] div t m = Float_u.(t / m)
-let[@inline] [@zero_alloc] ratio a b = Float_u.(a / b)
+let[@inline] [@zero_alloc] add a b = Float_u.O.(a + b)
+let[@inline] [@zero_alloc] sub a b = Float_u.O.(a - b)
+let[@inline] [@zero_alloc] mul t m = Float_u.O.(t * m)
+let[@inline] [@zero_alloc] div t m = Float_u.O.(t / m)
+let[@inline] [@zero_alloc] ratio a b = Float_u.O.(a / b)
 let[@inline] [@zero_alloc] sin t = Float_u.sin (radians t)
 let[@inline] [@zero_alloc] cos t = Float_u.cos (radians t)
 let[@inline] [@zero_alloc] tan t = Float_u.tan (radians t)
@@ -115,4 +121,4 @@ let[@inline] [@zero_alloc] normalized t =
 ;;
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare (radians a) (radians b)
-let[@inline] [@zero_alloc] equal a b = Float_u.( = ) (radians a) (radians b)
+let[@inline] [@zero_alloc] equal a b = Float_u.O.( = ) (radians a) (radians b)

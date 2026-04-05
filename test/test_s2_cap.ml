@@ -402,14 +402,17 @@ let test_basic f () =
       (S2.S1_chord_angle.of_angle (S2.S1_angle.of_degrees #150.0))
   in
   let max_err =
-    S2.S1_chord_angle.max_point_error (S2.S2_cap.radius_chord concave)
-    +. S2.S1_chord_angle.max_angle_error (S2.S2_cap.radius_chord concave)
-    +. (3.0 *. Float.epsilon_float)
+    Float_u.(
+      S2.S1_chord_angle.max_point_error (S2.S2_cap.radius_chord concave)
+      + S2.S1_chord_angle.max_angle_error (S2.S2_cap.radius_chord concave)
+      + (#3.0 * Float_u.epsilon_float ()))
   in
   let concave_min =
     S2.S2_cap.of_center_chord_angle
       concave_center
-      (S2.S1_chord_angle.plus_error (S2.S2_cap.radius_chord concave) (-.max_err))
+      (S2.S1_chord_angle.plus_error
+         (S2.S2_cap.radius_chord concave)
+         (Float_u.neg max_err))
   in
   let concave_max =
     S2.S2_cap.of_center_chord_angle

@@ -66,11 +66,11 @@ let[@inline] [@zero_alloc] norm t = Float_u.sqrt (norm2 t)
 
 let[@inline] [@zero_alloc] normalize t =
   let n = norm t in
-  let k = if Float_u.(n = #0.0) then #0.0 else Float_u.(#1.0 / n) in
+  let k = if Float_u.O.(n = #0.0) then #0.0 else Float_u.O.(#1.0 / n) in
   mul t k
 ;;
 
-let[@inline] [@zero_alloc] equal a b = Float_u.(a.#x = b.#x && a.#y = b.#y)
+let[@inline] [@zero_alloc] equal a b = Float_u.O.(a.#x = b.#x && a.#y = b.#y)
 
 module Option = struct
   type value = t
