@@ -41,6 +41,8 @@ let int64_of_json_exn = function
   | j -> failwith (sprintf "expected int64, got %s" (Yojson.Safe.to_string j))
 ;;
 
+let int64_u_of_json_exn j = Int64_u.of_int64 (int64_of_json_exn j)
+
 (** Little-endian [float] at [off] in a byte string (for S2 binary fixtures). *)
 let get_le_f64_from_string s off =
   let rec loop i acc =

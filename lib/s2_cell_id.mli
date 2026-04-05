@@ -1,5 +1,3 @@
-open Core
-
 (** S2_cell_id uniquely identifies a cell in the S2 cell decomposition. The most
     significant 3 bits encode the face number (0-5). The remaining 61 bits encode the
     position of the center of this cell along the Hilbert curve on that face.
@@ -10,7 +8,15 @@ open Core
     The level of a cell is determined by its lowest-numbered bit that is on. For a cell at
     level k, this position is 2 * (max_level - k). *)
 
-type t = private Int64.t [@@deriving sexp_of, compare, equal, hash]
+open Core
+
+[@@@zero_alloc all]
+
+type t : bits64
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+val hash : t -> int [@@zero_alloc ignore]
+val hash_fold_t : Hash.state -> t -> Hash.state [@@zero_alloc ignore]
 
 (** {1 Constants} *)
 
@@ -28,10 +34,8 @@ val none : t
 (** [sentinel] is an invalid cell ID ((1 << 64) - 1). *)
 val sentinel : t
 
-(** [from_face face] returns [Some cell_id] if [face] is in [0, 5], [None] otherwise. *)
-val from_face : int -> t option
-
-(** [from_face_exn face] is like [from_face] but raises if [face] is out of range. *)
+(** [from_face_exn face] returns the face cell for [face]. Raises if [face] is not in
+    [0, 5]. *)
 val from_face_exn : int -> t
 
 (** [from_face_pos_level face pos level] returns a cell ID from its face, 61-bit position,
@@ -52,12 +56,15 @@ val from_latlng : S2_latlng.t -> t
 (** [of_int64 i] creates a cell ID from a raw 64-bit integer. The resulting ID may be
     invalid; see {!is_valid}. *)
 val of_int64 : Int64.t -> t
+[@@zero_alloc ignore]
 
 (** [id t] returns the 64-bit integer representation of the cell ID. *)
 val id : t -> Int64.t
+[@@zero_alloc ignore]
 
 (** [to_int64] is {!id}: raw [Int64.t] for interop and symmetry with {!of_int64}. *)
 val to_int64 : t -> Int64.t
+[@@zero_alloc ignore]
 
 (** [is_valid t] returns true if the ID represents a valid cell. *)
 val is_valid : t -> bool
@@ -67,6 +74,7 @@ val face : t -> int
 
 (** [pos t] returns the 61-bit Hilbert curve position of the cell. *)
 val pos : t -> Int64.t
+[@@zero_alloc ignore]
 
 (** [level t] returns the subdivision level (0-30) of the cell. *)
 val level : t -> int
@@ -85,10 +93,7 @@ val size_st : int -> float#
 
 (** {1 Hierarchy Navigation} *)
 
-(** [parent t] returns [Some parent] of this cell. Returns [None] if [t] is a face cell. *)
-val parent : t -> t option
-
-(** [parent_exn t] is like [parent] but raises if [t] is a face cell. *)
+(** [parent_exn t] returns the parent of this cell. Raises if [t] is a face cell. *)
 val parent_exn : t -> t
 
 (** [parent_level t level] returns the ancestor of this cell at the given level. *)
@@ -114,12 +119,8 @@ val hilbert_begin : int -> t
 (** [hilbert_end level] is [S2CellId::End(level)] (ends on face 5). *)
 val hilbert_end : int -> t
 
-(** [child t k] returns [Some child] for the k-th child (k in [0, 3]). Returns [None] if
-    [t] is a leaf cell or [k] is out of range. *)
-val child : t -> int -> t option
-
-(** [child_exn t k] is like [child] but raises if [t] is a leaf cell or [k] is out of
-    range. *)
+(** [child_exn t k] returns the k-th child (k in [0, 3]). Raises if [t] is a leaf cell or
+    [k] is out of range. *)
 val child_exn : t -> int -> t
 
 (** [child_position t] returns the position of this cell within its parent (0-3). [t] must
@@ -158,14 +159,15 @@ val prev_wrap : t -> t
 
 (** [advance t steps] advances [t] by the given number of steps at its level. Clamps to
     [begin] and [end] of the level. *)
-val advance : t -> Int64.t -> t
+val advance : t -> int64# -> t
 
 (** [advance_wrap t steps] advances [t] by the given number of steps, wrapping around the
     sphere. *)
-val advance_wrap : t -> Int64.t -> t
+val advance_wrap : t -> int64# -> t
 
 (** Hilbert index of [ t ] among all cells at the same level. *)
 val distance_from_begin : t -> Int64.t
+[@@zero_alloc ignore]
 
 (** Level of the most specific common ancestor of two cells, or [-1]. *)
 val get_common_ancestor_level : t -> t -> int
@@ -182,14 +184,22 @@ val to_point : t -> R3_vector.t
 val to_point_raw : t -> R3_vector.t
 
 val to_center_uv : t -> R2_point.t
-val to_face_ij_orientation : t -> int * int * int * int
+val to_face_ij_orientation : t -> int * int * int * int [@@zero_alloc ignore]
 
 (** [to_token t] returns a hex string representing the cell ID. *)
 val to_token : t -> string
+[@@zero_alloc ignore]
 
 (** [to_string t] returns a string representation of the cell ID (face/level/pos). *)
 val to_string : t -> string
+[@@zero_alloc ignore]
 
 (** [from_token s] parses a hex string into a cell ID. Returns [none] for invalid input,
     empty strings, or ["X"] (the token for [none]). *)
 val from_token : string -> t
+[@@zero_alloc ignore]
+
+(* {1 Comparison }*)
+
+val compare : t -> t -> int
+val equal : t -> t -> bool

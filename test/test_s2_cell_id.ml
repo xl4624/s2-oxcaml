@@ -182,7 +182,7 @@ let test_advance fixture () =
   List.iteri cases ~f:(fun i c ->
     let msg = sprintf "advance %d" i in
     let id = s2_cell_id_of_json (member "id" c) in
-    let steps = int64_of_json_exn (member "steps" c) in
+    let steps = int64_u_of_json_exn (member "steps" c) in
     let expected_adv = s2_cell_id_of_json (member "advance" c) in
     let expected_adv_wrap = s2_cell_id_of_json (member "advance_wrap" c) in
     check_cell_id (msg ^ " advance") expected_adv (S2.S2_cell_id.advance id steps);
@@ -266,7 +266,7 @@ let test_parent_child fixture () =
   let next_child_begin_max =
     S2.S2_cell_id.advance
       (S2.S2_cell_id.child_begin_at_level (S2.S2_cell_id.next id) S2.S2_cell_id.max_level)
-      256L
+      #256L
   in
   check_cell_id
     "parent_child next_child_begin_max"
@@ -275,7 +275,7 @@ let test_parent_child fixture () =
   let child_begin_max_adv =
     S2.S2_cell_id.advance
       (S2.S2_cell_id.child_begin_at_level id S2.S2_cell_id.max_level)
-      256L
+      #256L
   in
   check_cell_id
     "parent_child child_begin_max_adv"
@@ -320,7 +320,7 @@ let test_wrapping fixture () =
       then
         S2.S2_cell_id.advance_wrap
           (S2.S2_cell_id.hilbert_begin S2.S2_cell_id.max_level)
-          (-1L)
+          (-#1L)
       else if String.equal name "End4_prev_next_wrap_vs_Begin4"
       then S2.S2_cell_id.next_wrap (S2.S2_cell_id.prev (S2.S2_cell_id.hilbert_end 4))
       else if String.equal name "EndMax_prev_next_wrap_vs_face0_leaf_min"
@@ -347,14 +347,14 @@ let test_advance_extended fixture () =
        check_cell_id
          msg
          (s2_cell_id_of_json (member "expected" c))
-         (S2.S2_cell_id.advance id (int64_of_json_exn j)));
+         (S2.S2_cell_id.advance id (int64_u_of_json_exn j)));
     (match steps_wrap_j with
      | `Null -> ()
      | j ->
        check_cell_id
          (msg ^ " wrap")
          (s2_cell_id_of_json (member "expected_wrap" c))
-         (S2.S2_cell_id.advance_wrap id (int64_of_json_exn j)));
+         (S2.S2_cell_id.advance_wrap id (int64_u_of_json_exn j)));
     match steps_j, steps_wrap_j with
     | `Null, `Null ->
       let name = string_of_json_exn (member "name" c) in
@@ -368,7 +368,7 @@ let test_advance_extended fixture () =
              (S2.S2_cell_id.child_begin_at_level
                 (S2.S2_cell_id.next id)
                 S2.S2_cell_id.max_level)
-             256L)
+             #256L)
       else if String.equal name "child_begin_max_adv256"
       then
         check_cell_id
@@ -376,7 +376,7 @@ let test_advance_extended fixture () =
           expected
           (S2.S2_cell_id.advance
              (S2.S2_cell_id.child_begin_at_level id S2.S2_cell_id.max_level)
-             256L)
+             #256L)
       else ()
     | _ -> ())
 ;;
@@ -471,7 +471,7 @@ let test_continuity_level8 fixture () =
     check_cell_id
       (msg ^ " advance_wrap_1")
       (s2_cell_id_of_json (member "advance_wrap_1" c))
-      (S2.S2_cell_id.advance_wrap id 1L))
+      (S2.S2_cell_id.advance_wrap id #1L))
 ;;
 
 let test_distance_from_begin fixture () =
@@ -479,11 +479,11 @@ let test_distance_from_begin fixture () =
   List.iteri cases ~f:(fun i c ->
     let msg = sprintf "distance_from_begin %d" i in
     let id = s2_cell_id_of_json (member "id" c) in
-    let dist = int64_of_json_exn (member "distance" c) in
+    let dist = int64_u_of_json_exn (member "distance" c) in
     check_bool
       (msg ^ " distance")
       ~expected:true
-      ~actual:(Int64.equal dist (S2.S2_cell_id.distance_from_begin id));
+      ~actual:(Int64.equal (Int64_u.to_int64 dist) (S2.S2_cell_id.distance_from_begin id));
     match member "roundtrip" c with
     | `Bool true ->
       let lvl = S2.S2_cell_id.level id in
@@ -520,8 +520,8 @@ let test_maximum_tile fixture () =
 let test_advance_wrap_equiv fixture () =
   let j = member "advance_wrap_equiv" fixture in
   let b = S2.S2_cell_id.hilbert_begin 5 in
-  let a = S2.S2_cell_id.advance_wrap b 6644L in
-  let c = S2.S2_cell_id.advance_wrap b (-11788L) in
+  let a = S2.S2_cell_id.advance_wrap b #6644L in
+  let c = S2.S2_cell_id.advance_wrap b (-#11788L) in
   check_bool
     "advance_wrap_equiv equal"
     ~expected:(bool_of_json_exn (member "eq" j))
