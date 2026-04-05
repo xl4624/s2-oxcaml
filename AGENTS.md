@@ -161,9 +161,21 @@ Do not edit generated files manually.
   it unnecessarily.
 - Functions that can fail due to invalid arguments or invariant violations
   should expose both:
-  - a safe variant returning `option` or `Or_error.t`
+  - a safe variant returning the module's unboxed `Option.t` (see below)
   - a raising variant suffixed with `_exn`
 - Prefer `Core.raise_s` over `failwith` or `invalid_arg`.
+
+Use `match%optional_u.Mod.Option expr with` to branch on option values inline,
+avoiding any allocation:
+
+```ocaml
+match%optional_u.R2_point.Option face_xyz_to_uv face p with
+| None -> ...
+| Some uv -> ...
+```
+
+See `lib/r2_point.ml`, `lib/s2_cap.ml`, and `lib/s1_chord_angle.ml` for
+complete worked examples.
 
 ## OxCaml Unboxed Types
 

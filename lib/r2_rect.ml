@@ -26,6 +26,55 @@ let[@inline] [@zero_alloc] is_valid t =
   Bool.equal (R1_interval.is_empty t.#x) (R1_interval.is_empty t.#y)
 ;;
 
+module Option = struct
+  type nonrec t = t
+
+  let none =
+    #{ x = R1_interval.create ~lo:(Float_u.nan ()) ~hi:(Float_u.nan ())
+     ; y = R1_interval.create ~lo:(Float_u.nan ()) ~hi:(Float_u.nan ())
+     }
+  ;;
+
+  let[@inline] [@zero_alloc] is_none t = Float_u.is_nan (R1_interval.lo t.#x)
+  let[@inline] [@zero_alloc] is_some t = not (is_none t)
+  let[@inline] [@zero_alloc] some v = v
+  let[@inline] [@zero_alloc] unchecked_value t = t
+  let[@inline] [@zero_alloc] value t ~default = if is_none t then default else t
+
+  let[@inline] [@zero_alloc] value_exn t =
+    if is_none t
+    then (
+      match raise_s [%message "R2_rect.Option.value_exn: none"] with
+      | (_ : Nothing.t) -> .)
+    else t
+  ;;
+
+  module Optional_syntax = struct
+    module Optional_syntax = struct
+      let[@zero_alloc] is_none t = is_none t
+      let[@zero_alloc] unsafe_value t = unchecked_value t
+    end
+  end
+
+  let[@zero_alloc ignore] sexp_of_t t =
+    if is_none t then sexp_of_string "None" else sexp_of_t t
+  ;;
+end
+
+let[@inline] [@zero_alloc] create ~(lo : R2_point.t) ~(hi : R2_point.t) : Option.t =
+  let x = R1_interval.create ~lo:(R2_point.x lo) ~hi:(R2_point.x hi) in
+  let y = R1_interval.create ~lo:(R2_point.y lo) ~hi:(R2_point.y hi) in
+  let t = #{ x; y } in
+  if is_valid t then t else Option.none
+;;
+
+let[@inline] [@zero_alloc] create_intervals ~(x : R1_interval.t) ~(y : R1_interval.t)
+  : Option.t
+  =
+  let t = #{ x; y } in
+  if is_valid t then t else Option.none
+;;
+
 let[@inline] [@zero_alloc] create_exn ~(lo : R2_point.t) ~(hi : R2_point.t) : t =
   let x = R1_interval.create ~lo:(R2_point.x lo) ~hi:(R2_point.x hi) in
   let y = R1_interval.create ~lo:(R2_point.y lo) ~hi:(R2_point.y hi) in
@@ -48,13 +97,13 @@ let[@inline] [@zero_alloc] create_intervals_exn ~(x : R1_interval.t) ~(y : R1_in
     | (_ : Nothing.t) -> .)
 ;;
 
+let empty = #{ x = R1_interval.empty; y = R1_interval.empty }
+
 let full =
   #{ x = R1_interval.create ~lo:(-#1.0) ~hi:#1.0
    ; y = R1_interval.create ~lo:(-#1.0) ~hi:#1.0
    }
 ;;
-
-let empty = #{ x = R1_interval.empty; y = R1_interval.empty }
 
 let[@inline] [@zero_alloc] from_center_size ~(center : R2_point.t) ~(size : R2_point.t)
   : t
@@ -158,7 +207,17 @@ let[@inline] [@zero_alloc] add_rect t other =
   #{ x = R1_interval.union t.#x other.#x; y = R1_interval.union t.#y other.#y }
 ;;
 
-let[@inline] [@zero_alloc] project t (p : R2_point.t) =
+let[@inline] [@zero_alloc] project t (p : R2_point.t) : R2_point.Option.t =
+  if is_empty t
+  then R2_point.Option.none
+  else
+    R2_point.Option.some
+      (R2_point.create
+         ~x:(R1_interval.project t.#x (R2_point.x p))
+         ~y:(R1_interval.project t.#y (R2_point.y p)))
+;;
+
+let[@inline] [@zero_alloc] project_exn t (p : R2_point.t) =
   if is_empty t
   then (
     match raise_s [%message "R2_rect.project: rectangle is empty"] with
