@@ -1,0 +1,6 @@
+(library
+ (name test_helpers)
+ (libraries core alcotest yojson s2 stdlib_upstream_compatible)
+ (preprocess
+  (pps ppx_jane))
+ (flags (:standard)))

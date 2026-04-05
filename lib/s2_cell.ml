@@ -1,0 +1,354 @@
+open Core
+
+module Internal = struct
+  let pos_to_ij =
+    [| [| 0; 1; 3; 2 |]; [| 0; 2; 3; 1 |]; [| 3; 2; 0; 1 |]; [| 3; 1; 0; 2 |] |]
+  ;;
+
+  let pos_to_orientation = [| 1; 0; 0; 3 |]
+end
+
+type t =
+  { id : S2_cell_id.t
+  ; face : int
+  ; level : int
+  ; orientation : int
+  ; uv : R2_rect.t
+  }
+[@@deriving sexp_of]
+
+let id t = t.id
+let face t = t.face
+let level t = t.level
+let orientation t = t.orientation
+let is_leaf t = t.level = S2_cell_id.max_level
+let bound_uv t = t.uv
+let size_ij t = S2_cell_id.size_ij t.level
+let size_st t = S2_cell_id.size_st t.level
+
+let ij_level_to_bound_uv ~i ~j level =
+  let sz = 1 lsl (S2_cell_id.max_level - level) in
+  let extract_interval coord =
+    let lo_ij = coord land -sz in
+    let hi_ij = lo_ij + sz in
+    let lo = S2_coords.st_to_uv (S2_coords.ij_to_st_min lo_ij) in
+    let hi = S2_coords.st_to_uv (S2_coords.ij_to_st_min hi_ij) in
+    R1_interval.create ~lo:(Float_u.of_float lo) ~hi:(Float_u.of_float hi)
+  in
+  let x = extract_interval i in
+  let y = extract_interval j in
+  R2_rect.create_intervals_exn ~x ~y
+;;
+
+let of_cell_id id =
+  let face, i, j, orientation = S2_cell_id.to_face_ij_orientation id in
+  let level = S2_cell_id.level id in
+  let uv = ij_level_to_bound_uv ~i ~j level in
+  { id; face; level; orientation; uv }
+;;
+
+let of_point p = of_cell_id (S2_cell_id.from_point p)
+let of_latlng ll = of_cell_id (S2_cell_id.from_latlng ll)
+let from_face face = of_cell_id (S2_cell_id.from_face_exn face)
+
+let from_face_pos_level ~face ~pos ~level =
+  of_cell_id (S2_cell_id.from_face_pos_level face pos level)
+;;
+
+let vertex_raw t k =
+  let v = R2_rect.get_vertex t.uv k in
+  S2_coords.face_uv_to_xyz
+    t.face
+    (Float_u.to_float (R2_point.x v))
+    (Float_u.to_float (R2_point.y v))
+;;
+
+let vertex t k = R3_vector.normalize (vertex_raw t k)
+
+let edge_raw t k =
+  match k land 3 with
+  | 0 -> S2_coords.get_v_norm t.face (Float_u.to_float (R1_interval.lo (R2_rect.y t.uv)))
+  | 1 -> S2_coords.get_u_norm t.face (Float_u.to_float (R1_interval.hi (R2_rect.x t.uv)))
+  | 2 ->
+    R3_vector.neg
+      (S2_coords.get_v_norm t.face (Float_u.to_float (R1_interval.hi (R2_rect.y t.uv))))
+  | 3 ->
+    R3_vector.neg
+      (S2_coords.get_u_norm t.face (Float_u.to_float (R1_interval.lo (R2_rect.x t.uv))))
+  | _ -> assert false
+;;
+
+let edge t k = R3_vector.normalize (edge_raw t k)
+let center_raw t = S2_cell_id.to_point_raw t.id
+let center t = S2_cell_id.to_point t.id
+
+let uv_endpoint interval i =
+  Float_u.to_float (if i = 0 then R1_interval.lo interval else R1_interval.hi interval)
+;;
+
+let get_latitude t i j =
+  let p =
+    S2_coords.face_uv_to_xyz
+      t.face
+      (uv_endpoint (R2_rect.x t.uv) i)
+      (uv_endpoint (R2_rect.y t.uv) j)
+  in
+  Float_u.to_float (S1_angle.radians (S2_latlng.latitude p))
+;;
+
+let get_longitude t i j =
+  let p =
+    S2_coords.face_uv_to_xyz
+      t.face
+      (uv_endpoint (R2_rect.x t.uv) i)
+      (uv_endpoint (R2_rect.y t.uv) j)
+  in
+  Float_u.to_float (S1_angle.radians (S2_latlng.longitude p))
+;;
+
+let average_area level =
+  (* C++: S2::kAvgArea.GetValue(level)
+     AvgArea = 4*pi / (6 * 4^level)
+  *)
+  4.0 *. Float.pi /. 6.0 /. (4.0 ** Float.of_int level)
+;;
+
+let spherical_area a b c =
+  let area =
+    2.0
+    *. Float.atan2
+         (Float_u.to_float (R3_vector.dot a (R3_vector.cross b c)))
+         (Float_u.to_float
+            Float_u.O.(#1.0 + R3_vector.dot a b + R3_vector.dot a c + R3_vector.dot b c))
+  in
+  Float.abs area
+;;
+
+let exact_area t =
+  let v0 = vertex t 0 in
+  let v1 = vertex t 1 in
+  let v2 = vertex t 2 in
+  let v3 = vertex t 3 in
+  spherical_area v0 v1 v2 +. spherical_area v0 v2 v3
+;;
+
+let approx_area t =
+  if t.level < 2
+  then average_area t.level
+  else (
+    let v0 = vertex t 0 in
+    let v1 = vertex t 1 in
+    let v2 = vertex t 2 in
+    let v3 = vertex t 3 in
+    let flat_area =
+      0.5
+      *. Float_u.to_float
+           (R3_vector.norm (R3_vector.cross (R3_vector.sub v2 v0) (R3_vector.sub v3 v1)))
+    in
+    flat_area *. 2.0 /. (1.0 +. Float.sqrt (1.0 -. Float.min 1.0 (flat_area /. Float.pi))))
+;;
+
+let contains_point t p =
+  let uv = S2_coords.face_xyz_to_uv t.face p in
+  match%optional_u.R2_point.Option uv with
+  | None -> false
+  | Some uv ->
+    let margin = 5.0 /. 3.0 *. Float.epsilon_float in
+    R2_rect.contains_point (R2_rect.expanded_scalar t.uv margin) uv
+;;
+
+let contains_cell t other = S2_cell_id.contains t.id other.id
+let intersects_cell t other = S2_cell_id.intersects t.id other.id
+
+let subdivide t =
+  if is_leaf t
+  then None
+  else (
+    let uv_mid = S2_cell_id.to_center_uv t.id in
+    let uv_mid_x = R2_point.x uv_mid in
+    let uv_mid_y = R2_point.y uv_mid in
+    let child_level = t.level + 1 in
+    let make_child pos =
+      let cid = S2_cell_id.child_exn t.id pos in
+      let orientation = t.orientation lxor Internal.pos_to_orientation.(pos) in
+      let ij = Internal.pos_to_ij.(t.orientation).(pos) in
+      let i = ij lsr 1 in
+      let j = ij land 1 in
+      let x_intv =
+        if i = 1
+        then R1_interval.create ~lo:uv_mid_x ~hi:(R1_interval.hi (R2_rect.x t.uv))
+        else R1_interval.create ~lo:(R1_interval.lo (R2_rect.x t.uv)) ~hi:uv_mid_x
+      in
+      let y_intv =
+        if j = 1
+        then R1_interval.create ~lo:uv_mid_y ~hi:(R1_interval.hi (R2_rect.y t.uv))
+        else R1_interval.create ~lo:(R1_interval.lo (R2_rect.y t.uv)) ~hi:uv_mid_y
+      in
+      let uv = R2_rect.create_intervals_exn ~x:x_intv ~y:y_intv in
+      { id = cid; face = t.face; level = child_level; orientation; uv }
+    in
+    Some [ make_child 0; make_child 1; make_child 2; make_child 3 ])
+;;
+
+let cap_bound t =
+  let center =
+    R3_vector.normalize
+      (S2_coords.face_uv_to_xyz
+         t.face
+         (Float_u.to_float (R2_point.x (R2_rect.center t.uv)))
+         (Float_u.to_float (R2_point.y (R2_rect.center t.uv))))
+  in
+  let cap = S2_cap.of_point center in
+  let cap = S2_cap.add_point cap (vertex t 0) in
+  let cap = S2_cap.add_point cap (vertex t 1) in
+  let cap = S2_cap.add_point cap (vertex t 2) in
+  S2_cap.add_point cap (vertex t 3)
+;;
+
+let vertex_chord_dist t p i j =
+  (* C++: S2Point(uv_[0][i], uv_[1][j], 1).Normalize()
+     Both callers pass UVW-space points, so the vertex must also be in UVW space. *)
+  let u =
+    if i = 0 then R1_interval.lo (R2_rect.x t.uv) else R1_interval.hi (R2_rect.x t.uv)
+  in
+  let v =
+    if j = 0 then R1_interval.lo (R2_rect.y t.uv) else R1_interval.hi (R2_rect.y t.uv)
+  in
+  let vert = R3_vector.normalize (R3_vector.create ~x:u ~y:v ~z:#1.0) in
+  S2_point.chord_angle_between p vert
+;;
+
+let u_edge_is_closest t p v_end =
+  let u0 = R1_interval.lo (R2_rect.x t.uv) in
+  let u1 = R1_interval.hi (R2_rect.x t.uv) in
+  let v =
+    if Int.(v_end = 0)
+    then R1_interval.lo (R2_rect.y t.uv)
+    else R1_interval.hi (R2_rect.y t.uv)
+  in
+  let open Float_u.O in
+  let dir0 =
+    R3_vector.create ~x:((v * v) + #1.0) ~y:(Float_u.neg u0 * v) ~z:(Float_u.neg u0)
+  in
+  let dir1 =
+    R3_vector.create ~x:((v * v) + #1.0) ~y:(Float_u.neg u1 * v) ~z:(Float_u.neg u1)
+  in
+  R3_vector.dot p dir0 > #0.0 && R3_vector.dot p dir1 < #0.0
+;;
+
+let v_edge_is_closest t p u_end =
+  let v0 = R1_interval.lo (R2_rect.y t.uv) in
+  let v1 = R1_interval.hi (R2_rect.y t.uv) in
+  let u =
+    if Int.(u_end = 0)
+    then R1_interval.lo (R2_rect.x t.uv)
+    else R1_interval.hi (R2_rect.x t.uv)
+  in
+  let open Float_u.O in
+  let dir0 =
+    R3_vector.create ~x:(Float_u.neg u * v0) ~y:((u * u) + #1.0) ~z:(Float_u.neg v0)
+  in
+  let dir1 =
+    R3_vector.create ~x:(Float_u.neg u * v1) ~y:((u * u) + #1.0) ~z:(Float_u.neg v1)
+  in
+  R3_vector.dot p dir0 > #0.0 && R3_vector.dot p dir1 < #0.0
+;;
+
+let edge_distance dir_ij uv =
+  let pq2 = dir_ij *. dir_ij /. (1.0 +. (uv *. uv)) in
+  let qr = 1.0 -. Float.sqrt (1.0 -. pq2) in
+  S1_chord_angle.of_length2 (pq2 +. (qr *. qr))
+;;
+
+let distance_to_point_internal t target_xyz to_interior =
+  let target = S2_coords.face_xyz_to_uvw t.face target_xyz in
+  let u0 = Float_u.to_float (R1_interval.lo (R2_rect.x t.uv)) in
+  let u1 = Float_u.to_float (R1_interval.hi (R2_rect.x t.uv)) in
+  let v0 = Float_u.to_float (R1_interval.lo (R2_rect.y t.uv)) in
+  let v1 = Float_u.to_float (R1_interval.hi (R2_rect.y t.uv)) in
+  let tx = Float_u.to_float (R3_vector.x target) in
+  let ty = Float_u.to_float (R3_vector.y target) in
+  let tz = Float_u.to_float (R3_vector.z target) in
+  let dir00 = tx -. (tz *. u0) in
+  let dir01 = tx -. (tz *. u1) in
+  let dir10 = ty -. (tz *. v0) in
+  let dir11 = ty -. (tz *. v1) in
+  let inside = ref true in
+  let module Res = struct
+    type t = { mutable r : S1_chord_angle.t }
+  end
+  in
+  let res = { Res.r = S1_chord_angle.Option.none } in
+  if Float.(dir00 < 0.0)
+  then (
+    inside := false;
+    if v_edge_is_closest t target 0
+    then res.r <- S1_chord_angle.Option.some (edge_distance (-.dir00) u0));
+  if S1_chord_angle.Option.is_none res.r && Float.(dir01 > 0.0)
+  then (
+    inside := false;
+    if v_edge_is_closest t target 1
+    then res.r <- S1_chord_angle.Option.some (edge_distance dir01 u1));
+  if S1_chord_angle.Option.is_none res.r && Float.(dir10 < 0.0)
+  then (
+    inside := false;
+    if u_edge_is_closest t target 0
+    then res.r <- S1_chord_angle.Option.some (edge_distance (-.dir10) v0));
+  if S1_chord_angle.Option.is_none res.r && Float.(dir11 > 0.0)
+  then (
+    inside := false;
+    if u_edge_is_closest t target 1
+    then res.r <- S1_chord_angle.Option.some (edge_distance dir11 v1));
+  let min_ca a b = if S1_chord_angle.compare a b <= 0 then a else b in
+  match%optional_u.S1_chord_angle.Option res.r with
+  | Some r -> r
+  | None ->
+    if !inside
+    then
+      if to_interior
+      then S1_chord_angle.zero
+      else (
+        let d0 = edge_distance (-.dir00) u0 in
+        let d1 = edge_distance dir01 u1 in
+        let d2 = edge_distance (-.dir10) v0 in
+        let d3 = edge_distance dir11 v1 in
+        min_ca (min_ca d0 d1) (min_ca d2 d3))
+    else (
+      let d0 = vertex_chord_dist t target 0 0 in
+      let d1 = vertex_chord_dist t target 1 0 in
+      let d2 = vertex_chord_dist t target 0 1 in
+      let d3 = vertex_chord_dist t target 1 1 in
+      min_ca (min_ca d0 d1) (min_ca d2 d3))
+;;
+
+let distance_to_point t p = distance_to_point_internal t p true
+let boundary_distance_to_point t p = distance_to_point_internal t p false
+
+let max_distance_to_point t target =
+  let target_uvw = S2_coords.face_xyz_to_uvw t.face target in
+  let max_ca a b = if S1_chord_angle.compare a b >= 0 then a else b in
+  let d0 = vertex_chord_dist t target_uvw 0 0 in
+  let d1 = vertex_chord_dist t target_uvw 1 0 in
+  let d2 = vertex_chord_dist t target_uvw 0 1 in
+  let d3 = vertex_chord_dist t target_uvw 1 1 in
+  let max_dist = max_ca (max_ca d0 d1) (max_ca d2 d3) in
+  if S1_chord_angle.compare max_dist S1_chord_angle.right <= 0
+  then max_dist
+  else
+    S1_chord_angle.sub
+      S1_chord_angle.straight
+      (distance_to_point t (R3_vector.neg target))
+;;
+
+let uv_coord_of_edge t k =
+  let k = k land 3 in
+  if k % 2 = 0
+  then R2_point.y (R2_rect.get_vertex t.uv k)
+  else R2_point.x (R2_rect.get_vertex t.uv k)
+;;
+
+let ij_coord_of_edge t k =
+  Float.iround_nearest_exn
+    (Float.of_int S2_coords.limit_ij
+     *. S2_coords.uv_to_st (Float_u.to_float (uv_coord_of_edge t k)))
+;;

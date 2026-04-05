@@ -1,0 +1,6 @@
+; Test stanzas are auto-generated. To add a new module's tests:
+;   1. Create test/test_<module>.ml
+;   2. Run: ./test/gen_dune.sh (or make build)
+; Do NOT edit dune.inc manually.
+
+(include dune.inc)

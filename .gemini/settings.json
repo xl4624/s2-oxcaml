@@ -1,0 +1,18 @@
+{
+  "agents": {
+    "overrides": {
+      "generalist": {
+        "runConfig": {
+          "maxTurns": 100,
+          "maxTimeMinutes": 20
+        }
+      },
+      "codebase_investigator": {
+        "runConfig": {
+          "maxTurns": 100,
+          "maxTimeMinutes": 20
+        }
+      }
+    }
+  }
+}

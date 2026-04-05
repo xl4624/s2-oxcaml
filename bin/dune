@@ -1,0 +1,7 @@
+(executable
+ (name main)
+ (public_name s2)
+ (libraries async core s2)
+ (preprocess
+  (pps ppx_jane))
+ (flags (:standard)))

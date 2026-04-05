@@ -1,0 +1,6 @@
+(executable
+ (name fixture_query)
+ (libraries core yojson)
+ (preprocess
+  (pps ppx_jane))
+ (flags (:standard)))

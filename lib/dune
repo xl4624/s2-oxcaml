@@ -1,0 +1,9 @@
+(library
+ (name s2)
+ (public_name s2)
+ (libraries async core stdlib_upstream_compatible unboxed)
+ (instrumentation
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_jane))
+ (flags (:standard)))
