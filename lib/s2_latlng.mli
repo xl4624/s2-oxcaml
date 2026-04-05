@@ -16,8 +16,9 @@ val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
 val to_string : t -> string [@@zero_alloc ignore]
 
 (** {1 Optional LatLng}
+
     An optional latlng representation that avoids allocating an [option] wrapper. Uses a
-    NaN sentinel. *)
+    NaN sentinel to represent absence. *)
 module Option : sig
   type value := t
   type nonrec t = t
@@ -34,13 +35,13 @@ module Option : sig
   val is_none : t -> bool
   val is_some : t -> bool
 
-  (** [value t ~default] returns the wrapped point, or [default] if [t] is [none]. *)
+  (** [value t ~default] returns the wrapped latlng, or [default] if [t] is [none]. *)
   val value : t -> default:value -> value
 
-  (** [value_exn t] returns the wrapped point, or raises if [t] is [none]. *)
+  (** [value_exn t] returns the wrapped latlng, or raises if [t] is [none]. *)
   val value_exn : t -> value
 
-  (** [unchecked_value t] returns the wrapped point without checking for [none]. *)
+  (** [unchecked_value t] returns the wrapped latlng without checking for [none]. *)
   val unchecked_value : t -> value
 
   module Optional_syntax : sig

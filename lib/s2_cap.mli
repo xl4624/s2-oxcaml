@@ -35,8 +35,9 @@ type t : (float64 & float64 & float64) & float64 [@@deriving sexp_of]
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** {1 Optional Cap}
+
     An optional cap representation that avoids allocating an [option] wrapper. Uses a NaN
-    sentinel. *)
+    sentinel to represent absence. *)
 module Option : sig
   type value := t
   type nonrec t = t

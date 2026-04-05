@@ -23,6 +23,7 @@ let[@inline] [@zero_alloc] is_valid t =
 ;;
 
 module Option = struct
+  type value = t
   type nonrec t = t
 
   let none =

@@ -83,11 +83,10 @@ val normalize : t -> t
 (** [equal a b] returns true iff both coordinates are exactly equal. *)
 val equal : t -> t -> bool
 
-(** {1 Optional points}
+(** {1 Optional Point}
 
-    An optional point representation that avoids allocating an [option] wrapper.
-
-    Uses a NaN sentinel to represent absence, similar to [Float_u.Option]. *)
+    An optional point representation that avoids allocating an [option] wrapper. Uses a
+    NaN sentinel to represent absence. *)
 module Option : sig
   type value := t
   type nonrec t = t

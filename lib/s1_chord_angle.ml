@@ -152,7 +152,8 @@ let[@inline] [@zero_alloc] compare a b = Float_u.compare a b
 let[@inline] [@zero_alloc] equal a b = Float_u.O.(a = b)
 
 module Option = struct
-  type t = float#
+  type value = t
+  type t = value
 
   let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
     : Sexp.t

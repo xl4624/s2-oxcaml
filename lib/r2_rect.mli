@@ -16,27 +16,39 @@ val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
 val to_string : t -> string [@@zero_alloc ignore]
 
-(** A sentinel-based option type for [R2_rect.t] that avoids boxing.
+(** {1 Optional Rect}
 
-    Uses NaN in the x-interval lo field as the none sentinel. *)
+    An optional rectangle representation that avoids allocating an [option] wrapper. Uses
+    a NaN sentinel to represent absence. *)
 module Option : sig
+  type value := t
   type nonrec t = t
-
-  val none : t
-  val some : t -> t
-  val is_none : t -> bool
-  val is_some : t -> bool
-  val value : t -> default:t -> t
-  val value_exn : t -> t
-  val unchecked_value : t -> t
 
   val%template sexp_of_t : t -> Sexp.t @ m
   [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
 
+  (** The absent value. *)
+  val none : t
+
+  (** [some v] wraps [v] as a present value. *)
+  val some : value -> t
+
+  val is_none : t -> bool
+  val is_some : t -> bool
+
+  (** [value t ~default] returns the wrapped rectangle, or [default] if [t] is [none]. *)
+  val value : t -> default:value -> value
+
+  (** [value_exn t] returns the wrapped rectangle, or raises if [t] is [none]. *)
+  val value_exn : t -> value
+
+  (** [unchecked_value t] returns the wrapped rectangle without checking for [none]. *)
+  val unchecked_value : t -> value
+
   module Optional_syntax : sig
     module Optional_syntax : sig
       val is_none : t -> bool
-      val unsafe_value : t -> t
+      val unsafe_value : t -> value
     end
   end
 end

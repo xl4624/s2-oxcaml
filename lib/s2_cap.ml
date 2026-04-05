@@ -13,6 +13,7 @@ type t =
 [@@deriving sexp_of]
 
 module Option = struct
+  type value = t
   type nonrec t = t
 
   let none =

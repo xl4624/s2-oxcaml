@@ -61,6 +61,28 @@ val of_unsigned_e6 : int -> t
 (** [of_unsigned_e7 u]: same as [of_unsigned_e6] for the E7 scale. *)
 val of_unsigned_e7 : int -> t
 
+(** {1 Optional Integer}
+
+    An unboxed optional integer that avoids allocating a boxed [option]. Uses
+    [Int.min_value] as a sentinel for absence. *)
+module Int_option : sig
+  type value := int
+  type t : immediate = int
+
+  val none : t
+  val some : value -> t
+  val is_none : t -> bool
+  val is_some : t -> bool
+  val value_exn : t -> value
+
+  module Optional_syntax : sig
+    module Optional_syntax : sig
+      val is_none : t -> bool
+      val unsafe_value : t -> value
+    end
+  end
+end
+
 (** {1 Accessors} *)
 
 (** Return the angle in radians. *)
@@ -69,32 +91,32 @@ val radians : t -> float#
 (** Return the angle in degrees. *)
 val degrees : t -> float#
 
-(** Return [Some e5] representation (degrees * 1e5, rounded to nearest integer).
+(** Return the E5 representation (degrees * 1e5, rounded to nearest integer), or
+    [Int_option.none] if the result overflows [int].
+
     The angle in degrees must be in the interval (-180, 180]. *)
-val e5 : t -> int option
-[@@zero_alloc ignore]
+val e5 : t -> Int_option.t
 
 (** [e5_exn t] is like [e5] but raises if the angle is out of range. *)
 val e5_exn : t -> int
-[@@zero_alloc ignore]
 
-(** Return [Some e6] representation (degrees * 1e6, rounded to nearest integer).
+(** Return the E6 representation (degrees * 1e6, rounded to nearest integer), or
+    [Int_option.none] if the result overflows [int].
+
     The angle in degrees must be in the interval (-180, 180]. *)
-val e6 : t -> int option
-[@@zero_alloc ignore]
+val e6 : t -> Int_option.t
 
 (** [e6_exn t] is like [e6] but raises if the angle is out of range. *)
 val e6_exn : t -> int
-[@@zero_alloc ignore]
 
-(** Return [Some e7] representation (degrees * 1e7, rounded to nearest integer).
+(** Return the E7 representation (degrees * 1e7, rounded to nearest integer), or
+    [Int_option.none] if the result overflows [int].
+
     The angle in degrees must be in the interval (-180, 180]. *)
-val e7 : t -> int option
-[@@zero_alloc ignore]
+val e7 : t -> Int_option.t
 
 (** [e7_exn t] is like [e7] but raises if the angle is out of range. *)
 val e7_exn : t -> int
-[@@zero_alloc ignore]
 
 (** {1 Predicates} *)
 
