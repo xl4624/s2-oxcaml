@@ -6,8 +6,10 @@
     id, several coordinate systems are used: (face, i, j), (face, s, t), (face, si, ti),
     (face, u, v), and (x, y, z) direction vectors. *)
 
+[@@@zero_alloc all]
+
 (** The maximum absolute error in U/V coordinates when converting from XYZ. *)
-val max_xyz_to_uv_error : float
+val max_xyz_to_uv_error : float#
 
 (** The maximum subdivision level (number of levels needed to specify a leaf cell). *)
 val max_cell_level : int
@@ -22,30 +24,30 @@ val max_si_ti : int
 
 (** [st_to_uv s] converts an s- or t-value to the corresponding u- or v-value. Uses the
     quadratic projection. *)
-val st_to_uv : float -> float
+val st_to_uv : float# -> float#
 
 (** [uv_to_st u] is the inverse of [st_to_uv]. Note that [uv_to_st (st_to_uv x)] may not
     equal [x] exactly due to numerical errors. *)
-val uv_to_st : float -> float
+val uv_to_st : float# -> float#
 
 (** [ij_to_st_min i] converts a leaf cell index to the minimum corresponding s- or
     t-value. The argument must be in the range [0..2**30]. *)
-val ij_to_st_min : int -> float
+val ij_to_st_min : int -> float#
 
 (** [st_to_ij s] returns the leaf cell index containing the given s- or t-value. Results
     are clamped to the range of valid leaf cell indices. *)
-val st_to_ij : float -> int
+val st_to_ij : float# -> int
 
 (** [si_ti_to_st si] converts an si- or ti-value to the corresponding s- or t-value. *)
-val si_ti_to_st : int -> float
+val si_ti_to_st : int -> float#
 
 (** [st_to_si_ti s] returns the si- or ti-coordinate nearest to the given s- or t-value.
     The result may be outside the range of valid (si, ti)-values. *)
-val st_to_si_ti : float -> int
+val st_to_si_ti : float# -> int
 
 (** [face_uv_to_xyz face u v] converts (face, u, v) coordinates to a direction vector (not
     necessarily unit length). *)
-val face_uv_to_xyz : int -> float -> float -> R3_vector.t
+val face_uv_to_xyz : int -> float# -> float# -> R3_vector.t
 
 (** [get_face p] returns the face containing the given direction vector. For points on the
     boundary between faces, the result is arbitrary but deterministic. *)
@@ -54,7 +56,7 @@ val get_face : R3_vector.t -> int
 (** [valid_face_xyz_to_uv face p] converts a direction vector to (u, v) on the given face.
     Assumes the face is valid for the point (i.e., the dot product of p with the face
     normal is positive). *)
-val valid_face_xyz_to_uv : int -> R3_vector.t -> float * float
+val valid_face_xyz_to_uv : int -> R3_vector.t -> R2_point.t
 
 (** [face_xyz_to_uv face p] returns the (u, v) on the given face if the dot product of [p]
     with the given face normal is positive, [R2_point.Option.none] otherwise. *)
@@ -63,9 +65,6 @@ val face_xyz_to_uv : int -> R3_vector.t -> R2_point.Option.t
 (** [face_xyz_to_uv_exn face p] is like [face_xyz_to_uv] but raises if the face is invalid
     for the given point. *)
 val face_xyz_to_uv_exn : int -> R3_vector.t -> R2_point.t
-
-(** [xyz_to_face_uv p] converts a direction vector to (face, u, v). *)
-val xyz_to_face_uv : R3_vector.t -> int * float * float
 
 (** [face_xyz_to_uvw face p] transforms the given point [p] to the (u, v, w) coordinate
     frame of the given face where the w-axis represents the face normal. *)
@@ -78,17 +77,17 @@ val face_si_ti_to_xyz : int -> int -> int -> R3_vector.t
 (** [xyz_to_face_si_ti p] converts a direction vector to (face, si, ti) coordinates and
     the level if [p] is exactly equal to the center of a cell (-1 otherwise). Returns
     [(face, si, ti, level)]. *)
-val xyz_to_face_si_ti : R3_vector.t -> int * int * int * int
+val xyz_to_face_si_ti : R3_vector.t -> #(int * int * int * int)
 
 (** [get_u_norm face u] returns the right-handed normal (not necessarily unit length) for
     an edge in the direction of the positive v-axis at the given u-value on the given
     face. *)
-val get_u_norm : int -> float -> R3_vector.t
+val get_u_norm : int -> float# -> R3_vector.t
 
 (** [get_v_norm face v] returns the right-handed normal (not necessarily unit length) for
     an edge in the direction of the positive u-axis at the given v-value on the given
     face. *)
-val get_v_norm : int -> float -> R3_vector.t
+val get_v_norm : int -> float# -> R3_vector.t
 
 (** [get_norm face] returns the unit-length normal for the given face. *)
 val get_norm : int -> R3_vector.t

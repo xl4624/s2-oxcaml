@@ -1,5 +1,3 @@
-open Core
-
 (** A disc-shaped region on the unit sphere, defined by a center and a radius. Technically
     this is a "spherical cap" rather than a planar disc, because it is not flat -- it
     represents the portion of the sphere cut off by a plane. The boundary of the cap is
@@ -19,8 +17,11 @@ open Core
 
     Empty and full caps are supported, containing no points and all points respectively. *)
 
+open Core
+
 (* TODO: replace with [S2_latlng_rect.t] once ported.
    Bounding rectangle in latitude-longitude space. *)
+
 type lat_lng_rect =
   { lat : R1_interval.t
   ; lng : S1_interval.t

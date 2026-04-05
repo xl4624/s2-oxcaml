@@ -80,8 +80,8 @@ val is_face : t -> bool
 (** [size_ij level] returns the edge length of cells at the given level in (i,j)-space. *)
 val size_ij : int -> int
 
-(** [size_st level] returns the edge length of cells at the given level in (s,t)-space. *)
-val size_st : int -> float
+(** [size_st level] returns the edge length of a cell at the given level in (s,t)-space. *)
+val size_st : int -> float#
 
 (** {1 Hierarchy Navigation} *)
 

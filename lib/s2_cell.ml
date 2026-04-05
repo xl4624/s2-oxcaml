@@ -33,7 +33,7 @@ let ij_level_to_bound_uv ~i ~j level =
     let hi_ij = lo_ij + sz in
     let lo = S2_coords.st_to_uv (S2_coords.ij_to_st_min lo_ij) in
     let hi = S2_coords.st_to_uv (S2_coords.ij_to_st_min hi_ij) in
-    R1_interval.create ~lo:(Float_u.of_float lo) ~hi:(Float_u.of_float hi)
+    R1_interval.create ~lo ~hi
   in
   let x = extract_interval i in
   let y = extract_interval j in
@@ -57,24 +57,17 @@ let from_face_pos_level ~face ~pos ~level =
 
 let vertex_raw t k =
   let v = R2_rect.get_vertex t.uv k in
-  S2_coords.face_uv_to_xyz
-    t.face
-    (Float_u.to_float (R2_point.x v))
-    (Float_u.to_float (R2_point.y v))
+  S2_coords.face_uv_to_xyz t.face (R2_point.x v) (R2_point.y v)
 ;;
 
 let vertex t k = R3_vector.normalize (vertex_raw t k)
 
 let edge_raw t k =
   match k land 3 with
-  | 0 -> S2_coords.get_v_norm t.face (Float_u.to_float (R1_interval.lo (R2_rect.y t.uv)))
-  | 1 -> S2_coords.get_u_norm t.face (Float_u.to_float (R1_interval.hi (R2_rect.x t.uv)))
-  | 2 ->
-    R3_vector.neg
-      (S2_coords.get_v_norm t.face (Float_u.to_float (R1_interval.hi (R2_rect.y t.uv))))
-  | 3 ->
-    R3_vector.neg
-      (S2_coords.get_u_norm t.face (Float_u.to_float (R1_interval.lo (R2_rect.x t.uv))))
+  | 0 -> S2_coords.get_v_norm t.face (R1_interval.lo (R2_rect.y t.uv))
+  | 1 -> S2_coords.get_u_norm t.face (R1_interval.hi (R2_rect.x t.uv))
+  | 2 -> R3_vector.neg (S2_coords.get_v_norm t.face (R1_interval.hi (R2_rect.y t.uv)))
+  | 3 -> R3_vector.neg (S2_coords.get_u_norm t.face (R1_interval.lo (R2_rect.x t.uv)))
   | _ -> assert false
 ;;
 
@@ -83,7 +76,7 @@ let center_raw t = S2_cell_id.to_point_raw t.id
 let center t = S2_cell_id.to_point t.id
 
 let uv_endpoint interval i =
-  Float_u.to_float (if i = 0 then R1_interval.lo interval else R1_interval.hi interval)
+  if i = 0 then R1_interval.lo interval else R1_interval.hi interval
 ;;
 
 let get_latitude t i j =
@@ -195,8 +188,8 @@ let cap_bound t =
     R3_vector.normalize
       (S2_coords.face_uv_to_xyz
          t.face
-         (Float_u.to_float (R2_point.x (R2_rect.center t.uv)))
-         (Float_u.to_float (R2_point.y (R2_rect.center t.uv))))
+         (R2_point.x (R2_rect.center t.uv))
+         (R2_point.y (R2_rect.center t.uv)))
   in
   let cap = S2_cap.of_point center in
   let cap = S2_cap.add_point cap (vertex t 0) in
@@ -348,7 +341,7 @@ let uv_coord_of_edge t k =
 ;;
 
 let ij_coord_of_edge t k =
-  Float.iround_nearest_exn
-    (Float.of_int S2_coords.limit_ij
-     *. S2_coords.uv_to_st (Float_u.to_float (uv_coord_of_edge t k)))
+  Float_u.iround_nearest_exn
+    Float_u.O.(
+      Float_u.of_int S2_coords.limit_ij * S2_coords.uv_to_st (uv_coord_of_edge t k))
 ;;

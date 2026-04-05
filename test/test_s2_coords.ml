@@ -37,7 +37,7 @@ let test_constants fixture () =
   check_float_exact
     "max_xyz_to_uv_error"
     ~expected:(float_of_json_exn (member "max_xyz_to_uv_error" c))
-    ~actual:S2.S2_coords.max_xyz_to_uv_error
+    ~actual:(Float_u.to_float S2.S2_coords.max_xyz_to_uv_error)
 ;;
 
 let test_st_uv_conversions fixture () =
@@ -48,7 +48,7 @@ let test_st_uv_conversions fixture () =
     let result = float_of_json_exn (member "result" c) in
     match op with
     | "st_to_uv" ->
-      let actual = S2.S2_coords.st_to_uv input in
+      let actual = Float_u.to_float (S2.S2_coords.st_to_uv (Float_u.of_float input)) in
       let expected_linear = float_of_json_exn (member "expected_linear" c) in
       check_float_exact (sprintf "st_to_uv(%g)" input) ~expected:result ~actual;
       check_float_exact
@@ -56,7 +56,7 @@ let test_st_uv_conversions fixture () =
         ~expected:expected_linear
         ~actual
     | "uv_to_st" ->
-      let actual = S2.S2_coords.uv_to_st input in
+      let actual = Float_u.to_float (S2.S2_coords.uv_to_st (Float_u.of_float input)) in
       let expected_linear = float_of_json_exn (member "expected_linear" c) in
       check_float_exact (sprintf "uv_to_st(%g)" input) ~expected:result ~actual;
       check_float_exact
@@ -64,10 +64,16 @@ let test_st_uv_conversions fixture () =
         ~expected:expected_linear
         ~actual
     | "st_roundtrip" ->
-      let actual = S2.S2_coords.uv_to_st (S2.S2_coords.st_to_uv input) in
+      let actual =
+        Float_u.to_float
+          (S2.S2_coords.uv_to_st (S2.S2_coords.st_to_uv (Float_u.of_float input)))
+      in
       check_float (sprintf "st_roundtrip(%g)" input) ~expected:result ~actual
     | "uv_roundtrip" ->
-      let actual = S2.S2_coords.st_to_uv (S2.S2_coords.uv_to_st input) in
+      let actual =
+        Float_u.to_float
+          (S2.S2_coords.st_to_uv (S2.S2_coords.uv_to_st (Float_u.of_float input)))
+      in
       check_float (sprintf "uv_roundtrip(%g)" input) ~expected:result ~actual
     | _ -> failwith (sprintf "unknown op: %s" op))
 ;;
@@ -77,7 +83,7 @@ let test_st_to_ij fixture () =
   List.iter cases ~f:(fun c ->
     let input = float_of_json_exn (member "input" c) in
     let expected = int_of_json_exn (member "expected" c) in
-    let actual = S2.S2_coords.st_to_ij input in
+    let actual = S2.S2_coords.st_to_ij (Float_u.of_float input) in
     (check int) (sprintf "st_to_ij(%g)" input) expected actual)
 ;;
 
@@ -86,7 +92,7 @@ let test_si_ti_to_st fixture () =
   List.iter cases ~f:(fun c ->
     let si = int_of_json_exn (member "si" c) in
     let expected = float_of_json_exn (member "st" c) in
-    let actual = S2.S2_coords.si_ti_to_st si in
+    let actual = Float_u.to_float (S2.S2_coords.si_ti_to_st si) in
     check_float_exact (sprintf "si_ti_to_st(%d)" si) ~expected ~actual)
 ;;
 
@@ -95,10 +101,10 @@ let test_st_to_si_ti fixture () =
   List.iter cases ~f:(fun c ->
     let input = float_of_json_exn (member "input_st" c) in
     let expected_si = int_of_json_exn (member "si_ti" c) in
-    let actual_si = S2.S2_coords.st_to_si_ti input in
+    let actual_si = S2.S2_coords.st_to_si_ti (Float_u.of_float input) in
     (check int) (sprintf "st_to_si_ti(%g)" input) expected_si actual_si;
     let expected_rt = float_of_json_exn (member "roundtrip_st" c) in
-    let actual_rt = S2.S2_coords.si_ti_to_st actual_si in
+    let actual_rt = Float_u.to_float (S2.S2_coords.si_ti_to_st actual_si) in
     check_float_exact
       (sprintf "si_ti roundtrip(%g)" input)
       ~expected:expected_rt
@@ -110,7 +116,7 @@ let test_ij_to_st_min fixture () =
   List.iter cases ~f:(fun c ->
     let i = int_of_json_exn (member "i" c) in
     let expected = float_of_json_exn (member "st_min" c) in
-    let actual = S2.S2_coords.ij_to_st_min i in
+    let actual = Float_u.to_float (S2.S2_coords.ij_to_st_min i) in
     check_float_exact (sprintf "ij_to_st_min(%d)" i) ~expected ~actual)
 ;;
 
@@ -125,7 +131,9 @@ let test_face_uv_to_xyz fixture () =
     | `Null ->
       (match member "next_start" c with
        | `Null ->
-         let actual = S2.S2_coords.face_uv_to_xyz face u v in
+         let actual =
+           S2.S2_coords.face_uv_to_xyz face (Float_u.of_float u) (Float_u.of_float v)
+         in
          check_r3_vector_exact
            (sprintf "face_uv_to_xyz(%d,%g,%g)" face u v)
            ~expected
@@ -140,10 +148,14 @@ let test_face_uv_to_xyz fixture () =
               ~expected:expected_norm
               ~actual:actual_norm)
        | next_j ->
-         let actual = S2.S2_coords.face_uv_to_xyz face u v in
+         let actual =
+           S2.S2_coords.face_uv_to_xyz face (Float_u.of_float u) (Float_u.of_float v)
+         in
          check_r3_vector_exact (sprintf "hilbert end(%d)" face) ~expected ~actual;
          let next_start = r3_vector_of_json next_j in
-         let actual_next = S2.S2_coords.face_uv_to_xyz ((face + 1) mod 6) (-1.0) (-1.0) in
+         let actual_next =
+           S2.S2_coords.face_uv_to_xyz ((face + 1) mod 6) (-#1.0) (-#1.0)
+         in
          check_r3_vector_exact
            (sprintf "hilbert start(%d)" face)
            ~expected:next_start
@@ -152,7 +164,7 @@ let test_face_uv_to_xyz fixture () =
       let expected_cross_dot = float_of_json_exn cross_j in
       let u_axis = S2.S2_coords.get_u_axis face in
       let v_axis = S2.S2_coords.get_v_axis face in
-      let center = S2.S2_coords.face_uv_to_xyz face 0.0 0.0 in
+      let center = S2.S2_coords.face_uv_to_xyz face #0.0 #0.0 in
       let cross_dot = S2.R3_vector.dot (S2.R3_vector.cross u_axis v_axis) center in
       check_float_exact
         (sprintf "right-handed(%d)" face)
@@ -184,8 +196,8 @@ let test_uv_norms fixture () =
     let expected_v_norm = r3_vector_of_json (member "v_norm" c) in
     let expected_u_angle = float_of_json_exn (member "u_angle" c) in
     let expected_v_angle = float_of_json_exn (member "v_angle" c) in
-    let actual_u_norm = S2.S2_coords.get_u_norm face x in
-    let actual_v_norm = S2.S2_coords.get_v_norm face x in
+    let actual_u_norm = S2.S2_coords.get_u_norm face (Float_u.of_float x) in
+    let actual_v_norm = S2.S2_coords.get_v_norm face (Float_u.of_float x) in
     check_r3_vector_exact
       (sprintf "u_norm(%d,%g)" face x)
       ~expected:expected_u_norm
@@ -194,10 +206,10 @@ let test_uv_norms fixture () =
       (sprintf "v_norm(%d,%g)" face x)
       ~expected:expected_v_norm
       ~actual:actual_v_norm;
-    let p1 = S2.S2_coords.face_uv_to_xyz face x (-1.0) in
-    let p2 = S2.S2_coords.face_uv_to_xyz face x 1.0 in
-    let q1 = S2.S2_coords.face_uv_to_xyz face (-1.0) x in
-    let q2 = S2.S2_coords.face_uv_to_xyz face 1.0 x in
+    let p1 = S2.S2_coords.face_uv_to_xyz face (Float_u.of_float x) (-#1.0) in
+    let p2 = S2.S2_coords.face_uv_to_xyz face (Float_u.of_float x) #1.0 in
+    let q1 = S2.S2_coords.face_uv_to_xyz face (-#1.0) (Float_u.of_float x) in
+    let q2 = S2.S2_coords.face_uv_to_xyz face #1.0 (Float_u.of_float x) in
     let actual_u_angle =
       Float_u.to_float
         (S2.S1_angle.radians
@@ -232,12 +244,12 @@ let test_uvw_axis fixture () =
     let actual_u = S2.S2_coords.get_u_axis face in
     let actual_v = S2.S2_coords.get_v_axis face in
     let actual_norm = S2.S2_coords.get_norm face in
-    let actual_center = S2.S2_coords.face_uv_to_xyz face 0.0 0.0 in
+    let actual_center = S2.S2_coords.face_uv_to_xyz face #0.0 #0.0 in
     let actual_u_from_face =
-      S2.R3_vector.sub (S2.S2_coords.face_uv_to_xyz face 1.0 0.0) actual_center
+      S2.R3_vector.sub (S2.S2_coords.face_uv_to_xyz face #1.0 #0.0) actual_center
     in
     let actual_v_from_face =
-      S2.R3_vector.sub (S2.S2_coords.face_uv_to_xyz face 0.0 1.0) actual_center
+      S2.R3_vector.sub (S2.S2_coords.face_uv_to_xyz face #0.0 #1.0) actual_center
     in
     check_r3_vector_exact
       (sprintf "u_axis(%d)" face)
@@ -361,7 +373,10 @@ let test_xyz_to_face_uv fixture () =
     let expected_face = int_of_json_exn (member "face" c) in
     let expected_u = float_of_json_exn (member "u" c) in
     let expected_v = float_of_json_exn (member "v" c) in
-    let actual_face, actual_u, actual_v = S2.S2_coords.xyz_to_face_uv point in
+    let actual_face = S2.S2_coords.get_face point in
+    let actual_uv = S2.S2_coords.valid_face_xyz_to_uv actual_face point in
+    let actual_u = Float_u.to_float (S2.R2_point.x actual_uv) in
+    let actual_v = Float_u.to_float (S2.R2_point.y actual_uv) in
     (check int) "xyz_to_face_uv face" expected_face actual_face;
     check_float_exact "xyz_to_face_uv u" ~expected:expected_u ~actual:actual_u;
     check_float_exact "xyz_to_face_uv v" ~expected:expected_v ~actual:actual_v)

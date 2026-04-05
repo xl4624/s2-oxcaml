@@ -11,9 +11,13 @@ let%expect_test "constants" =
 
 let%expect_test "st_uv_roundtrip" =
   List.iter [ 0.0; 0.25; 0.5; 0.75; 1.0 ] ~f:(fun s ->
-    let u = S2.S2_coords.st_to_uv s in
+    let u = S2.S2_coords.st_to_uv (Float_u.of_float s) in
     let back = S2.S2_coords.uv_to_st u in
-    printf "s=%.17g -> u=%.17g -> back=%.17g\n" s u back);
+    printf
+      "s=%.17g -> u=%.17g -> back=%.17g\n"
+      s
+      (Float_u.to_float u)
+      (Float_u.to_float back));
   [%expect
     {|
     s=0 -> u=-1 -> back=0
@@ -25,7 +29,7 @@ let%expect_test "st_uv_roundtrip" =
 ;;
 
 let%expect_test "face_uv_to_xyz_face0" =
-  let p = S2.S2_coords.face_uv_to_xyz 0 0.0 0.0 in
+  let p = S2.S2_coords.face_uv_to_xyz 0 #0.0 #0.0 in
   printf
     "(%g, %g, %g)\n"
     (Float_u.to_float (S2.R3_vector.x p))

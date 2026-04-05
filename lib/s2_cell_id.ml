@@ -164,9 +164,10 @@ let from_face_ij face i j =
 ;;
 
 let from_point (p : R3_vector.t) =
-  let face, u, v = S2_coords.xyz_to_face_uv p in
-  let i = S2_coords.st_to_ij (S2_coords.uv_to_st u) in
-  let j = S2_coords.st_to_ij (S2_coords.uv_to_st v) in
+  let face = S2_coords.get_face p in
+  let uv = S2_coords.valid_face_xyz_to_uv face p in
+  let i = S2_coords.st_to_ij (S2_coords.uv_to_st (R2_point.x uv)) in
+  let j = S2_coords.st_to_ij (S2_coords.uv_to_st (R2_point.y uv)) in
   from_face_ij face i j
 ;;
 
@@ -428,9 +429,7 @@ let to_center_uv t =
   let _face, si, ti = get_center_si_ti t in
   let s = S2_coords.si_ti_to_st si in
   let t_val = S2_coords.si_ti_to_st ti in
-  R2_point.create
-    ~x:(Float_u.of_float (S2_coords.st_to_uv s))
-    ~y:(Float_u.of_float (S2_coords.st_to_uv t_val))
+  R2_point.create ~x:(S2_coords.st_to_uv s) ~y:(S2_coords.st_to_uv t_val)
 ;;
 
 let to_point_raw t : R3_vector.t =

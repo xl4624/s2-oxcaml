@@ -38,7 +38,7 @@ val bound_uv : t -> R2_rect.t
 val size_ij : t -> int
 
 (** [size_st t] returns the edge length of this cell in (s,t)-space. *)
-val size_st : t -> float
+val size_st : t -> float#
 
 (** {1 Geometry} *)
 
