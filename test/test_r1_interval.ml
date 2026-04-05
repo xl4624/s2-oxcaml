@@ -92,7 +92,7 @@ let quickcheck_project_in_range () =
       if not (S2.R1_interval.is_empty interval)
       then (
         let p = Float_u.of_float 7.89 in
-        let proj = S2.R1_interval.project interval p in
+        let proj = S2.R1_interval.project_exn interval p in
         assert (S2.R1_interval.contains interval proj)))
 ;;
 
@@ -301,7 +301,7 @@ let test_project fixture () =
     check_float_u_exact
       (sprintf "project %s onto %s" (Float_u.to_string pu) (S2.R1_interval.to_string i))
       ~expected:(float_u_of_json_exn (member "projected" c))
-      ~actual:(S2.R1_interval.project i pu))
+      ~actual:(S2.R1_interval.project_exn i pu))
 ;;
 
 let test_expanded fixture () =
@@ -358,7 +358,7 @@ let test_approx_equal fixture () =
          (S2.R1_interval.to_string x)
          (S2.R1_interval.to_string y))
       expected
-      (S2.R1_interval.approx_equal x y))
+      (S2.R1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) x y))
 ;;
 
 let test_approx_equal_custom fixture () =
@@ -375,7 +375,13 @@ let test_approx_equal_custom fixture () =
         (S2.R1_interval.to_string x)
         (S2.R1_interval.to_string y)
     in
-    (check bool) label expected (S2.R1_interval.approx_equal ~max_error:me x y))
+    (check bool)
+      label
+      expected
+      (S2.R1_interval.approx_equal
+         ~max_error:(Packed_float_option.Unboxed.some (Float_u.of_float me))
+         x
+         y))
 ;;
 
 let test_equal fixture () =

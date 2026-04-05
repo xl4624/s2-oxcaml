@@ -15,11 +15,7 @@ let[@zero_alloc ignore] pp ppf t =
 ;;
 
 let[@zero_alloc ignore] to_string t =
-  let buffer = Buffer.create 32 in
-  let ppf = Format.formatter_of_buffer buffer in
-  pp ppf t;
-  Format.pp_print_flush ppf ();
-  Buffer.contents buffer
+  sprintf "{x=%s, y=%s}" (R1_interval.to_string t.#x) (R1_interval.to_string t.#y)
 ;;
 
 let[@inline] [@zero_alloc] is_valid t =
@@ -56,8 +52,10 @@ module Option = struct
     end
   end
 
-  let[@zero_alloc ignore] sexp_of_t t =
-    if is_none t then sexp_of_string "None" else sexp_of_t t
+  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
+    : Sexp.t
+    =
+    if is_none t then sexp_of_string "None" else sexp_of_t t [@exclave_if_stack a]
   ;;
 end
 
@@ -213,8 +211,8 @@ let[@inline] [@zero_alloc] project t (p : R2_point.t) : R2_point.Option.t =
   else
     R2_point.Option.some
       (R2_point.create
-         ~x:(R1_interval.project t.#x (R2_point.x p))
-         ~y:(R1_interval.project t.#y (R2_point.y p)))
+         ~x:(R1_interval.project_exn t.#x (R2_point.x p))
+         ~y:(R1_interval.project_exn t.#y (R2_point.y p)))
 ;;
 
 let[@inline] [@zero_alloc] project_exn t (p : R2_point.t) =
@@ -224,8 +222,8 @@ let[@inline] [@zero_alloc] project_exn t (p : R2_point.t) =
     | (_ : Nothing.t) -> .)
   else
     R2_point.create
-      ~x:(R1_interval.project t.#x (R2_point.x p))
-      ~y:(R1_interval.project t.#y (R2_point.y p))
+      ~x:(R1_interval.project_exn t.#x (R2_point.x p))
+      ~y:(R1_interval.project_exn t.#y (R2_point.y p))
 ;;
 
 let[@inline] [@zero_alloc] expanded t (margin : R2_point.t) =
@@ -258,8 +256,9 @@ let[@inline] [@zero_alloc] intersection t other =
 ;;
 
 let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) t other =
-  R1_interval.approx_equal ~max_error t.#x other.#x
-  && R1_interval.approx_equal ~max_error t.#y other.#y
+  let me = Packed_float_option.Unboxed.some (Float_u.of_float max_error) in
+  R1_interval.approx_equal ~max_error:me t.#x other.#x
+  && R1_interval.approx_equal ~max_error:me t.#y other.#y
 ;;
 
 let[@inline] [@zero_alloc] equal t other =

@@ -81,8 +81,13 @@ val union : t -> t -> t
 (** [add_point t p] returns the interval expanded so that it contains [p]. *)
 val add_point : t -> float# -> t
 
-(** [project t p] returns [p'] where [p'] is the closest point in [t] to [p]. *)
-val project : t -> float# -> float#
+(** [project t p] returns the closest point in [t] to [p], or
+    [Packed_float_option.Unboxed.none] if [t] is empty. *)
+val project : t -> float# -> Packed_float_option.Unboxed.t
+
+(** [project_exn t p] returns the closest point in [t] to [p]. The interval must be
+    non-empty. Matches [R1Interval::Project] in the C++ library. *)
+val project_exn : t -> float# -> float#
 
 (** [expanded t margin] returns an interval expanded on each side by [margin]. If [margin]
     is negative, the interval is shrunk instead. The result may be empty. Any expansion of
@@ -97,8 +102,7 @@ val directed_hausdorff_distance : t -> t -> float#
     by moving each endpoint by at most [max_error]. The empty interval is considered to be
     positioned arbitrarily on the real line, so any interval with sufficiently small
     length matches it. *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
 
 (** [equal t other] returns true iff the two intervals contain the same set of points. *)
 val equal : t -> t -> bool

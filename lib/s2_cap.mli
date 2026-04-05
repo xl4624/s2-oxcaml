@@ -40,7 +40,8 @@ module Option : sig
   type value := t
   type nonrec t = t
 
-  val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+  val%template sexp_of_t : t -> Sexp.t @ m
+  [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
 
   (** The absent value. *)
   val none : t

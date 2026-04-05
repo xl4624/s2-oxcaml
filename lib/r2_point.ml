@@ -7,9 +7,7 @@ type t =
 [@@deriving sexp_of]
 
 let[@zero_alloc ignore] pp ppf t =
-  let x = Float_u.to_float t.#x in
-  let y = Float_u.to_float t.#y in
-  Format.fprintf ppf "(%a, %a)" Float.pp x Float.pp y
+  Format.fprintf ppf "(%s, %s)" (Float_u.to_string t.#x) (Float_u.to_string t.#y)
 ;;
 
 let[@zero_alloc ignore] to_string t =
@@ -86,7 +84,9 @@ module Option = struct
   let[@inline] [@zero_alloc] is_some t = not (is_none t)
   let[@inline] [@zero_alloc] unchecked_value t = t
 
-  let[@zero_alloc ignore] sexp_of_t t =
+  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
+    : Sexp.t
+    =
     if is_none t
     then Sexp.List []
     else
@@ -96,6 +96,7 @@ module Option = struct
             ; Sexp.List [ Sexp.Atom "y"; Float.sexp_of_t (Float_u.to_float t.#y) ]
             ]
         ]
+      [@exclave_if_stack a]
   ;;
 
   let[@inline] [@zero_alloc] value t ~default = if is_some t then t else default

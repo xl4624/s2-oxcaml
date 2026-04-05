@@ -44,8 +44,10 @@ module Option = struct
     end
   end
 
-  let[@zero_alloc ignore] sexp_of_t t =
-    if is_none t then sexp_of_string "None" else sexp_of_t t
+  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
+    : Sexp.t
+    =
+    if is_none t then sexp_of_string "None" else sexp_of_t t [@exclave_if_stack a]
   ;;
 end
 

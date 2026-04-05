@@ -39,7 +39,8 @@ open Core
 
 type t : float64 [@@deriving sexp_of]
 
-val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+val%template sexp_of_t : t -> Sexp.t @ m
+[@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
 
 (** {1 Constants} *)
 
@@ -170,7 +171,8 @@ module Option : sig
   type value := t
   type nonrec t = t
 
-  val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+  val%template sexp_of_t : t -> Sexp.t @ m
+  [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
 
   (** The absent value. *)
   val none : t

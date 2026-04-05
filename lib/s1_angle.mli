@@ -25,7 +25,9 @@ open Core
 
 type t : float64 [@@deriving sexp_of]
 
-val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+val%template sexp_of_t : t -> Sexp.t @ m
+[@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
+
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
 val to_string : t -> string [@@zero_alloc ignore]
 

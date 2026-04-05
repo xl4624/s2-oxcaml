@@ -8,9 +8,7 @@ type t =
 [@@deriving sexp_of]
 
 let[@zero_alloc ignore] pp ppf t =
-  let lo = Float_u.to_float t.#lo in
-  let hi = Float_u.to_float t.#hi in
-  Format.fprintf ppf "[%a, %a]" Float.pp lo Float.pp hi
+  Format.fprintf ppf "[%s, %s]" (Float_u.to_string t.#lo) (Float_u.to_string t.#hi)
 ;;
 
 let[@zero_alloc ignore] to_string t =
@@ -73,7 +71,13 @@ let[@inline] [@zero_alloc] add_point t p : t =
   else #{ lo = t.#lo; hi = t.#hi }
 ;;
 
-let[@inline] [@zero_alloc] project t p = Float_u.clamp_exn p ~min:t.#lo ~max:t.#hi
+let[@inline] [@zero_alloc] project t p : Packed_float_option.Unboxed.t =
+  if is_empty t
+  then Packed_float_option.Unboxed.none ()
+  else Packed_float_option.Unboxed.some (Float_u.clamp_exn p ~min:t.#lo ~max:t.#hi)
+;;
+
+let[@inline] [@zero_alloc] project_exn t p = Float_u.clamp_exn p ~min:t.#lo ~max:t.#hi
 
 let[@inline] [@zero_alloc] expanded t margin : t =
   if is_empty t then t else #{ lo = t.#lo - margin; hi = t.#hi + margin }
@@ -87,8 +91,8 @@ let[@inline] [@zero_alloc] directed_hausdorff_distance t y =
   else Float_u.max #0.0 (Float_u.max (t.#hi - y.#hi) (y.#lo - t.#lo))
 ;;
 
-let approx_equal ?(max_error = 1e-15) t y =
-  let max_error = Float_u.of_float max_error in
+let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t y =
+  let max_error = Packed_float_option.Unboxed.value max_error ~default:#1e-15 in
   if is_empty t
   then length y <= #2.0 * max_error
   else if is_empty y

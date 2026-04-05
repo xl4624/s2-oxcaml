@@ -34,7 +34,9 @@ module Option = struct
   let[@inline] [@zero_alloc] is_some t = not (is_none t)
   let[@inline] [@zero_alloc] unchecked_value t = t
 
-  let[@zero_alloc ignore] sexp_of_t t =
+  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
+    : Sexp.t
+    =
     if is_none t
     then Sexp.List []
     else
@@ -44,6 +46,7 @@ module Option = struct
             ; Sexp.List [ Sexp.Atom "lng"; Float.sexp_of_t (Float_u.to_float t.#lng) ]
             ]
         ]
+      [@exclave_if_stack a]
   ;;
 
   let[@inline] [@zero_alloc] value t ~default = if is_some t then t else default

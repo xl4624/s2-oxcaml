@@ -4,8 +4,10 @@ open Core
 
 type t = float#
 
-let[@zero_alloc ignore] sexp_of_t t =
+let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t : Sexp.t
+  =
   Sexp.List [ Sexp.List [ Sexp.Atom "length2"; Float.sexp_of_t (Float_u.to_float t) ] ]
+  [@exclave_if_stack a]
 ;;
 
 let relative_sum_error = Float_u.O.(#2.02 * Float_u.epsilon_float ())
@@ -152,8 +154,12 @@ let[@inline] [@zero_alloc] equal a b = Float_u.O.(a = b)
 module Option = struct
   type t = float#
 
-  let[@zero_alloc ignore] sexp_of_t t =
-    if Float_u.is_nan t then Sexp.Atom "None" else sexp_of_t t
+  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
+    : Sexp.t
+    =
+    if Float_u.is_nan t
+    then Sexp.Atom "None"
+    else (sexp_of_t [@alloc a]) t [@exclave_if_stack a]
   ;;
 
   let none = Float_u.of_float Float.nan
