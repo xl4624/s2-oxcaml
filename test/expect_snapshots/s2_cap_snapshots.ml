@@ -59,12 +59,12 @@ let%expect_test "hemisphere_height" =
 ;;
 
 let%expect_test "full_area" =
-  printf "%.17g\n" (S2.S2_cap.area S2.S2_cap.full);
+  printf "%.17g\n" (Float_u.to_float (S2.S2_cap.area S2.S2_cap.full));
   [%expect {| 12.566370614359172 |}]
 ;;
 
 let%expect_test "empty_area" =
-  printf "%.17g\n" (S2.S2_cap.area S2.S2_cap.empty);
+  printf "%.17g\n" (Float_u.to_float (S2.S2_cap.area S2.S2_cap.empty));
   [%expect {| 0 |}]
 ;;
 
@@ -85,7 +85,7 @@ let%expect_test "union_with_empty" =
       (S2.S1_angle.of_degrees #10.0)
   in
   let u = S2.S2_cap.union cap S2.S2_cap.empty in
-  printf "area_eq: %b\n" (Float.( = ) (S2.S2_cap.area u) (S2.S2_cap.area cap));
+  printf "area_eq: %b\n" (Float_u.equal (S2.S2_cap.area u) (S2.S2_cap.area cap));
   [%expect {| area_eq: true |}]
 ;;
 
@@ -96,7 +96,7 @@ let%expect_test "encode_decode_roundtrip" =
       (S2.S1_angle.of_degrees #45.0)
   in
   let encoded = S2.S2_cap.encode cap in
-  let decoded = Or_error.ok_exn (S2.S2_cap.decode encoded) in
+  let decoded = S2.S2_cap.Option.value_exn (S2.S2_cap.decode encoded) in
   printf "equal: %b\n" (S2.S2_cap.equal decoded cap);
   [%expect {| equal: true |}]
 ;;

@@ -110,7 +110,7 @@ let quickcheck_union_contains_both () =
     ~f:(fun { Cap_pair.a; b } ->
       let u = S2.S2_cap.union a b in
       let margin = S2.S1_angle.of_radians (Float_u.of_float 1e-14) in
-      let u_expanded = Or_error.ok_exn (S2.S2_cap.expanded u margin) in
+      let u_expanded = S2.S2_cap.Option.value_exn (S2.S2_cap.expanded u margin) in
       assert (S2.S2_cap.contains_cap u_expanded a);
       assert (S2.S2_cap.contains_cap u_expanded b))
 ;;
@@ -416,14 +416,14 @@ let test_add_cap f () =
       (S2.S1_angle.of_degrees (Float_u.of_float 10.0))
   in
   let t1 = S2.S2_cap.add_cap non_empty S2.S2_cap.empty in
-  check_float
+  check_float_u
     "add_empty_area"
-    ~expected:(float_of_json_exn (member "add_empty_area" a))
+    ~expected:(float_u_of_json_exn (member "add_empty_area" a))
     ~actual:(S2.S2_cap.area t1);
   let t2 = S2.S2_cap.add_cap S2.S2_cap.empty non_empty in
-  check_float
+  check_float_u
     "empty_after_add_area"
-    ~expected:(float_of_json_exn (member "empty_after_add_area" a))
+    ~expected:(float_u_of_json_exn (member "empty_after_add_area" a))
     ~actual:(S2.S2_cap.area t2)
 ;;
 
@@ -460,7 +460,9 @@ let test_rect_bound f () =
         S2.S2_cap.of_center_angle
           (latlng_point 90.0 123.0)
           (S2.S1_angle.of_degrees (Float_u.of_float 10.0))
-      | _ -> Alcotest.fail ("unknown rect_bound case " ^ name)
+      | _ ->
+        (match Alcotest.fail ("unknown rect_bound case " ^ name) with
+         | (_ : Nothing.t) -> .)
     in
     check_lat_lng_rect name rect_j (S2.S2_cap.rect_bound cap))
 ;;
@@ -473,14 +475,14 @@ let test_expanded f () =
   chk
     "empty_stays_empty"
     (S2.S2_cap.is_empty
-       (Or_error.ok_exn
+       (S2.S2_cap.Option.value_exn
           (S2.S2_cap.expanded
              S2.S2_cap.empty
              (S2.S1_angle.of_radians (Float_u.of_float 2.0)))));
   chk
     "full_stays_full"
     (S2.S2_cap.is_full
-       (Or_error.ok_exn
+       (S2.S2_cap.Option.value_exn
           (S2.S2_cap.expanded
              S2.S2_cap.full
              (S2.S1_angle.of_radians (Float_u.of_float 2.0)))));
@@ -495,7 +497,7 @@ let test_expanded f () =
       (S2.S1_angle.of_degrees (Float_u.of_float 51.0))
   in
   let exp0 =
-    Or_error.ok_exn
+    S2.S2_cap.Option.value_exn
       (S2.S2_cap.expanded cap50 (S2.S1_angle.of_radians (Float_u.of_float 0.0)))
   in
   Alcotest.(check bool) "expanded0_approx_cap50" true (S2.S2_cap.approx_equal exp0 cap50);
@@ -504,7 +506,7 @@ let test_expanded f () =
     ~expected:(float_u_of_json_exn (member "cap50_exp0_len2" e))
     ~actual:(S2.S1_chord_angle.length2 (S2.S2_cap.radius_chord exp0));
   let exp1 =
-    Or_error.ok_exn
+    S2.S2_cap.Option.value_exn
       (S2.S2_cap.expanded cap50 (S2.S1_angle.of_degrees (Float_u.of_float 1.0)))
   in
   check_float_u
@@ -519,12 +521,12 @@ let test_expanded f () =
     "exp12999_not_full"
     (not
        (S2.S2_cap.is_full
-          (Or_error.ok_exn
+          (S2.S2_cap.Option.value_exn
              (S2.S2_cap.expanded cap50 (S2.S1_angle.of_degrees (Float_u.of_float 129.99))))));
   chk
     "exp13001_full"
     (S2.S2_cap.is_full
-       (Or_error.ok_exn
+       (S2.S2_cap.Option.value_exn
           (S2.S2_cap.expanded cap50 (S2.S1_angle.of_degrees (Float_u.of_float 130.01)))))
 ;;
 
@@ -611,7 +613,7 @@ let test_union f () =
         "area_eq"
         ~expected:(bool_of_json_exn (member "area_eq" c))
         ~actual:
-          (Float.( = )
+          (Float_u.equal
              (S2.S2_cap.area (S2.S2_cap.union a0 S2.S2_cap.empty))
              (S2.S2_cap.area a0))
     | "encompasses" ->
@@ -693,7 +695,7 @@ let test_encode_decode f () =
   let j = member "encode_decode" f in
   let cap = cap_of_json (member "roundtrip" j) in
   let encoded = S2.S2_cap.encode cap in
-  let dec = Or_error.ok_exn (S2.S2_cap.decode encoded) in
+  let dec = S2.S2_cap.Option.value_exn (S2.S2_cap.decode encoded) in
   Alcotest.(check bool) "decode roundtrip" true (S2.S2_cap.equal dec cap);
   let floats = to_list (member "encoded" j) in
   List.iteri floats ~f:(fun i elt ->

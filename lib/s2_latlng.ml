@@ -49,11 +49,11 @@ module Option = struct
   let[@inline] [@zero_alloc] value t ~default = if is_some t then t else default
 
   let[@inline] [@zero_alloc] value_exn t =
-    if is_some t
-    then t
-    else (
+    if is_none t
+    then (
       match raise_s [%message "S2_latlng.Option.value_exn: none"] with
       | (_ : Nothing.t) -> .)
+    else t
   ;;
 
   module Optional_syntax = struct

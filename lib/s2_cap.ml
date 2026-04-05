@@ -7,173 +7,246 @@ type lat_lng_rect =
 [@@deriving sexp_of]
 
 type t =
-  { center : S2_point.t
-  ; radius : S1_chord_angle.t
-  }
+  #{ center : S2_point.t
+   ; radius : S1_chord_angle.t
+   }
 [@@deriving sexp_of]
 
-(* Empty cap uses the same default center as C++ / Go (1, 0, 0). *)
 let empty =
-  { center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
-  ; radius = S1_chord_angle.negative
-  }
+  #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
+   ; radius = S1_chord_angle.negative
+   }
 ;;
 
 let full =
-  { center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
-  ; radius = S1_chord_angle.straight
-  }
+  #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
+   ; radius = S1_chord_angle.straight
+   }
 ;;
 
-let of_point center = { center; radius = S1_chord_angle.zero }
+module Option = struct
+  type nonrec t = t
+
+  let none =
+    #{ center =
+         S2_point.of_coords ~x:(Float_u.nan ()) ~y:(Float_u.nan ()) ~z:(Float_u.nan ())
+     ; radius = S1_chord_angle.Option.none
+     }
+  ;;
+
+  let[@inline] is_none t = S1_chord_angle.Option.is_none t.#radius
+  let[@inline] is_some t = not (is_none t)
+  let[@inline] some v = v
+  let[@inline] value t ~default = if is_none t then default else t
+
+  let value_exn t =
+    if is_none t
+    then (
+      match failwith "S2_cap.Option: value_exn called on none" with
+      | (_ : Nothing.t) -> .)
+    else t
+  ;;
+
+  let unchecked_value t = t
+
+  module Optional_syntax = struct
+    module Optional_syntax = struct
+      let is_none t = is_none t
+      let unsafe_value t = unchecked_value t
+    end
+  end
+
+  let[@zero_alloc ignore] sexp_of_t t =
+    if is_none t then sexp_of_string "None" else sexp_of_t t
+  ;;
+end
+
+let[@inline] [@zero_alloc] of_point center = #{ center; radius = S1_chord_angle.zero }
 
 let of_center_angle center angle =
+  let open Float_u.O in
   let angle =
     if S1_angle.is_inf angle
-    then S1_angle.of_radians (Float_u.of_float Float.pi)
-    else (
-      let r = Float_u.to_float (S1_angle.radians angle) in
-      if Float.( > ) r Float.pi
-      then S1_angle.of_radians (Float_u.of_float Float.pi)
-      else angle)
+    then S1_angle.of_radians (Float_u.pi ())
+    else if S1_angle.radians angle > Float_u.pi ()
+    then S1_angle.of_radians (Float_u.pi ())
+    else angle
   in
-  { center; radius = S1_chord_angle.of_angle angle }
+  #{ center; radius = S1_chord_angle.of_angle angle }
 ;;
 
-let of_center_chord_angle center radius = { center; radius }
+let of_center_chord_angle center radius = #{ center; radius }
 
-let of_center_height center height =
-  { center; radius = S1_chord_angle.of_length2 (2.0 *. height) }
+(* TODO: zero_alloc blocked on S1_chord_angle *)
+let[@zero_alloc ignore] of_center_height center height =
+  #{ center; radius = S1_chord_angle.of_length2 (2.0 *. height) }
 ;;
 
-let of_center_area center area =
-  { center; radius = S1_chord_angle.of_length2 (area /. Float.pi) }
+(* TODO: zero_alloc blocked on S1_chord_angle *)
+let[@zero_alloc ignore] of_center_area center area =
+  #{ center; radius = S1_chord_angle.of_length2 (area /. Float.pi) }
 ;;
 
-let center t = t.center
-let radius_chord t = t.radius
-let height t = 0.5 *. Float_u.to_float (S1_chord_angle.length2 t.radius)
-let radius_angle t = S1_chord_angle.to_angle t.radius
+let center t = t.#center
+let radius_chord t = t.#radius
 
-let area t =
-  let h = height t in
-  2.0 *. Float.pi *. Float.max 0.0 h
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] height t =
+  0.5 *. Float_u.to_float (S1_chord_angle.length2 t.#radius)
 ;;
 
-let is_empty t = S1_chord_angle.is_negative t.radius
-let is_full t = Float_u.O.(S1_chord_angle.length2 t.radius = #4.0)
+let radius_angle t = S1_chord_angle.to_angle t.#radius
+
+(* TODO: zero_alloc blocked on [height] *)
+let[@zero_alloc ignore] area t =
+  let open Float_u.O in
+  let h = Float_u.of_float (height t) in
+  #2.0 * Float_u.pi () * Float_u.max #0.0 h
+;;
+
+let is_empty t = S1_chord_angle.is_negative t.#radius
+let is_full t = Float_u.O.(S1_chord_angle.length2 t.#radius = #4.0)
 
 let is_valid t =
-  S2_point.is_unit_length t.center
-  && S1_chord_angle.is_valid t.radius
-  && Float_u.O.(S1_chord_angle.length2 t.radius <= #4.0)
+  S2_point.is_unit_length t.#center
+  && S1_chord_angle.is_valid t.#radius
+  && Float_u.(S1_chord_angle.length2 t.#radius <= #4.0)
 ;;
 
-let centroid t =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] centroid t =
+  let open Float_u.O in
   if is_empty t
   then R3_vector.zero
   else (
-    let r = 1.0 -. (0.5 *. height t) in
+    let r = #1.0 - (#0.5 * Float_u.of_float (height t)) in
     let a = area t in
-    R3_vector.mul t.center (Float_u.of_float (r *. a)))
+    R3_vector.mul t.#center (r * a))
 ;;
 
-let complement t =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] complement t =
   if is_full t
   then empty
   else if is_empty t
   then full
   else (
-    let l2 = S1_chord_angle.length2 t.radius in
-    { center = R3_vector.neg t.center
-    ; radius = S1_chord_angle.of_length2 (4.0 -. Float_u.to_float l2)
-    })
+    let l2 = S1_chord_angle.length2 t.#radius in
+    #{ center = R3_vector.neg t.#center
+     ; radius = S1_chord_angle.of_length2 (4.0 -. Float_u.to_float l2)
+     })
 ;;
 
-let contains_cap t other =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] contains_cap t other =
   if is_full t || is_empty other
   then true
   else (
-    let dist = S2_point.chord_angle_between t.center other.center in
-    let sum = S1_chord_angle.add dist other.radius in
-    S1_chord_angle.compare t.radius sum >= 0)
+    let dist = S2_point.chord_angle_between t.#center other.#center in
+    let sum = S1_chord_angle.add dist other.#radius in
+    S1_chord_angle.compare t.#radius sum >= 0)
 ;;
 
-let intersects t other =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] intersects t other =
   if is_empty t || is_empty other
   then false
   else (
-    let dist = S2_point.chord_angle_between t.center other.center in
-    let sum = S1_chord_angle.add t.radius other.radius in
+    let dist = S2_point.chord_angle_between t.#center other.#center in
+    let sum = S1_chord_angle.add t.#radius other.#radius in
     S1_chord_angle.compare sum dist >= 0)
 ;;
 
-let interior_intersects t other =
-  if Float_u.O.(S1_chord_angle.length2 t.radius <= #0.0) || is_empty other
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] interior_intersects t other =
+  if Float_u.O.(S1_chord_angle.length2 t.#radius <= #0.0) || is_empty other
   then false
   else (
-    let dist = S2_point.chord_angle_between t.center other.center in
-    let sum = S1_chord_angle.add t.radius other.radius in
+    let dist = S2_point.chord_angle_between t.#center other.#center in
+    let sum = S1_chord_angle.add t.#radius other.#radius in
     S1_chord_angle.compare sum dist > 0)
 ;;
 
-let contains_point t p =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] contains_point t p =
   if is_empty t
   then false
   else if is_full t
   then true
   else (
-    let d = S2_point.chord_angle_between t.center p in
-    S1_chord_angle.compare d t.radius <= 0)
+    let d = S2_point.chord_angle_between t.#center p in
+    S1_chord_angle.compare d t.#radius <= 0)
 ;;
 
-let interior_contains_point t p =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] interior_contains_point t p =
   if is_full t
   then true
-  else if is_empty t || Float_u.O.(S1_chord_angle.length2 t.radius <= #0.0)
+  else if is_empty t || Float_u.O.(S1_chord_angle.length2 t.#radius <= #0.0)
   then false
   else (
-    let d = S2_point.chord_angle_between t.center p in
-    S1_chord_angle.compare d t.radius < 0)
+    let d = S2_point.chord_angle_between t.#center p in
+    S1_chord_angle.compare d t.#radius < 0)
 ;;
 
-let add_point t p =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] add_point t p =
   if is_empty t
-  then { center = p; radius = S1_chord_angle.zero }
+  then #{ center = p; radius = S1_chord_angle.zero }
   else (
-    let d = S2_point.chord_angle_between t.center p in
-    if S1_chord_angle.compare d t.radius > 0 then { t with radius = d } else t)
+    let d = S2_point.chord_angle_between t.#center p in
+    if S1_chord_angle.compare d t.#radius > 0
+    then #{ center = t.#center; radius = d }
+    else t)
 ;;
 
-let add_cap t other =
+(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
+let[@zero_alloc ignore] add_cap t other =
   if is_empty t
   then other
   else if is_empty other
   then t
   else (
     let dist =
-      S1_chord_angle.add (S2_point.chord_angle_between t.center other.center) other.radius
+      S1_chord_angle.add
+        (S2_point.chord_angle_between t.#center other.#center)
+        other.#radius
     in
     let err =
       ((2.0 *. Float.epsilon_float) +. S1_chord_angle.relative_sum_error)
       *. Float_u.to_float (S1_chord_angle.length2 dist)
     in
     let dist = S1_chord_angle.plus_error dist err in
-    if S1_chord_angle.compare dist t.radius > 0 then { t with radius = dist } else t)
+    if S1_chord_angle.compare dist t.#radius > 0
+    then #{ center = t.#center; radius = dist }
+    else t)
 ;;
 
-let expanded t distance =
-  if Float.( < ) (Float_u.to_float (S1_angle.radians distance)) 0.0
-  then
-    Or_error.error_s
-      [%message "S2_cap.expanded: distance must be non-negative" (distance : S1_angle.t)]
+let[@inline] [@zero_alloc] expanded t distance =
+  let open Float_u.O in
+  if S1_angle.radians distance < #0.0
+  then Option.none
   else if is_empty t
-  then Ok empty
+  then Option.some empty
   else
-    Ok { t with radius = S1_chord_angle.add t.radius (S1_chord_angle.of_angle distance) }
+    Option.some
+      #{ center = t.#center
+       ; radius = S1_chord_angle.add t.#radius (S1_chord_angle.of_angle distance)
+       }
 ;;
 
-let expanded_exn t distance = Or_error.ok_exn (expanded t distance)
+let expanded_exn t distance =
+  let opt = expanded t distance in
+  if Option.is_none opt
+  then (
+    match
+      Core.raise_s
+        [%message
+          "S2_cap.expanded: distance must be non-negative" (distance : S1_angle.t)]
+    with
+    | (_ : Nothing.t) -> .)
+  else Option.value_exn opt
+;;
 
 let get_point_on_ray origin dir r =
   let c = Float_u.cos (S1_angle.radians r) in
@@ -190,15 +263,15 @@ let get_point_on_line a b r =
   get_point_on_ray a dir r [@nontail]
 ;;
 
-let rec union t other =
-  if S1_chord_angle.compare t.radius other.radius < 0
+let[@zero_alloc ignore] rec union t other =
+  if S1_chord_angle.compare t.#radius other.#radius < 0
   then union other t
   else if is_full t || is_empty other
   then t
   else (
-    let this_r = S1_chord_angle.to_angle t.radius in
-    let other_r = S1_chord_angle.to_angle other.radius in
-    let dist = S2_point.distance t.center other.center in
+    let this_r = S1_chord_angle.to_angle t.#radius in
+    let other_r = S1_chord_angle.to_angle other.#radius in
+    let dist = S2_point.distance t.#center other.#center in
     if S1_angle.compare this_r (S1_angle.add dist other_r) >= 0
     then t
     else (
@@ -206,15 +279,15 @@ let rec union t other =
         S1_angle.mul (S1_angle.add (S1_angle.add dist this_r) other_r) #0.5
       in
       let f = S1_angle.mul (S1_angle.add (S1_angle.sub dist this_r) other_r) #0.5 in
-      let result_center = get_point_on_line t.center other.center f in
+      let result_center = get_point_on_line t.#center other.#center f in
       of_center_angle result_center result_r))
 ;;
 
-let rect_bound t =
+let[@zero_alloc ignore] rect_bound t =
   if is_empty t
   then { lat = R1_interval.empty; lng = S1_interval.empty }
   else (
-    let center_ll = S2_latlng.of_point t.center in
+    let center_ll = S2_latlng.of_point t.#center in
     let cap_angle = Float_u.to_float (S1_angle.radians (radius_angle t)) in
     let mutable all_longitudes = false in
     let mutable lat_lo =
@@ -235,7 +308,7 @@ let rect_bound t =
       all_longitudes <- true);
     if not all_longitudes
     then (
-      let sin_a = S1_chord_angle.sin t.radius in
+      let sin_a = S1_chord_angle.sin t.#radius in
       let sin_c =
         Float_u.of_float
           (Float.cos (Float_u.to_float (S1_angle.radians (S2_latlng.lat center_ll))))
@@ -251,17 +324,17 @@ let rect_bound t =
     })
 ;;
 
-let equal t other =
-  (S2_point.equal t.center other.center && S1_chord_angle.equal t.radius other.radius)
+let[@zero_alloc ignore] equal t other =
+  (S2_point.equal t.#center other.#center && S1_chord_angle.equal t.#radius other.#radius)
   || (is_empty t && is_empty other)
   || (is_full t && is_full other)
 ;;
 
 let approx_equal ?(max_error = 1e-14) t other =
   let max_e = max_error in
-  let r2 = S1_chord_angle.length2 t.radius in
-  let o2 = S1_chord_angle.length2 other.radius in
-  (S2_point.approx_equal ~max_error t.center other.center
+  let r2 = S1_chord_angle.length2 t.#radius in
+  let o2 = S1_chord_angle.length2 other.#radius in
+  (S2_point.approx_equal ~max_error t.#center other.#center
    && Float.( <= ) (Float.abs (Float_u.to_float Float_u.O.(r2 - o2))) max_e)
   || (is_empty t && Float.( <= ) (Float_u.to_float o2) max_e)
   || (is_empty other && Float.( <= ) (Float_u.to_float r2) max_e)
@@ -298,18 +371,17 @@ let[@inline] get_le_f64 s off =
 
 let encode t =
   let b = Bytes.create 32 in
-  let c = t.center in
+  let c = t.#center in
   set_le_f64_into b 0 (Float_u.to_float (R3_vector.x c));
   set_le_f64_into b 8 (Float_u.to_float (R3_vector.y c));
   set_le_f64_into b 16 (Float_u.to_float (R3_vector.z c));
-  set_le_f64_into b 24 (Float_u.to_float (S1_chord_angle.length2 t.radius));
+  set_le_f64_into b 24 (Float_u.to_float (S1_chord_angle.length2 t.#radius));
   Bytes.to_string b
 ;;
 
 let decode s =
-  let open Or_error.Let_syntax in
   if String.length s <> 32
-  then Or_error.error_string "S2_cap.decode: expected 32-byte string"
+  then Option.none
   else (
     let x = get_le_f64 s 0 in
     let y = get_le_f64 s 8 in
@@ -322,10 +394,8 @@ let decode s =
         ~z:(Float_u.of_float z)
     in
     let radius = S1_chord_angle.of_length2 l2 in
-    let t = { center; radius } in
-    if not (is_valid t)
-    then Or_error.error_string "S2_cap.decode: invalid cap"
-    else return t)
+    let t = #{ center; radius } in
+    if not (is_valid t) then Option.none else Option.some t)
 ;;
 
-let decode_exn s = Or_error.ok_exn (decode s)
+let decode_exn s = Option.value_exn (decode s)

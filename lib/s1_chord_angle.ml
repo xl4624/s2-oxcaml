@@ -30,7 +30,7 @@ let[@inline] [@zero_alloc] rec of_angle angle =
     of_length2_u (l * l)
 
 and[@inline] [@zero_alloc] of_length2_u length2 =
-  if Float_u.O.(length2 > max_length2) then straight else length2
+  if Float_u.(length2 > max_length2) then straight else length2
 ;;
 
 let[@inline] [@zero_alloc] of_length2 length2 = of_length2_u (Float_u.of_float length2)

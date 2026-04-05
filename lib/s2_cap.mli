@@ -27,7 +27,46 @@ type lat_lng_rect =
   }
 [@@deriving sexp_of]
 
-type t [@@deriving sexp_of]
+[@@@zero_alloc all]
+
+type t : (float64 & float64 & float64) & float64 [@@deriving sexp_of]
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+
+(** {1 Optional Cap}
+    An optional cap representation that avoids allocating an [option] wrapper. Uses a NaN
+    sentinel. *)
+module Option : sig
+  type value := t
+  type nonrec t = t
+
+  val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+
+  (** The absent value. *)
+  val none : t
+
+  (** [some v] wraps [v] as a present value. *)
+  val some : value -> t
+
+  val is_none : t -> bool
+  val is_some : t -> bool
+
+  (** [value t ~default] returns the wrapped cap, or [default] if [t] is [none]. *)
+  val value : t -> default:value -> value
+
+  (** [value_exn t] returns the wrapped cap, or raises if [t] is [none]. *)
+  val value_exn : t -> value
+
+  (** [unchecked_value t] returns the wrapped cap without checking for [none]. *)
+  val unchecked_value : t -> value
+
+  module Optional_syntax : sig
+    module Optional_syntax : sig
+      val is_none : t -> bool
+      val unsafe_value : t -> value
+    end
+  end
+end
 
 (** {1 Constructors} *)
 
@@ -38,7 +77,7 @@ val full : t
 val of_point : S2_point.t -> t
 
 (** Center must be unit length. Angle is clamped to [[0, pi]] before conversion; angles
-    larger than [pi] yield a full cap (see C++ [S2Cap(S2Point, S1Angle)]). *)
+    larger than [pi] yield a full cap. *)
 val of_center_angle : S2_point.t -> S1_angle.t -> t
 
 (** [center] should be unit length. *)
@@ -47,69 +86,78 @@ val of_center_chord_angle : S2_point.t -> S1_chord_angle.t -> t
 (** [height] is distance from center to the cutoff plane along [center]. Negative height
     gives an empty cap; [height >= 2] gives a full cap. *)
 val of_center_height : S2_point.t -> float -> t
+[@@zero_alloc ignore]
 
 (** [area] is surface area on the unit sphere (solid angle). Negative yields empty;
     [area >= 4 * pi] yields full. *)
 val of_center_area : S2_point.t -> float -> t
+[@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
 val center : t -> S2_point.t
 val radius_chord : t -> S1_chord_angle.t
-val height : t -> float
+val height : t -> float [@@zero_alloc ignore]
 
 (** Angular radius (may differ slightly from the angle passed to {!of_center_angle}). *)
 val radius_angle : t -> S1_angle.t
 
-val area : t -> float
+val area : t -> float# [@@zero_alloc ignore]
 
-(** Area-weighted centroid; for an empty cap this is [(0,0,0)] (C++ [S2Point()]). *)
+(** Area-weighted centroid; for an empty cap this is [(0,0,0)]. *)
 val centroid : t -> S2_point.t
+[@@zero_alloc ignore]
 
 (** Latitude-longitude bounds (see [S2Cap::GetRectBound]). *)
 val rect_bound : t -> lat_lng_rect
+[@@zero_alloc ignore]
 
 (** {1 Predicates} *)
 
 val is_valid : t -> bool
 val is_empty : t -> bool
 val is_full : t -> bool
-val equal : t -> t -> bool
+val equal : t -> t -> bool [@@zero_alloc ignore]
 
-(** Like C++ [ApproxEquals]: center angles and squared chord radii within [max_error]
-    (radians on the sphere for centers, absolute on [length2] for radii). *)
+(** Center angles and squared chord radii within [max_error] (radians on the sphere for
+    centers, absolute on [length2] for radii). *)
 val approx_equal : ?max_error:float -> t -> t -> bool
+[@@zero_alloc ignore]
 
 (** {1 Set operations} *)
 
-val complement : t -> t
-val contains_cap : t -> t -> bool
-val intersects : t -> t -> bool
-val interior_intersects : t -> t -> bool
-val interior_contains_point : t -> S2_point.t -> bool
+val complement : t -> t [@@zero_alloc ignore]
+val contains_cap : t -> t -> bool [@@zero_alloc ignore]
+val intersects : t -> t -> bool [@@zero_alloc ignore]
+val interior_intersects : t -> t -> bool [@@zero_alloc ignore]
+val interior_contains_point : t -> S2_point.t -> bool [@@zero_alloc ignore]
 
 (** [p] must be unit length. *)
 val contains_point : t -> S2_point.t -> bool
+[@@zero_alloc ignore]
 
 (** Smallest cap containing [cap] and [p]. If [cap] is empty, center becomes [p]. *)
 val add_point : t -> S2_point.t -> t
+[@@zero_alloc ignore]
 
-(** Like C++ [AddCap], including the rounding bump on the chord sum. *)
+(** Including the rounding bump on the chord sum. *)
 val add_cap : t -> t -> t
+[@@zero_alloc ignore]
 
 (** Expanding an empty cap yields empty. *)
-val expanded : t -> S1_angle.t -> t Or_error.t
+val expanded : t -> S1_angle.t -> Option.t
 
 (** @raise [Invalid_argument] if [distance] is negative. *)
 val expanded_exn : t -> S1_angle.t -> t
+[@@zero_alloc ignore]
 
-(** Smallest cap enclosing both operands (C++ [Union]). *)
-val union : t -> t -> t
+(** Smallest cap enclosing both operands. *)
+val union : t -> t -> t [@@zero_alloc ignore]
 
 (** {1 Encoding}
 
-    Binary layout matches C++ [S2Cap::Encode]: four IEEE doubles [x; y; z; length2]. *)
+    Binary layout: four IEEE doubles [x; y; z; length2]. *)
 
-val encode : t -> string
-val decode : string -> t Or_error.t
-val decode_exn : string -> t
+val encode : t -> string [@@zero_alloc ignore]
+val decode : string -> Option.t [@@zero_alloc ignore]
+val decode_exn : string -> t [@@zero_alloc ignore]
