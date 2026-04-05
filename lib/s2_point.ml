@@ -1,6 +1,6 @@
 open Core
 
-type t = R3_vector.t [@@deriving compare, equal, sexp_of]
+type t = R3_vector.t [@@deriving sexp_of]
 
 let[@zero_alloc ignore] pp ppf t = R3_vector.pp ppf t
 let[@zero_alloc ignore] to_string t = R3_vector.to_string t
@@ -28,12 +28,6 @@ let[@inline] [@zero_alloc] is_unit_length t =
   Float.( <= )
     (Float.abs (Float_u.to_float (R3_vector.norm2 t) -. 1.0))
     (5.0 *. Float.epsilon_float)
-;;
-
-let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) a b =
-  let max_error = Float_u.of_float max_error in
-  let angle = R3_vector.angle a b in
-  S1_angle.compare angle (S1_angle.of_radians max_error) <= 0
 ;;
 
 let[@inline] [@zero_alloc] ortho a =
@@ -103,6 +97,15 @@ let[@inline] [@zero_alloc] rotate p ~axis ~angle =
   let t2 = R3_vector.mul dy sin_a in
   let t3 = R3_vector.add t1 t2 in
   R3_vector.(R3_vector.normalize (R3_vector.add t3 center))
+;;
+
+let[@inline] [@zero_alloc] compare a b = R3_vector.compare a b
+let[@inline] [@zero_alloc] equal a b = R3_vector.equal a b
+
+let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) a b =
+  let max_error = Float_u.of_float max_error in
+  let angle = R3_vector.angle a b in
+  S1_angle.compare angle (S1_angle.of_radians max_error) <= 0
 ;;
 
 (* 3x3 matrix stored as three column vectors. *)

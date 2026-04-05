@@ -85,19 +85,17 @@ val of_center_chord_angle : S2_point.t -> S1_chord_angle.t -> t
 
 (** [height] is distance from center to the cutoff plane along [center]. Negative height
     gives an empty cap; [height >= 2] gives a full cap. *)
-val of_center_height : S2_point.t -> float -> t
-[@@zero_alloc ignore]
+val of_center_height : S2_point.t -> float# -> t
 
 (** [area] is surface area on the unit sphere (solid angle). Negative yields empty;
     [area >= 4 * pi] yields full. *)
 val of_center_area : S2_point.t -> float# -> t
-[@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
 val center : t -> S2_point.t
 val radius_chord : t -> S1_chord_angle.t
-val height : t -> float# [@@zero_alloc]
+val height : t -> float#
 
 (** Angular radius (may differ slightly from the angle passed to {!of_center_angle}). *)
 val radius_angle : t -> S1_angle.t
@@ -117,32 +115,23 @@ val rect_bound : t -> lat_lng_rect
 val is_valid : t -> bool
 val is_empty : t -> bool
 val is_full : t -> bool
-val equal : t -> t -> bool [@@zero_alloc ignore]
-
-(** Center angles and squared chord radii within [max_error] (radians on the sphere for
-    centers, absolute on [length2] for radii). *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
 
 (** {1 Set operations} *)
 
 val complement : t -> t [@@zero_alloc ignore]
 val contains_cap : t -> t -> bool [@@zero_alloc ignore]
 val intersects : t -> t -> bool [@@zero_alloc ignore]
-val interior_intersects : t -> t -> bool [@@zero_alloc ignore]
-val interior_contains_point : t -> S2_point.t -> bool [@@zero_alloc ignore]
+val interior_intersects : t -> t -> bool
+val interior_contains_point : t -> S2_point.t -> bool
 
 (** [p] must be unit length. *)
 val contains_point : t -> S2_point.t -> bool
-[@@zero_alloc ignore]
 
 (** Smallest cap containing [cap] and [p]. If [cap] is empty, center becomes [p]. *)
 val add_point : t -> S2_point.t -> t
-[@@zero_alloc ignore]
 
 (** Including the rounding bump on the chord sum. *)
 val add_cap : t -> t -> t
-[@@zero_alloc ignore]
 
 (** Expanding an empty cap yields empty. *)
 val expanded : t -> S1_angle.t -> Option.t
@@ -153,6 +142,15 @@ val expanded_exn : t -> S1_angle.t -> t
 
 (** Smallest cap enclosing both operands. *)
 val union : t -> t -> t [@@zero_alloc ignore]
+
+(** {1 Comparison} *)
+
+val equal : t -> t -> bool
+
+(** Center angles and squared chord radii within [max_error] (radians on the sphere for
+    centers, absolute on [length2] for radii). *)
+val approx_equal : ?max_error:float -> t -> t -> bool
+[@@zero_alloc ignore]
 
 (** {1 Encoding}
 

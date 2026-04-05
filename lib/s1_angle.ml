@@ -15,28 +15,10 @@ let[@zero_alloc ignore] to_string t = Float_u.to_string t
 let zero = #0.0
 let infinity = Float_u.infinity ()
 let[@inline] [@zero_alloc] of_radians r = r
-
-(* The conversion factor (pi / 180) is chosen so that Degrees(180) == Radians(pi)
-   exactly. *)
-let[@inline] [@zero_alloc] of_degrees d =
-  let open Float_u.O in
-  Float_u.of_float Float.pi / #180.0 * d
-;;
-
-let[@inline] [@zero_alloc] of_e5 e =
-  let open Float_u.O in
-  of_degrees (#1e-5 * Float_u.of_float (Float.of_int e))
-;;
-
-let[@inline] [@zero_alloc] of_e6 e =
-  let open Float_u.O in
-  of_degrees (#1e-6 * Float_u.of_float (Float.of_int e))
-;;
-
-let[@inline] [@zero_alloc] of_e7 e =
-  let open Float_u.O in
-  of_degrees (#1e-7 * Float_u.of_float (Float.of_int e))
-;;
+let[@inline] [@zero_alloc] of_degrees d = Float_u.O.(Float_u.pi () / #180.0 * d)
+let[@inline] [@zero_alloc] of_e5 e = of_degrees Float_u.O.(#1e-5 * Float_u.of_int e)
+let[@inline] [@zero_alloc] of_e6 e = of_degrees Float_u.O.(#1e-6 * Float_u.of_int e)
+let[@inline] [@zero_alloc] of_e7 e = of_degrees Float_u.O.(#1e-7 * Float_u.of_int e)
 
 (* [u] is taken modulo [2^32] then cast to signed int32, like C++ [static_cast<int32_t>(u)]. *)
 let[@inline] [@zero_alloc] of_unsigned_e6 (u : int) =
@@ -52,11 +34,7 @@ let[@inline] [@zero_alloc] of_unsigned_e7 (u : int) =
 ;;
 
 let[@inline] [@zero_alloc] radians t = t
-
-let[@inline] [@zero_alloc] degrees t =
-  let open Float_u.O in
-  #180.0 / Float_u.pi () * t
-;;
+let[@inline] [@zero_alloc] degrees t = Float_u.O.(#180.0 / Float_u.pi () * t)
 
 let[@inline] [@zero_alloc ignore] e5 t =
   Float_u.iround_nearest Float_u.O.(#1e5 * degrees t)
@@ -121,4 +99,4 @@ let[@inline] [@zero_alloc] normalized t =
 ;;
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare (radians a) (radians b)
-let[@inline] [@zero_alloc] equal a b = Float_u.O.( = ) (radians a) (radians b)
+let[@inline] [@zero_alloc] equal a b = Float_u.O.(radians a = radians b)

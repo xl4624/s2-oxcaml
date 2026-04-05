@@ -126,6 +126,7 @@ let[@inline] [@zero_alloc] equal a b =
   Float_u.O.(a.#x = b.#x && a.#y = b.#y && a.#z = b.#z)
 ;;
 
+(* TODO: to unbox this we can make this take a Packed_float_option instead *)
 let[@zero_alloc ignore] approx_equal ?(max_error = 1e-16) a b =
   let max_error = Float_u.of_float max_error in
   Float_u.abs (a.#x - b.#x) <= max_error

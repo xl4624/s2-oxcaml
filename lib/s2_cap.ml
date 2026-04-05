@@ -12,18 +12,6 @@ type t =
    }
 [@@deriving sexp_of]
 
-let empty =
-  #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
-   ; radius = S1_chord_angle.negative
-   }
-;;
-
-let full =
-  #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
-   ; radius = S1_chord_angle.straight
-   }
-;;
-
 module Option = struct
   type nonrec t = t
 
@@ -34,10 +22,10 @@ module Option = struct
      }
   ;;
 
-  let[@inline] is_none t = S1_chord_angle.Option.is_none t.#radius
-  let[@inline] is_some t = not (is_none t)
-  let[@inline] some v = v
-  let[@inline] value t ~default = if is_none t then default else t
+  let[@inline] [@zero_alloc] is_none t = S1_chord_angle.Option.is_none t.#radius
+  let[@inline] [@zero_alloc] is_some t = not (is_none t)
+  let[@inline] [@zero_alloc] some v = v
+  let[@inline] [@zero_alloc] value t ~default = if is_none t then default else t
 
   let value_exn t =
     if is_none t
@@ -61,9 +49,21 @@ module Option = struct
   ;;
 end
 
+let empty =
+  #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
+   ; radius = S1_chord_angle.negative
+   }
+;;
+
+let full =
+  #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
+   ; radius = S1_chord_angle.straight
+   }
+;;
+
 let[@inline] [@zero_alloc] of_point center = #{ center; radius = S1_chord_angle.zero }
 
-let of_center_angle center angle =
+let[@inline] [@zero_alloc] of_center_angle center angle =
   let open Float_u.O in
   let angle =
     if S1_angle.is_inf angle
@@ -75,18 +75,18 @@ let of_center_angle center angle =
   #{ center; radius = S1_chord_angle.of_angle angle }
 ;;
 
-let of_center_chord_angle center radius = #{ center; radius }
+let[@inline] [@zero_alloc] of_center_chord_angle center radius = #{ center; radius }
 
-let[@zero_alloc ignore] of_center_height center height =
-  #{ center; radius = S1_chord_angle.of_length2 (Float_u.of_float (2.0 *. height)) }
+let[@inline] [@zero_alloc] of_center_height center height =
+  #{ center; radius = S1_chord_angle.of_length2 Float_u.O.(#2.0 * height) }
 ;;
 
-let[@zero_alloc ignore] of_center_area center area =
+let[@inline] [@zero_alloc] of_center_area center area =
   #{ center; radius = S1_chord_angle.of_length2 Float_u.O.(area / Float_u.pi ()) }
 ;;
 
-let center t = t.#center
-let radius_chord t = t.#radius
+let[@inline] [@zero_alloc] center t = t.#center
+let[@inline] [@zero_alloc] radius_chord t = t.#radius
 let[@inline] [@zero_alloc] height t = Float_u.O.(#0.5 * S1_chord_angle.length2 t.#radius)
 let radius_angle t = S1_chord_angle.to_angle t.#radius
 
@@ -144,8 +144,7 @@ let[@inline] [@zero_alloc] intersects t other =
     S1_chord_angle.compare sum dist >= 0)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] interior_intersects t other =
+let[@inline] [@zero_alloc] interior_intersects t other =
   if Float_u.O.(S1_chord_angle.length2 t.#radius <= #0.0) || is_empty other
   then false
   else (
@@ -154,8 +153,7 @@ let[@zero_alloc ignore] interior_intersects t other =
     S1_chord_angle.compare sum dist > 0)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] contains_point t p =
+let[@inline] [@zero_alloc] contains_point t p =
   if is_empty t
   then false
   else if is_full t
@@ -165,8 +163,7 @@ let[@zero_alloc ignore] contains_point t p =
     S1_chord_angle.compare d t.#radius <= 0)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] interior_contains_point t p =
+let[@inline] [@zero_alloc] interior_contains_point t p =
   if is_full t
   then true
   else if is_empty t || Float_u.O.(S1_chord_angle.length2 t.#radius <= #0.0)
@@ -176,8 +173,7 @@ let[@zero_alloc ignore] interior_contains_point t p =
     S1_chord_angle.compare d t.#radius < 0)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] add_point t p =
+let[@inline] [@zero_alloc] add_point t p =
   if is_empty t
   then #{ center = p; radius = S1_chord_angle.zero }
   else (
@@ -187,8 +183,7 @@ let[@zero_alloc ignore] add_point t p =
     else t)
 ;;
 
-(* TODO: zero_alloc blocked on S2_point.chord_angle_between *)
-let[@zero_alloc ignore] add_cap t other =
+let[@inline] [@zero_alloc] add_cap t other =
   if is_empty t
   then other
   else if is_empty other
@@ -312,22 +307,21 @@ let[@zero_alloc ignore] rect_bound t =
     })
 ;;
 
-let[@zero_alloc ignore] equal t other =
+let[@inline] [@zero_alloc] equal t other =
   (S2_point.equal t.#center other.#center && S1_chord_angle.equal t.#radius other.#radius)
   || (is_empty t && is_empty other)
   || (is_full t && is_full other)
 ;;
 
 let approx_equal ?(max_error = 1e-14) t other =
-  let max_e = max_error in
   let r2 = S1_chord_angle.length2 t.#radius in
   let o2 = S1_chord_angle.length2 other.#radius in
   (S2_point.approx_equal ~max_error t.#center other.#center
-   && Float.( <= ) (Float.abs (Float_u.to_float Float_u.O.(r2 - o2))) max_e)
-  || (is_empty t && Float.( <= ) (Float_u.to_float o2) max_e)
-  || (is_empty other && Float.( <= ) (Float_u.to_float r2) max_e)
-  || (is_full t && Float.( >= ) (Float_u.to_float o2) (2.0 -. max_e))
-  || (is_full other && Float.( >= ) (Float_u.to_float r2) (2.0 -. max_e))
+   && Float.( <= ) (Float.abs (Float_u.to_float Float_u.O.(r2 - o2))) max_error)
+  || (is_empty t && Float.( <= ) (Float_u.to_float o2) max_error)
+  || (is_empty other && Float.( <= ) (Float_u.to_float r2) max_error)
+  || (is_full t && Float.( >= ) (Float_u.to_float o2) (2.0 -. max_error))
+  || (is_full other && Float.( >= ) (Float_u.to_float r2) (2.0 -. max_error))
 ;;
 
 let[@inline] set_le_f64_into buf off f =

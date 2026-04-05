@@ -102,17 +102,18 @@ let quickcheck_complement_complement () =
       assert (S2.S2_cap.approx_equal ~max_error:1e-14 cap cc))
 ;;
 
-(*TODO: verify this test *)
 let quickcheck_union_contains_both () =
   Base_quickcheck.Test.run_exn
     (module Cap_pair)
     ~config:qc_config
     ~f:(fun { Cap_pair.a; b } ->
       let u = S2.S2_cap.union a b in
-      let margin = S2.S1_angle.of_radians #1e-14 in
-      let u_expanded = S2.S2_cap.Option.value_exn (S2.S2_cap.expanded u margin) in
-      assert (S2.S2_cap.contains_cap u_expanded a);
-      assert (S2.S2_cap.contains_cap u_expanded b))
+      if not (S2.S2_cap.is_empty u)
+      then (
+        let margin = S2.S1_angle.of_radians #1e-14 in
+        let u_expanded = S2.S2_cap.expanded_exn u margin in
+        assert (S2.S2_cap.contains_cap u_expanded a);
+        assert (S2.S2_cap.contains_cap u_expanded b)))
 ;;
 
 let quickcheck_add_point_contains () =
@@ -357,7 +358,7 @@ let test_basic f () =
     (bool_of_json_exn (member "tiny_not_contains_outer" b))
     (not (S2.S2_cap.contains_point tiny outer));
   let hemi =
-    S2.S2_cap.of_center_height (S2.S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#1.0) 1.0
+    S2.S2_cap.of_center_height (S2.S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#1.0) #1.0
   in
   let hemi_c = S2.S2_cap.center hemi in
   (check bool)
@@ -511,7 +512,7 @@ let test_basic f () =
     (not
        (S2.S2_cap.contains_cap
           concave
-          (S2.S2_cap.of_center_height (S2.R3_vector.neg (S2.S2_cap.center concave)) 0.1)))
+          (S2.S2_cap.of_center_height (S2.R3_vector.neg (S2.S2_cap.center concave)) #0.1)))
 ;;
 
 let test_add_cap f () =
@@ -640,7 +641,7 @@ let test_centroid f () =
   let samples = to_list (member "samples" c) in
   List.iteri samples ~f:(fun i s ->
     let center = r3_vector_of_json (member "center" s) in
-    let height = float_of_json_exn (member "height" s) in
+    let height = float_u_of_json_exn (member "height" s) in
     let cap = S2.S2_cap.of_center_height center height in
     let centroid = S2.S2_cap.centroid cap in
     let expected = r3_vector_of_json (member "expected" s) in
@@ -674,7 +675,7 @@ let test_union f () =
       (S2.S1_angle.of_degrees #150.0)
   in
   let hemi =
-    S2.S2_cap.of_center_height (S2.S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0) 1.0
+    S2.S2_cap.of_center_height (S2.S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0) #1.0
   in
   let cases = to_list (member "union" f) in
   List.iter cases ~f:(fun c ->

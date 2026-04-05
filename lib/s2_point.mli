@@ -5,7 +5,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t = R3_vector.t [@@deriving compare, equal]
+type t = R3_vector.t
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
@@ -40,12 +40,6 @@ val to_r3 : t -> R3_vector.t
 (** [is_unit_length t] returns true if the point is within a small epsilon of unit length. *)
 val is_unit_length : t -> bool
 
-(** [approx_equal ?max_error a b] returns true if the angle between [a] and [b] is at most
-    [max_error]. *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
-(* TODO: optional float argument should probably be packed float option *)
-
 (** {1 Geometry} *)
 
 (** [ortho t] returns a unit-length vector orthogonal to [t]. Satisfies the property that
@@ -71,6 +65,17 @@ val chord_angle_between : t -> t -> S1_chord_angle.t
 (** [rotate p ~axis ~angle] rotates the point [p] about the given [axis] by the given
     [angle]. *)
 val rotate : t -> axis:t -> angle:S1_angle.t -> t
+
+(** {1 Comparison} *)
+
+val compare : t -> t -> int
+val equal : t -> t -> bool
+
+(** [approx_equal ?max_error a b] returns true if the angle between [a] and [b] is at most
+    [max_error]. *)
+val approx_equal : ?max_error:float -> t -> t -> bool
+[@@zero_alloc ignore]
+(* TODO: optional float argument should probably be packed float option *)
 
 (** {1 Frames} *)
 
