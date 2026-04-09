@@ -80,14 +80,14 @@ let check_rect_exact msg (expected : S2.R2_rect.t) actual =
     (msg ^ " x.hi")
     ~expected:(S2.R1_interval.hi ex)
     ~actual:(S2.R1_interval.hi ax);
-  check_float_exact
+  check_float_u_exact
     (msg ^ " y.lo")
-    ~expected:(Float_u.to_float (S2.R1_interval.lo ey))
-    ~actual:(Float_u.to_float (S2.R1_interval.lo ay));
-  check_float_exact
+    ~expected:(S2.R1_interval.lo ey)
+    ~actual:(S2.R1_interval.lo ay);
+  check_float_u_exact
     (msg ^ " y.hi")
-    ~expected:(Float_u.to_float (S2.R1_interval.hi ey))
-    ~actual:(Float_u.to_float (S2.R1_interval.hi ay))
+    ~expected:(S2.R1_interval.hi ey)
+    ~actual:(S2.R1_interval.hi ay)
 ;;
 
 let cell_of_token_json j =
@@ -161,8 +161,8 @@ let test_subdivide fixture () =
       3
   in
   let cell = S2.S2_cell.of_cell_id parent_id in
-  let children = S2.S2_cell.subdivide cell |> Option.value_exn in
-  List.iteri children ~f:(fun i child ->
+  for i = 0 to 3 do
+    let child = S2.S2_cell.child cell ~pos:i in
     let c = List.nth_exn cases i in
     let label = sprintf "child %d" i in
     (check string)
@@ -184,27 +184,28 @@ let test_subdivide fixture () =
     check_rect_exact
       (label ^ " uv")
       (r2_rect_of_json (member "uv" c))
-      (S2.S2_cell.bound_uv child))
+      (S2.S2_cell.bound_uv child)
+  done
 ;;
 
 let test_areas fixture () =
   let cases = to_list (member "areas" fixture) in
   List.iter cases ~f:(fun c ->
     let cell = cell_of_token_json (member "id" c) in
-    check_float
+    check_float_u
       ~eps:2e-15
       "exact_area"
-      ~expected:(float_of_json_exn (member "exact_area" c))
+      ~expected:(float_u_of_json_exn (member "exact_area" c))
       ~actual:(S2.S2_cell.exact_area cell);
-    check_float
+    check_float_u
       ~eps:2e-15
       "approx_area"
-      ~expected:(float_of_json_exn (member "approx_area" c))
+      ~expected:(float_u_of_json_exn (member "approx_area" c))
       ~actual:(S2.S2_cell.approx_area cell);
-    check_float
+    check_float_u
       ~eps:2e-15
       "avg_area"
-      ~expected:(float_of_json_exn (member "avg_area" c))
+      ~expected:(float_u_of_json_exn (member "avg_area" c))
       ~actual:(S2.S2_cell.average_area (S2.S2_cell.level cell)))
 ;;
 
@@ -248,10 +249,10 @@ let test_edge_coords fixture () =
     List.iteri
       (to_list (member "uv_coords" c))
       ~f:(fun k uv ->
-        check_float_exact
+        check_float_u_exact
           (sprintf "%s uv_coord_%d" label k)
-          ~expected:(float_of_json_exn uv)
-          ~actual:(Float_u.to_float (S2.S2_cell.uv_coord_of_edge cell k)));
+          ~expected:(float_u_of_json_exn uv)
+          ~actual:(S2.S2_cell.uv_coord_of_edge cell k));
     List.iteri
       (to_list (member "ij_coords" c))
       ~f:(fun k ij ->
@@ -277,16 +278,16 @@ let quickcheck_subdivide_matches_cell_id_hierarchy () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
     let cell_id = S2.S2_cell_id.of_int64 id in
     let cell = S2.S2_cell.of_cell_id cell_id in
-    match S2.S2_cell.subdivide cell with
-    | None -> assert (S2.S2_cell.is_leaf cell)
-    | Some children ->
-      assert (not (S2.S2_cell.is_leaf cell));
-      assert (List.length children = 4);
-      List.iteri children ~f:(fun k child ->
+    if S2.S2_cell.is_leaf cell
+    then ()
+    else
+      for k = 0 to 3 do
+        let child = S2.S2_cell.child cell ~pos:k in
         assert (
           S2.S2_cell_id.equal (S2.S2_cell.id child) (S2.S2_cell_id.child_exn cell_id k));
         assert (S2.S2_cell.contains_cell cell child);
-        assert (S2.S2_cell.intersects_cell cell child)))
+        assert (S2.S2_cell.intersects_cell cell child)
+      done)
 ;;
 
 let quickcheck_center_and_vertices_contained () =

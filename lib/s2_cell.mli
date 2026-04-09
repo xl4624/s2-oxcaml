@@ -5,7 +5,11 @@ open Core
     An S2Cell is an S2Region object that represents a cell. Unlike S2CellIds, it supports
     efficient containment and intersection tests. However, it is also a more expensive
     representation. *)
-type t [@@deriving sexp_of]
+type t :
+  bits64 & immediate & immediate & immediate & ((float64 & float64) & (float64 & float64))
+[@@deriving sexp_of]
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** {1 Constructors} *)
 
@@ -67,13 +71,13 @@ val center_raw : t -> S2_point.t
 (** {1 Measures} *)
 
 (** [exact_area] returns the area of this cell as accurately as possible. *)
-val exact_area : t -> float
+val exact_area : t -> float#
 
 (** [approx_area] returns the approximate area of this cell. *)
-val approx_area : t -> float
+val approx_area : t -> float#
 
 (** [average_area level] returns the average area of cells at the given level. *)
-val average_area : int -> float
+val average_area : int -> float#
 
 (** {1 Relations} *)
 
@@ -89,9 +93,9 @@ val intersects_cell : t -> t -> bool
 
 (** {1 Subdivide} *)
 
-(** [subdivide] returns the four direct children of this cell. Returns [None] if the cell
-    is a leaf. *)
-val subdivide : t -> t list option
+(** [child t ~pos] returns the child of [t] at the given position (0-3). Raises if [t] is
+    a leaf cell. *)
+val child : t -> pos:int -> t
 
 (** {1 Bounding} *)
 

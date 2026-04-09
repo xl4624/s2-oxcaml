@@ -99,12 +99,13 @@ let quickcheck_volume_nonneg () =
     (module Rect_gen)
     ~config:qc_config
     ~f:(fun { Rect_gen.rect } ->
+      let open Float_u in
       if not (S2.R2_rect.is_empty rect)
       then (
-        let dx = Float_u.to_float (S2.R1_interval.length (S2.R2_rect.x rect)) in
-        let dy = Float_u.to_float (S2.R1_interval.length (S2.R2_rect.y rect)) in
-        let vol = dx *. dy in
-        assert (Float.( >= ) vol 0.0)))
+        let dx = S2.R1_interval.length (S2.R2_rect.x rect) in
+        let dy = S2.R1_interval.length (S2.R2_rect.y rect) in
+        let vol = dx * dy in
+        assert (vol >= #0.0)))
 ;;
 
 let quickcheck_project_in_rect () =
