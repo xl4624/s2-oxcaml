@@ -165,11 +165,11 @@ let test_interpolate () =
     let t = float_of_json_exn (member "t" c) in
     let expected = point_of_json (member "actual" c) in
     let actual = S2.S2_edge_distances.interpolate a b t in
-    let angle =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance actual expected))
-    in
-    if Float.( > ) angle 3e-15
-    then Alcotest.fail (sprintf "interpolate[%d]: angle=%g > 3e-15" i angle))
+    let angle = S2.S1_angle.radians (S2.S2_point.distance actual expected) in
+    if Float_u.O.(angle > #3e-15)
+    then
+      Alcotest.fail
+        (sprintf "interpolate[%d]: angle=%s > 3e-15" i (Float_u.to_string angle)))
 ;;
 
 let test_interpolate_extrapolate () =
