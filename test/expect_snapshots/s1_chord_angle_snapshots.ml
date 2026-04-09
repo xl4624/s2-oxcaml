@@ -120,7 +120,7 @@ let%expect_test "option_value_exn_none" =
     ignore
       (S2.S1_chord_angle.Option.value_exn S2.S1_chord_angle.Option.none
        : S2.S1_chord_angle.t));
-  [%expect {| (raised "S1_chord_angle.Option.value_exn: none") |}]
+  [%expect {| (raised (Failure "t.Option.value_exn: none")) |}]
 ;;
 
 let%expect_test "option_match_optional_u_some" =

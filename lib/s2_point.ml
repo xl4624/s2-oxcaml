@@ -1,6 +1,6 @@
 open Core
 
-type t = R3_vector.t [@@deriving sexp_of]
+type t = R3_vector.t [@@deriving sexp_of, unboxed_option]
 
 let[@zero_alloc ignore] pp ppf t = R3_vector.pp ppf t
 let[@zero_alloc ignore] to_string t = R3_vector.to_string t

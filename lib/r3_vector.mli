@@ -4,7 +4,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t : float64 & float64 & float64
+type t : float64 & float64 & float64 [@@deriving unboxed_option { sentinel = true }]
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]

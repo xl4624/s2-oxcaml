@@ -4,7 +4,7 @@ type t =
   #{ x : Float_u.t
    ; y : Float_u.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 let[@zero_alloc ignore] pp ppf t =
   Format.fprintf ppf "(%s, %s)" (Float_u.to_string t.#x) (Float_u.to_string t.#y)
@@ -71,18 +71,7 @@ let[@inline] [@zero_alloc] normalize t =
 let[@inline] [@zero_alloc] equal a b = Float_u.O.(a.#x = b.#x && a.#y = b.#y)
 
 module Option = struct
-  type value = t
-  type t = value
-
-  let none = #{ x = Float_u.nan (); y = Float_u.nan () }
-
-  let[@inline] [@zero_alloc] some (v : value) =
-    if Float_u.is_nan v.#x || Float_u.is_nan v.#y then none else v
-  ;;
-
-  let[@inline] [@zero_alloc] is_none t = Float_u.is_nan t.#x || Float_u.is_nan t.#y
-  let[@inline] [@zero_alloc] is_some t = not (is_none t)
-  let[@inline] [@zero_alloc] unchecked_value t = t
+  include Option
 
   let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
     : Sexp.t
@@ -98,21 +87,4 @@ module Option = struct
         ]
       [@exclave_if_stack a]
   ;;
-
-  let[@inline] [@zero_alloc] value t ~default = if is_some t then t else default
-
-  let[@inline] [@zero_alloc] value_exn t =
-    if is_none t
-    then (
-      match raise_s [%message "R2_point.Option.value_exn: none"] with
-      | (_ : Nothing.t) -> .)
-    else t
-  ;;
-
-  module Optional_syntax = struct
-    module Optional_syntax = struct
-      let[@zero_alloc] is_none t = is_none t
-      let[@zero_alloc] unsafe_value t = unchecked_value t
-    end
-  end
 end

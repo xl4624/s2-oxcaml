@@ -17,6 +17,7 @@ depends: [
   "yojson"
   "base_quickcheck"
   "unboxed"
+  "ppx_uopt"
   "odoc" {with-doc}
 ]
 build: [

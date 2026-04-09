@@ -2,7 +2,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t = float#
+type t = float# [@@deriving unboxed_option { sentinel = true }]
 
 let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t : Sexp.t
   =
@@ -152,8 +152,7 @@ let[@inline] [@zero_alloc] compare a b = Float_u.compare a b
 let[@inline] [@zero_alloc] equal a b = Float_u.O.(a = b)
 
 module Option = struct
-  type value = t
-  type t = value
+  include Option
 
   let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
     : Sexp.t
@@ -162,27 +161,4 @@ module Option = struct
     then Sexp.Atom "None"
     else (sexp_of_t [@alloc a]) t [@exclave_if_stack a]
   ;;
-
-  let none = Float_u.nan ()
-  let some v = v
-  let is_none t = Float_u.is_nan t
-  let is_some t = not (Float_u.is_nan t)
-  let value t ~default = if is_none t then default else t
-
-  let value_exn t =
-    if is_none t
-    then (
-      match raise_s [%message "S1_chord_angle.Option.value_exn: none"] with
-      | (_ : Nothing.t) -> .)
-    else t
-  ;;
-
-  let unchecked_value t = t
-
-  module Optional_syntax = struct
-    module Optional_syntax = struct
-      let is_none t = is_none t
-      let unsafe_value t = unchecked_value t
-    end
-  end
 end

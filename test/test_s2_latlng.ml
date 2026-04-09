@@ -355,12 +355,11 @@ let test_negative_zeros fixture () =
            (match failwith "bad which" with
             | (_ : Nothing.t) -> .))
     in
-    check_float_u_exact (name ^ " value") ~expected:expected ~actual;
+    check_float_u_exact (name ^ " value") ~expected ~actual;
     check_bool
       (name ^ " not neg zero")
       ~expected:is_neg_zero
-      ~actual:
-        (actual = #0.0 && Float_u.ieee_negative actual))
+      ~actual:(actual = #0.0 && Float_u.ieee_negative actual))
 ;;
 
 let test_distance fixture () =

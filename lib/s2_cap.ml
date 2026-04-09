@@ -10,40 +10,10 @@ type t =
   #{ center : S2_point.t
    ; radius : S1_chord_angle.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 module Option = struct
-  type value = t
-  type nonrec t = t
-
-  let none =
-    #{ center =
-         S2_point.of_coords ~x:(Float_u.nan ()) ~y:(Float_u.nan ()) ~z:(Float_u.nan ())
-     ; radius = S1_chord_angle.Option.none
-     }
-  ;;
-
-  let[@inline] [@zero_alloc] is_none t = S1_chord_angle.Option.is_none t.#radius
-  let[@inline] [@zero_alloc] is_some t = not (is_none t)
-  let[@inline] [@zero_alloc] some v = v
-  let[@inline] [@zero_alloc] value t ~default = if is_none t then default else t
-
-  let value_exn t =
-    if is_none t
-    then (
-      match failwith "S2_cap.Option: value_exn called on none" with
-      | (_ : Nothing.t) -> .)
-    else t
-  ;;
-
-  let unchecked_value t = t
-
-  module Optional_syntax = struct
-    module Optional_syntax = struct
-      let is_none t = is_none t
-      let unsafe_value t = unchecked_value t
-    end
-  end
+  include Option
 
   let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
     : Sexp.t

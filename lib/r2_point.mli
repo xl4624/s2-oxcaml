@@ -11,7 +11,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t : float64 & float64 [@@deriving sexp_of]
+type t : float64 & float64 [@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
@@ -88,35 +88,8 @@ val equal : t -> t -> bool
     An optional point representation that avoids allocating an [option] wrapper. Uses a
     NaN sentinel to represent absence. *)
 module Option : sig
-  type value := t
-  type nonrec t = t
+  include module type of Option
 
   val%template sexp_of_t : t -> Sexp.t @ m
   [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
-
-  (** The absent value. Represented internally as NaN coordinates. *)
-  val none : t
-
-  (** [some v] wraps [v] as a present value. If either coordinate of [v] is NaN, the
-      result is [none] (NaN points are not representable as [some]). *)
-  val some : value -> t
-
-  val is_none : t -> bool
-  val is_some : t -> bool
-
-  (** [value t ~default] returns the wrapped point, or [default] if [t] is [none]. *)
-  val value : t -> default:value -> value
-
-  (** [value_exn t] returns the wrapped point, or raises if [t] is [none]. *)
-  val value_exn : t -> value
-
-  (** [unchecked_value t] returns the wrapped point without checking for [none]. *)
-  val unchecked_value : t -> value
-
-  module Optional_syntax : sig
-    module Optional_syntax : sig
-      val is_none : t -> bool
-      val unsafe_value : t -> value
-    end
-  end
 end

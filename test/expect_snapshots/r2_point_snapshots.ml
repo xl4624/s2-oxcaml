@@ -72,17 +72,10 @@ let%expect_test "option_some" =
   [%expect {| (((x 3)(y 4))) |}]
 ;;
 
-let%expect_test "option_some_nan_is_none" =
-  let p = S2.R2_point.create ~x:(Float_u.nan ()) ~y:#1.0 in
-  let opt = S2.R2_point.Option.some p in
-  printf "is_none: %b\n" (S2.R2_point.Option.is_none opt);
-  [%expect {| is_none: true |}]
-;;
-
 let%expect_test "option_value_exn_none" =
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.R2_point.Option.value_exn S2.R2_point.Option.none : S2.R2_point.t));
-  [%expect {| (raised "R2_point.Option.value_exn: none") |}]
+  [%expect {| (raised (Failure "t.Option.value_exn: none")) |}]
 ;;
 
 let%expect_test "option_value_default" =

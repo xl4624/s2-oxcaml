@@ -5,7 +5,7 @@ type t =
   #{ lo : Float_u.t
    ; hi : Float_u.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 let[@zero_alloc ignore] pp ppf t =
   Format.fprintf ppf "[%s, %s]" (Float_u.to_string t.#lo) (Float_u.to_string t.#hi)

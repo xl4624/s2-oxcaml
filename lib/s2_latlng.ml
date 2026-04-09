@@ -4,7 +4,7 @@ type t =
   #{ lat : Float_u.t
    ; lng : Float_u.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 let[@zero_alloc ignore] pp ppf t =
   let lat_val = Float_u.to_float t.#lat in
@@ -21,18 +21,7 @@ let[@zero_alloc ignore] to_string t =
 ;;
 
 module Option = struct
-  type value = t
-  type t = value
-
-  let none = #{ lat = Float_u.nan (); lng = Float_u.nan () }
-
-  let[@inline] [@zero_alloc] some (v : value) =
-    if Float_u.is_nan v.#lat || Float_u.is_nan v.#lng then none else v
-  ;;
-
-  let[@inline] [@zero_alloc] is_none t = Float_u.is_nan t.#lat || Float_u.is_nan t.#lng
-  let[@inline] [@zero_alloc] is_some t = not (is_none t)
-  let[@inline] [@zero_alloc] unchecked_value t = t
+  include Option
 
   let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
     : Sexp.t
@@ -48,23 +37,6 @@ module Option = struct
         ]
       [@exclave_if_stack a]
   ;;
-
-  let[@inline] [@zero_alloc] value t ~default = if is_some t then t else default
-
-  let[@inline] [@zero_alloc] value_exn t =
-    if is_none t
-    then (
-      match raise_s [%message "S2_latlng.Option.value_exn: none"] with
-      | (_ : Nothing.t) -> .)
-    else t
-  ;;
-
-  module Optional_syntax = struct
-    module Optional_syntax = struct
-      let[@zero_alloc] is_none t = is_none t
-      let[@zero_alloc] unsafe_value t = unchecked_value t
-    end
-  end
 end
 
 let[@inline] [@zero_alloc] create ~lat ~lng =

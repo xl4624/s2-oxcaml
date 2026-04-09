@@ -6,7 +6,7 @@ type t =
    ; y : Float_u.t
    ; z : Float_u.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 let[@zero_alloc ignore] pp ppf t =
   let x = Float_u.to_float t.#x in

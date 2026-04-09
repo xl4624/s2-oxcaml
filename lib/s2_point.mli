@@ -5,7 +5,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t = R3_vector.t
+type t = R3_vector.t [@@deriving unboxed_option]
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
