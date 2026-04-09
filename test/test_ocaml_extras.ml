@@ -259,18 +259,21 @@ let quickcheck_r2_dot_commutative () =
     ~f:(fun { R2_pair.a; b } ->
       let u = S2.R2_point.dot a b in
       let v = S2.R2_point.dot b a in
-      let scale = Float_u.(max #1.0 (max (abs u) (abs v))) |> Float_u.to_float in
-      assert (Float.( <= ) (Float.abs (Float_u.to_float Float_u.(u - v))) (1e-10 *. scale)))
+      let open Float_u.O in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs u) (Float_u.abs v)) in
+      assert (Float_u.abs (u - v) <= #1e-10 * scale))
 ;;
 
 let quickcheck_r2_ortho_perpendicular () =
   Base_quickcheck.Test.run_exn (module R2_vec) ~config:qc_config ~f:(fun { R2_vec.v } ->
     let d = S2.R2_point.dot v (S2.R2_point.ortho v) in
+    let open Float_u.O in
     let scale =
-      Float_u.(max #1.0 (max (abs (S2.R2_point.x v)) (abs (S2.R2_point.y v))))
-      |> Float_u.to_float
+      Float_u.max
+        #1.0
+        (Float_u.max (Float_u.abs (S2.R2_point.x v)) (Float_u.abs (S2.R2_point.y v)))
     in
-    assert (Float.( <= ) (Float.abs (Float_u.to_float d)) (1e-14 *. scale)))
+    assert (Float_u.abs d <= #1e-14 * scale))
 ;;
 
 let quickcheck_r2_norm2_mul () =
@@ -281,9 +284,9 @@ let quickcheck_r2_norm2_mul () =
       let ku = Float_u.of_float k in
       let lhs = S2.R2_point.norm2 (S2.R2_point.mul v ku) in
       let rhs = Float_u.(ku * ku * S2.R2_point.norm2 v) in
-      let scale = Float_u.(max (abs lhs) (abs rhs) |> max #1.0) |> Float_u.to_float in
-      assert (
-        Float.( <= ) (Float.abs (Float_u.to_float Float_u.(lhs - rhs))) (1e-10 *. scale)))
+      let open Float_u.O in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs lhs) (Float_u.abs rhs)) in
+      assert (Float_u.abs (lhs - rhs) <= #1e-10 * scale))
 ;;
 
 let quickcheck_r3_dot_commutative () =
@@ -291,10 +294,11 @@ let quickcheck_r3_dot_commutative () =
     (module R3_pair)
     ~config:qc_config
     ~f:(fun { R3_pair.a; b } ->
-      let u = Float_u.to_float (S2.R3_vector.dot a b) in
-      let v = Float_u.to_float (S2.R3_vector.dot b a) in
-      let scale = Float.max 1.0 (Float.max (Float.abs u) (Float.abs v)) in
-      assert (Float.( <= ) (Float.abs (u -. v)) (1e-10 *. scale)))
+      let u = S2.R3_vector.dot a b in
+      let v = S2.R3_vector.dot b a in
+      let open Float_u.O in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs u) (Float_u.abs v)) in
+      assert (Float_u.abs (u - v) <= #1e-10 * scale))
 ;;
 
 let quickcheck_r3_cross_antisymmetric () =

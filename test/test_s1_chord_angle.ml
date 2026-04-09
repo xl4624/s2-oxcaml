@@ -108,25 +108,27 @@ let quickcheck_successor_predecessor_inverse () =
 
 let quickcheck_of_angle_roundtrip () =
   Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
     let ca = Chord_angle_valid.to_chord t in
     let angle = S2.S1_chord_angle.to_angle ca in
     let ca2 = S2.S1_chord_angle.of_angle angle in
     (* Round-trip should be close *)
-    let d1 = Float_u.to_float (S2.S1_chord_angle.length2 ca) in
-    let d2 = Float_u.to_float (S2.S1_chord_angle.length2 ca2) in
-    let scale = Float.max 1.0 (Float.max (Float.abs d1) (Float.abs d2)) in
-    assert (Float.( <= ) (Float.abs (d1 -. d2)) (1e-13 *. scale)))
+    let d1 = S2.S1_chord_angle.length2 ca in
+    let d2 = S2.S1_chord_angle.length2 ca2 in
+    let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs d1) (Float_u.abs d2)) in
+    assert (Float_u.abs (d1 - d2) <= #1e-13 * scale))
 ;;
 
 let quickcheck_sin2_cos2_identity () =
   Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
     let ca = Chord_angle_valid.to_chord t in
     if not (S2.S1_chord_angle.is_special ca)
     then (
-      let s = Float_u.to_float (S2.S1_chord_angle.sin ca) in
-      let c = Float_u.to_float (S2.S1_chord_angle.cos ca) in
-      let sum = (s *. s) +. (c *. c) in
-      assert (Float.( <= ) (Float.abs (sum -. 1.0)) 1e-14)))
+      let s = S2.S1_chord_angle.sin ca in
+      let c = S2.S1_chord_angle.cos ca in
+      let sum = (s * s) + (c * c) in
+      assert (Float_u.abs (sum - #1.0) <= #1e-14)))
 ;;
 
 let quickcheck_compare_consistent () =
@@ -138,9 +140,7 @@ let quickcheck_compare_consistent () =
       let cb = S2.S1_chord_angle.of_degrees b in
       let cmp = S2.S1_chord_angle.compare ca cb in
       let l2_cmp =
-        Float.compare
-          (Float_u.to_float (S2.S1_chord_angle.length2 ca))
-          (Float_u.to_float (S2.S1_chord_angle.length2 cb))
+        Float_u.compare (S2.S1_chord_angle.length2 ca) (S2.S1_chord_angle.length2 cb)
       in
       assert (Sign.equal (Sign.of_int cmp) (Sign.of_int l2_cmp)))
 ;;
@@ -321,15 +321,15 @@ let test_successor_predecessor fixture () =
 let test_successor_chain fixture () =
   let cases = to_list (member "successor_chain" fixture) in
   List.iter cases ~f:(fun c ->
-    let current = float_of_json_exn (member "length2" c) in
+    let current = float_u_of_json_exn (member "length2" c) in
     let angle =
-      if Float.( = ) current (-1.0)
+      if Float_u.equal current (-#1.0)
       then S2.S1_chord_angle.negative
-      else S2.S1_chord_angle.of_length2 (Float_u.of_float current)
+      else S2.S1_chord_angle.of_length2 current
     in
     let result = S2.S1_chord_angle.successor angle in
     check_float_u_exact
-      (sprintf "successor chain %.17g" current)
+      (sprintf "successor chain %s" (Float_u.to_string current))
       ~expected:(float_u_of_json_exn (member "successor_length2" c))
       ~actual:(S2.S1_chord_angle.length2 result))
 ;;
@@ -378,8 +378,9 @@ let test_arithmetic fixture () =
 let test_trigonometry fixture () =
   let cases = to_list (member "trigonometry" fixture) in
   List.iter cases ~f:(fun c ->
-    let angle = S2.S1_chord_angle.of_radians (float_of_json_exn (member "radians" c)) in
-    let label = sprintf "trig(%g)" (float_of_json_exn (member "radians" c)) in
+    let rad = float_of_json_exn (member "radians" c) in
+    let angle = S2.S1_chord_angle.of_radians rad in
+    let label = sprintf "trig(%g)" rad in
     check_float_u
       (label ^ " sin")
       ~expected:(float_u_of_json_exn (member "sin" c))
@@ -394,13 +395,13 @@ let test_trigonometry fixture () =
       ~actual:(S2.S1_chord_angle.cos angle);
     let expected_tan =
       match member "tan" c with
-      | `Null -> Float.infinity
-      | j -> float_of_json_exn j
+      | `Null -> Float_u.infinity ()
+      | j -> float_u_of_json_exn j
     in
-    check_float
+    check_float_u
       (label ^ " atan(tan)")
-      ~expected:(Float.atan expected_tan)
-      ~actual:(Float.atan (Float_u.to_float (S2.S1_chord_angle.tan angle))))
+      ~expected:(Float_u.atan expected_tan)
+      ~actual:(Float_u.atan (S2.S1_chord_angle.tan angle)))
 ;;
 
 let test_plus_error fixture () =
@@ -425,16 +426,13 @@ let test_error_bounds fixture () =
   let cases = to_list (member "error_bounds" fixture) in
   List.iter cases ~f:(fun c ->
     let angle = S2.S1_chord_angle.of_length2 (float_u_of_json_exn (member "length2" c)) in
+    let l2_label = Float_u.to_string (S2.S1_chord_angle.length2 angle) in
     check_float_u
-      (sprintf
-         "error_bounds length2=%g point"
-         (Float_u.to_float (S2.S1_chord_angle.length2 angle)))
+      (sprintf "error_bounds length2=%s point" l2_label)
       ~expected:(float_u_of_json_exn (member "max_point_error" c))
       ~actual:(S2.S1_chord_angle.max_point_error angle);
     check_float_u
-      (sprintf
-         "error_bounds length2=%g angle"
-         (Float_u.to_float (S2.S1_chord_angle.length2 angle)))
+      (sprintf "error_bounds length2=%s angle" l2_label)
       ~expected:(float_u_of_json_exn (member "max_angle_error" c))
       ~actual:(S2.S1_chord_angle.max_angle_error angle))
 ;;

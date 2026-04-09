@@ -161,22 +161,22 @@ let check_lat_lng_rect msg (expected_r : Yojson.Safe.t) (actual : S2.S2_cap.lat_
   let lng_j = member "lng" expected_r in
   let exp_lat = r1_interval_of_json lat_j in
   let exp_lng = s1_interval_of_json lng_j in
-  check_float
+  check_float_u
     (msg ^ " lat lo")
-    ~expected:(Float_u.to_float (S2.R1_interval.lo exp_lat))
-    ~actual:(Float_u.to_float (S2.R1_interval.lo actual.lat));
-  check_float
+    ~expected:(S2.R1_interval.lo exp_lat)
+    ~actual:(S2.R1_interval.lo actual.lat);
+  check_float_u
     (msg ^ " lat hi")
-    ~expected:(Float_u.to_float (S2.R1_interval.hi exp_lat))
-    ~actual:(Float_u.to_float (S2.R1_interval.hi actual.lat));
-  check_float
+    ~expected:(S2.R1_interval.hi exp_lat)
+    ~actual:(S2.R1_interval.hi actual.lat);
+  check_float_u
     (msg ^ " lng lo")
-    ~expected:(Float_u.to_float (S2.S1_interval.lo exp_lng))
-    ~actual:(Float_u.to_float (S2.S1_interval.lo actual.lng));
-  check_float
+    ~expected:(S2.S1_interval.lo exp_lng)
+    ~actual:(S2.S1_interval.lo actual.lng);
+  check_float_u
     (msg ^ " lng hi")
-    ~expected:(Float_u.to_float (S2.S1_interval.hi exp_lng))
-    ~actual:(Float_u.to_float (S2.S1_interval.hi actual.lng));
+    ~expected:(S2.S1_interval.hi exp_lng)
+    ~actual:(S2.S1_interval.hi actual.lng);
   check_bool
     (msg ^ " lat_empty")
     ~expected:(bool_of_json_exn (member "lat_empty" expected_r))
@@ -217,11 +217,10 @@ let test_basic f () =
     "full_height"
     ~expected:(float_u_of_json_exn (member "full_height" b))
     ~actual:(S2.S2_cap.height S2.S2_cap.full);
-  check_float
+  check_float_u
     "full_radius_deg"
-    ~expected:(float_of_json_exn (member "full_radius_deg" b))
-    ~actual:
-      (Float_u.to_float (S2.S1_angle.degrees (S2.S2_cap.radius_angle S2.S2_cap.full)));
+    ~expected:(float_u_of_json_exn (member "full_radius_deg" b))
+    ~actual:(S2.S1_angle.degrees (S2.S2_cap.radius_angle S2.S2_cap.full));
   (check bool)
     "neg_angle_empty"
     (bool_of_json_exn (member "neg_angle_empty" b))
@@ -299,10 +298,10 @@ let test_basic f () =
     "xaxis_not_contains_near"
     (bool_of_json_exn (member "xaxis_not_contains_near" b))
     (S2.S2_cap.contains_point xaxis near);
-  check_float
+  check_float_u
     "xaxis_radius_rad"
-    ~expected:(float_of_json_exn (member "xaxis_radius_rad" b))
-    ~actual:(Float_u.to_float (S2.S1_angle.radians (S2.S2_cap.radius_angle xaxis)));
+    ~expected:(float_u_of_json_exn (member "xaxis_radius_rad" b))
+    ~actual:(S2.S1_angle.radians (S2.S2_cap.radius_angle xaxis));
   (* Golden = C++ [yaxis.Contains(xaxis.center())]. *)
   (check bool)
     "yaxis_not_contains_xcenter"
@@ -634,10 +633,10 @@ let test_centroid f () =
     "empty_centroid"
     ~expected:(r3_vector_of_json (member "empty_centroid" c))
     ~actual:(S2.S2_cap.centroid S2.S2_cap.empty);
-  check_float
+  check_float_u
     "full_centroid_norm"
-    ~expected:(float_of_json_exn (member "full_centroid_norm" c))
-    ~actual:(Float_u.to_float (S2.R3_vector.norm (S2.S2_cap.centroid S2.S2_cap.full)));
+    ~expected:(float_u_of_json_exn (member "full_centroid_norm" c))
+    ~actual:(S2.R3_vector.norm (S2.S2_cap.centroid S2.S2_cap.full));
   let samples = to_list (member "samples" c) in
   List.iteri samples ~f:(fun i s ->
     let center = r3_vector_of_json (member "center" s) in
@@ -729,18 +728,18 @@ let test_union f () =
         "not_intersects"
         ~expected:(bool_of_json_exn (member "not_intersects" c))
         ~actual:(not (S2.S2_cap.intersects d0 a0));
-      check_float
+      check_float_u
         "lat_deg"
-        ~expected:(float_of_json_exn (member "lat_deg" c))
-        ~actual:(Float_u.to_float (S2.S1_angle.degrees (S2.S2_latlng.lat ll)));
-      check_float
+        ~expected:(float_u_of_json_exn (member "lat_deg" c))
+        ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lat ll));
+      check_float_u
         "lng_deg"
-        ~expected:(float_of_json_exn (member "lng_deg" c))
-        ~actual:(Float_u.to_float (S2.S1_angle.degrees (S2.S2_latlng.lng ll)));
-      check_float
+        ~expected:(float_u_of_json_exn (member "lng_deg" c))
+        ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lng ll));
+      check_float_u
         "radius_deg"
-        ~expected:(float_of_json_exn (member "radius_deg" c))
-        ~actual:(Float_u.to_float (S2.S1_angle.degrees (S2.S2_cap.radius_angle u)))
+        ~expected:(float_u_of_json_exn (member "radius_deg" c))
+        ~actual:(S2.S1_angle.degrees (S2.S2_cap.radius_angle u))
     | "overlap" ->
       let u = S2.S2_cap.union a0 e0 in
       let ll = S2.S2_latlng.of_point (S2.S2_cap.center u) in
@@ -748,18 +747,18 @@ let test_union f () =
         "intersects"
         ~expected:(bool_of_json_exn (member "intersects" c))
         ~actual:(S2.S2_cap.intersects e0 a0);
-      check_float
+      check_float_u
         "lat_deg"
-        ~expected:(float_of_json_exn (member "lat_deg" c))
-        ~actual:(Float_u.to_float (S2.S1_angle.degrees (S2.S2_latlng.lat ll)));
-      check_float
+        ~expected:(float_u_of_json_exn (member "lat_deg" c))
+        ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lat ll));
+      check_float_u
         "lng_deg"
-        ~expected:(float_of_json_exn (member "lng_deg" c))
-        ~actual:(Float_u.to_float (S2.S1_angle.degrees (S2.S2_latlng.lng ll)));
-      check_float
+        ~expected:(float_u_of_json_exn (member "lng_deg" c))
+        ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lng ll));
+      check_float_u
         "radius_deg"
-        ~expected:(float_of_json_exn (member "radius_deg" c))
-        ~actual:(Float_u.to_float (S2.S1_angle.degrees (S2.S2_cap.radius_angle u)))
+        ~expected:(float_u_of_json_exn (member "radius_deg" c))
+        ~actual:(S2.S1_angle.degrees (S2.S2_cap.radius_angle u))
     | "two_large" ->
       check_bool
         "is_full"

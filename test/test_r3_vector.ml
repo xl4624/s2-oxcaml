@@ -62,10 +62,11 @@ let quickcheck_dot_commutative () =
     (module R3_pair)
     ~config:qc_config
     ~f:(fun { R3_pair.a; b } ->
-      let u = Float_u.to_float (S2.R3_vector.dot a b) in
-      let v = Float_u.to_float (S2.R3_vector.dot b a) in
-      let scale = Float.max 1.0 (Float.max (Float.abs u) (Float.abs v)) in
-      assert (Float.( <= ) (Float.abs (u -. v)) (1e-10 *. scale)))
+      let open Float_u.O in
+      let u = S2.R3_vector.dot a b in
+      let v = S2.R3_vector.dot b a in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs u) (Float_u.abs v)) in
+      assert (Float_u.abs (u - v) <= #1e-10 * scale))
 ;;
 
 let quickcheck_cross_antisymmetric () =
@@ -117,13 +118,11 @@ let quickcheck_fabs_nonneg () =
     (module R3_vec)
     ~config:qc_config
     ~f:(fun { R3_vec.v = p } ->
+      let open Float_u.O in
       let f = S2.R3_vector.abs p in
-      let x = Float_u.to_float (S2.R3_vector.x f) in
-      let y = Float_u.to_float (S2.R3_vector.y f) in
-      let z = Float_u.to_float (S2.R3_vector.z f) in
-      assert (Float.( >= ) x 0.0);
-      assert (Float.( >= ) y 0.0);
-      assert (Float.( >= ) z 0.0))
+      assert (S2.R3_vector.x f >= #0.0);
+      assert (S2.R3_vector.y f >= #0.0);
+      assert (S2.R3_vector.z f >= #0.0))
 ;;
 
 let test_constructors fixture () =

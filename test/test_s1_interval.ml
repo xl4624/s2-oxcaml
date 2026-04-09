@@ -99,7 +99,7 @@ let quickcheck_add_point_contains () =
     (module S1_interval_gen)
     ~config:qc_config
     ~f:(fun { S1_interval_gen.interval } ->
-      let p = Float_u.of_float 1.23 in
+      let p = #1.23 in
       let added = S2.S1_interval.add_point interval p in
       assert (S2.S1_interval.contains added p))
 ;;
@@ -111,7 +111,7 @@ let quickcheck_expanded_contains () =
     ~f:(fun { S1_interval_gen.interval } ->
       if not (S2.S1_interval.is_empty interval)
       then (
-        let margin = Float_u.of_float 0.5 in
+        let margin = #0.5 in
         let expanded = S2.S1_interval.expanded interval margin in
         assert (S2.S1_interval.contains_interval expanded interval)))
 ;;
@@ -121,8 +121,7 @@ let quickcheck_length_nonneg () =
     (module S1_interval_gen)
     ~config:qc_config
     ~f:(fun { S1_interval_gen.interval } ->
-      let len = Float_u.to_float (S2.S1_interval.length interval) in
-      assert (Float.( >= ) len 0.0))
+      assert (Float_u.O.(S2.S1_interval.length interval >= #0.0)))
 ;;
 
 let quickcheck_equal_reflexive () =
@@ -140,7 +139,7 @@ let quickcheck_project_in_range () =
     ~f:(fun { S1_interval_gen.interval } ->
       if not (S2.S1_interval.is_empty interval)
       then (
-        let p = Float_u.of_float 2.34 in
+        let p = #2.34 in
         let proj = S2.S1_interval.project interval p in
         assert (S2.S1_interval.contains interval proj)))
 ;;
@@ -267,7 +266,7 @@ let test_contains_point fixture () =
     let name = string_of_json_exn (member "name" c) in
     let i = s1_interval_of_json (member "interval" c) in
     let p = float_u_of_json_exn (member "p" c) in
-    let label = sprintf "%s contains %g" name (Float_u.to_float p) in
+    let label = sprintf "%s contains %s" name (Float_u.to_string p) in
     (check bool)
       label
       (bool_of_json_exn (member "contains" c))
@@ -416,7 +415,7 @@ let test_is_valid_point fixture () =
   List.iter cases ~f:(fun c ->
     let p = float_u_of_json_exn (member "p" c) in
     (check bool)
-      (sprintf "is_valid_point %g" (Float_u.to_float p))
+      (sprintf "is_valid_point %s" (Float_u.to_string p))
       (bool_of_json_exn (member "valid" c))
       (S2.S1_interval.is_valid_point p))
 ;;

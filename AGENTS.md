@@ -200,12 +200,24 @@ does not unify with unboxed product layouts like `float64 & float64`. Use the
 - Negative: `-#1.0` (not `#(-1.0)`)
 - Zero: `#0.0`
 
+### Unboxed constants
+
+Unboxed constants are exposed as `unit -> float#` functions, not plain values.
+Call them with `()`:
+
+- `Float_u.infinity ()`, `Float_u.neg_infinity ()`, `Float_u.nan ()`
+- `Float_u.pi ()`, `Float_u.max_float ()`, `Float_u.min_float ()`
+- `Float_u.epsilon ()`, etc.
+
 ### Boxing conversions
 
 - `float` to `float#`: `Float_u.of_float x`
 - `float#` to `float`: `Float_u.to_float x`
 - Unboxed types cannot appear in tuples; use boxed records or unboxed records
   (`#{ ... }`) instead.
+- When a function has several `float#` operations, use `let open Float_u.O in`
+  to get infix operators (`+`, `-`, `*`, `/`, `<=`, `>=`, etc.) instead of
+  writing `Float_u.( - )`, `Float_u.( <= )`, and so on.
 
 ## Naming And Style
 

@@ -74,7 +74,7 @@ let quickcheck_add_point_contains () =
     (module Rect_gen)
     ~config:qc_config
     ~f:(fun { Rect_gen.rect } ->
-      let p = S2.R2_point.create ~x:(Float_u.of_float 1.23) ~y:(Float_u.of_float 4.56) in
+      let p = S2.R2_point.create ~x:#1.23 ~y:#4.56 in
       let added = S2.R2_rect.add_point rect p in
       assert (S2.R2_rect.contains_point added p))
 ;;
@@ -86,11 +86,7 @@ let quickcheck_expanded_contains () =
     ~f:(fun { Rect_gen.rect } ->
       if not (S2.R2_rect.is_empty rect)
       then (
-        let expanded =
-          S2.R2_rect.expanded
-            rect
-            (S2.R2_point.create ~x:(Float_u.of_float 0.5) ~y:(Float_u.of_float 0.5))
-        in
+        let expanded = S2.R2_rect.expanded rect (S2.R2_point.create ~x:#0.5 ~y:#0.5) in
         assert (S2.R2_rect.contains_rect expanded rect)))
 ;;
 
@@ -99,7 +95,7 @@ let quickcheck_volume_nonneg () =
     (module Rect_gen)
     ~config:qc_config
     ~f:(fun { Rect_gen.rect } ->
-      let open Float_u in
+      let open Float_u.O in
       if not (S2.R2_rect.is_empty rect)
       then (
         let dx = S2.R1_interval.length (S2.R2_rect.x rect) in
@@ -115,9 +111,7 @@ let quickcheck_project_in_rect () =
     ~f:(fun { Rect_gen.rect } ->
       if not (S2.R2_rect.is_empty rect)
       then (
-        let p =
-          S2.R2_point.create ~x:(Float_u.of_float 7.89) ~y:(Float_u.of_float 0.12)
-        in
+        let p = S2.R2_point.create ~x:#7.89 ~y:#0.12 in
         let proj = S2.R2_rect.project rect p in
         assert (S2.R2_rect.contains_point rect proj)))
 ;;

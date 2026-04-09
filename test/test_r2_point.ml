@@ -102,18 +102,19 @@ let quickcheck_dot_commutative () =
     ~f:(fun { R2_pair.a; b } ->
       let u = S2.R2_point.dot a b in
       let v = S2.R2_point.dot b a in
-      let scale = Float_u.(max #1.0 (max (abs u) (abs v))) |> Float_u.to_float in
-      assert (Float.( <= ) (Float.abs (Float_u.to_float Float_u.(u - v))) (1e-10 *. scale)))
+      let open Float_u.O in
+      let scale = Float_u.(max #1.0 (max (abs u) (abs v))) in
+      assert (Float_u.abs (u - v) <= #1e-10 * scale))
 ;;
 
 let quickcheck_ortho_perpendicular () =
   Base_quickcheck.Test.run_exn (module R2_vec) ~config:qc_config ~f:(fun { R2_vec.v } ->
     let d = S2.R2_point.dot v (S2.R2_point.ortho v) in
+    let open Float_u.O in
     let scale =
       Float_u.(max #1.0 (max (abs (S2.R2_point.x v)) (abs (S2.R2_point.y v))))
-      |> Float_u.to_float
     in
-    assert (Float.( <= ) (Float.abs (Float_u.to_float d)) (1e-14 *. scale)))
+    assert (Float_u.abs d <= #1e-14 * scale))
 ;;
 
 let quickcheck_norm2_mul () =
@@ -124,9 +125,9 @@ let quickcheck_norm2_mul () =
       let ku = Float_u.of_float k in
       let lhs = S2.R2_point.norm2 (S2.R2_point.mul v ku) in
       let rhs = Float_u.(ku * ku * S2.R2_point.norm2 v) in
-      let scale = Float_u.(max (abs lhs) (abs rhs) |> max #1.0) |> Float_u.to_float in
-      assert (
-        Float.( <= ) (Float.abs (Float_u.to_float Float_u.(lhs - rhs))) (1e-10 *. scale)))
+      let open Float_u.O in
+      let scale = Float_u.(max (abs lhs) (abs rhs) |> max #1.0) in
+      assert (Float_u.abs (lhs - rhs) <= #1e-10 * scale))
 ;;
 
 let quickcheck_neg_involution () =
@@ -152,9 +153,7 @@ let quickcheck_norm_nonneg () =
   Base_quickcheck.Test.run_exn
     (module R2_vec)
     ~config:qc_config
-    ~f:(fun { R2_vec.v = p } ->
-      let norm = Float_u.to_float (S2.R2_point.norm p) in
-      assert (Float.( >= ) norm 0.0))
+    ~f:(fun { R2_vec.v = p } -> assert (Float_u.O.(S2.R2_point.norm p >= #0.0)))
 ;;
 
 let quickcheck_normalize_unit_or_zero () =
@@ -165,9 +164,9 @@ let quickcheck_normalize_unit_or_zero () =
       let n = S2.R2_point.normalize p in
       if S2.R2_point.equal p S2.R2_point.zero
       then assert (S2.R2_point.equal n S2.R2_point.zero)
-      else (
-        let norm = Float_u.to_float (S2.R2_point.norm n) in
-        assert (Float.( <= ) (Float.abs (norm -. 1.0)) 1e-15)))
+      else
+        let open Float_u.O in
+        assert (Float_u.abs (S2.R2_point.norm n - #1.0) <= #1e-15))
 ;;
 
 let quickcheck_cross_antisymmetric () =
@@ -175,9 +174,8 @@ let quickcheck_cross_antisymmetric () =
     (module R2_pair)
     ~config:qc_config
     ~f:(fun { R2_pair.a; b } ->
-      let cross_ab = Float_u.to_float (S2.R2_point.cross a b) in
-      let cross_ba = Float_u.to_float (S2.R2_point.cross b a) in
-      assert (Float.( <= ) (Float.abs (cross_ab +. cross_ba)) 1e-15))
+      let open Float_u.O in
+      assert (Float_u.abs (S2.R2_point.cross a b + S2.R2_point.cross b a) <= #1e-15))
 ;;
 
 let quickcheck_fabs_nonneg () =
@@ -186,10 +184,9 @@ let quickcheck_fabs_nonneg () =
     ~config:qc_config
     ~f:(fun { R2_vec.v = p } ->
       let f = S2.R2_point.fabs p in
-      let x = Float_u.to_float (S2.R2_point.x f) in
-      let y = Float_u.to_float (S2.R2_point.y f) in
-      assert (Float.( >= ) x 0.0);
-      assert (Float.( >= ) y 0.0))
+      let open Float_u.O in
+      assert (S2.R2_point.x f >= #0.0);
+      assert (S2.R2_point.y f >= #0.0))
 ;;
 
 let test_constructors fixture () =

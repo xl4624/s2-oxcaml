@@ -17,9 +17,11 @@
    - Areas                                              - exact_area, approx_area,
       average_area against C++ golden data
 
+   -  TEST(S2Cell, ConsistentWithS2CellIdFromPoint)     - quickcheck: vertex ->
+      of_point -> contains_point roundtrip
+
    Deliberately omitted:
    - GetRectBound / GetCapBound / CellUnionBound / EncodeDecode
-   - randomized coverage from ConsistentWithS2CellIdFromPoint
    - distance to edge / distance to cell / max distance to edge / max distance to cell *)
 
 open Core
@@ -290,6 +292,20 @@ let quickcheck_subdivide_matches_cell_id_hierarchy () =
       done)
 ;;
 
+(* TEST(S2Cell, ConsistentWithS2CellIdFromPoint) - randomized version.
+   For random cells, verify that S2Cell(S2CellId(vertex)).Contains(vertex)
+   holds for all vertices. This tests containment of points that lie exactly
+   on cell boundaries. *)
+let quickcheck_consistent_with_cell_id_from_point () =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let cell = S2.S2_cell.of_cell_id (S2.S2_cell_id.of_int64 id) in
+    for k = 0 to 3 do
+      let v = S2.S2_cell.vertex cell k in
+      let cell_from_v = S2.S2_cell.of_point v in
+      assert (S2.S2_cell.contains_point cell_from_v v)
+    done)
+;;
+
 let quickcheck_center_and_vertices_contained () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
     let cell = S2.S2_cell.of_cell_id (S2.S2_cell_id.of_int64 id) in
@@ -325,6 +341,10 @@ let () =
             "subdivide_matches_cell_id_hierarchy"
             `Quick
             quickcheck_subdivide_matches_cell_id_hierarchy
+        ; test_case
+            "consistent_with_cell_id_from_point"
+            `Quick
+            quickcheck_consistent_with_cell_id_from_point
         ; test_case
             "center_and_vertices_contained"
             `Quick

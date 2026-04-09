@@ -84,8 +84,7 @@ let quickcheck_distance_nonneg () =
     (module S2_point_pair)
     ~config:qc_config
     ~f:(fun { S2_point_pair.a; b } ->
-      let d = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance a b)) in
-      assert (Float.( >= ) d 0.0))
+      assert (Float_u.O.(S2.S1_angle.radians (S2.S2_point.distance a b) >= #0.0)))
 ;;
 
 let quickcheck_distance_symmetric () =
@@ -93,9 +92,9 @@ let quickcheck_distance_symmetric () =
     (module S2_point_pair)
     ~config:qc_config
     ~f:(fun { S2_point_pair.a; b } ->
-      let d1 = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance a b)) in
-      let d2 = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance b a)) in
-      assert (Float.( <= ) (Float.abs (d1 -. d2)) 1e-15))
+      let d1 = S2.S1_angle.radians (S2.S2_point.distance a b) in
+      let d2 = S2.S1_angle.radians (S2.S2_point.distance b a) in
+      assert (Float_u.O.(Float_u.abs (d1 - d2) <= #1e-15)))
 ;;
 
 let quickcheck_distance_self_zero () =
@@ -103,8 +102,8 @@ let quickcheck_distance_self_zero () =
     (module S2_point_gen)
     ~config:qc_config
     ~f:(fun { S2_point_gen.p } ->
-      let d = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance p p)) in
-      assert (Float.( <= ) (Float.abs d) 1e-15))
+      let d = S2.S1_angle.radians (S2.S2_point.distance p p) in
+      assert (Float_u.O.(Float_u.abs d <= #1e-15)))
 ;;
 
 let quickcheck_ortho_perpendicular () =
@@ -113,8 +112,8 @@ let quickcheck_ortho_perpendicular () =
     ~config:qc_config
     ~f:(fun { S2_point_gen.p } ->
       let o = S2.S2_point.ortho p in
-      let dot = Float_u.to_float (S2.R3_vector.dot p o) in
-      assert (Float.( <= ) (Float.abs dot) 1e-14))
+      let dot = S2.R3_vector.dot p o in
+      assert (Float_u.O.(Float_u.abs dot <= #1e-14)))
 ;;
 
 let quickcheck_ortho_unit () =
@@ -194,10 +193,10 @@ let test_ortho fixture () =
     let expected = point_of_json (member "ortho" c) in
     let result = S2.S2_point.ortho a in
     check_point (name ^ " ortho") expected result;
-    check_float
+    check_float_u
       (name ^ " dot")
-      ~expected:(float_of_json_exn (member "dot" c))
-      ~actual:(Float_u.to_float (S2.R3_vector.dot a result));
+      ~expected:(float_u_of_json_exn (member "dot" c))
+      ~actual:(S2.R3_vector.dot a result);
     Alcotest.(check bool)
       (name ^ " unit")
       (bool_of_json_exn (member "is_unit" c))
@@ -285,11 +284,10 @@ let test_distance fixture () =
     let name = string_of_json_exn (member "name" c) in
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let expected = float_of_json_exn (member "angle_radians" c) in
-    check_float
+    check_float_u
       (name ^ " distance")
-      ~expected
-      ~actual:(Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance a b))))
+      ~expected:(float_u_of_json_exn (member "angle_radians" c))
+      ~actual:(S2.S1_angle.radians (S2.S2_point.distance a b)))
 ;;
 
 let test_stable_angle fixture () =
@@ -298,11 +296,10 @@ let test_stable_angle fixture () =
     let name = string_of_json_exn (member "name" c) in
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let expected = float_of_json_exn (member "angle_radians" c) in
-    check_float
+    check_float_u
       (name ^ " stable_angle")
-      ~expected
-      ~actual:(Float_u.to_float (S2.S1_angle.radians (S2.S2_point.stable_angle a b))))
+      ~expected:(float_u_of_json_exn (member "angle_radians" c))
+      ~actual:(S2.S1_angle.radians (S2.S2_point.stable_angle a b)))
 ;;
 
 let test_chord_angle_between fixture () =
@@ -327,10 +324,10 @@ let test_from_coords fixture () =
     let result = S2.S2_point.of_coords ~x ~y ~z in
     check_point
       (sprintf
-         "of_coords(%g,%g,%g)"
-         (Float_u.to_float x)
-         (Float_u.to_float y)
-         (Float_u.to_float z))
+         "of_coords(%s,%s,%s)"
+         (Float_u.to_string x)
+         (Float_u.to_string y)
+         (Float_u.to_string z))
       expected
       result)
 ;;

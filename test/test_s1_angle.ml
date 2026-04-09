@@ -90,13 +90,13 @@ let quickcheck_abs_nonneg () =
   Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
     let a = S1_angle_only.to_angle t in
     let abs_a = S2.S1_angle.abs a in
-    assert (Float.( >= ) (Float_u.to_float (S2.S1_angle.radians abs_a)) 0.0))
+    assert (Float_u.( >= ) (S2.S1_angle.radians abs_a) #0.0))
 ;;
 
 let quickcheck_mul_identity () =
   Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
     let a = S1_angle_only.to_angle t in
-    let mul_a = S2.S1_angle.mul a (Float_u.of_float 1.0) in
+    let mul_a = S2.S1_angle.mul a #1.0 in
     assert (S2.S1_angle.equal mul_a a))
 ;;
 
@@ -105,26 +105,25 @@ let quickcheck_div_self_one () =
     (module S1_angle_only)
     ~config:qc_config
     ~f:(fun { S1_angle_only.radians = r } ->
+      let open Float_u.O in
       let a_rad = Float.abs r in
       if Float.( > ) a_rad 1e-10
       then (
-        let a = S2.S1_angle.of_radians (Float_u.of_float a_rad) in
-        let div_a = S2.S1_angle.div a (Float_u.of_float a_rad) in
-        let diff = Float.abs (Float_u.to_float (S2.S1_angle.radians div_a) -. 1.0) in
-        assert (Float.( <= ) diff 1e-14)))
+        let a_rad_u = Float_u.of_float a_rad in
+        let a = S2.S1_angle.of_radians a_rad_u in
+        let div_a = S2.S1_angle.div a a_rad_u in
+        let diff = Float_u.abs (S2.S1_angle.radians div_a - #1.0) in
+        assert (diff <= #1e-14)))
 ;;
 
 let quickcheck_degrees_radians_roundtrip () =
   Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
     let a = S1_angle_only.to_angle t in
     let deg = S2.S1_angle.degrees a in
     let back = S2.S1_angle.of_degrees deg in
-    let diff =
-      Float.abs
-        (Float_u.to_float (S2.S1_angle.radians a)
-         -. Float_u.to_float (S2.S1_angle.radians back))
-    in
-    assert (Float.( <= ) diff 1e-13))
+    let diff = Float_u.abs (S2.S1_angle.radians a - S2.S1_angle.radians back) in
+    assert (diff <= #1e-13))
 ;;
 
 let test_constructors fixture () =
@@ -233,11 +232,11 @@ let test_arithmetic fixture () =
 let test_normalized fixture () =
   let cases = to_list (member "normalized" fixture) in
   List.iter cases ~f:(fun c ->
-    let deg = float_of_json_exn (member "input_degrees" c) in
+    let deg = float_u_of_json_exn (member "input_degrees" c) in
     let expected_deg = float_u_of_json_exn (member "result_degrees" c) in
     let expected_rad = float_u_of_json_exn (member "result_radians" c) in
-    let result = S2.S1_angle.normalized (S2.S1_angle.of_degrees (Float_u.of_float deg)) in
-    let label = sprintf "normalized(%g)" deg in
+    let result = S2.S1_angle.normalized (S2.S1_angle.of_degrees deg) in
+    let label = sprintf "normalized(%s)" (Float_u.to_string deg) in
     check_float_u
       (label ^ " degrees")
       ~expected:expected_deg
@@ -251,9 +250,9 @@ let test_normalized fixture () =
 let test_trigonometry fixture () =
   let cases = to_list (member "trigonometry" fixture) in
   List.iter cases ~f:(fun c ->
-    let deg = float_of_json_exn (member "degrees" c) in
-    let angle = S2.S1_angle.of_degrees (Float_u.of_float deg) in
-    let label = sprintf "trig(%g)" deg in
+    let deg = float_u_of_json_exn (member "degrees" c) in
+    let angle = S2.S1_angle.of_degrees deg in
+    let label = sprintf "trig(%s)" (Float_u.to_string deg) in
     check_float_u_exact
       (label ^ " sin")
       ~expected:(float_u_of_json_exn (member "sin" c))
@@ -272,7 +271,7 @@ let test_degrees_vs_e6 fixture () =
   let cases = to_list (member "degrees_vs_e6" fixture) in
   List.iter cases ~f:(fun c ->
     let n = int_of_json_exn (member "n" c) in
-    let from_deg = S2.S1_angle.of_degrees (Float_u.of_float (Float.of_int n)) in
+    let from_deg = S2.S1_angle.of_degrees (Float_u.of_int n) in
     let from_e6 = S2.S1_angle.of_e6 (1000000 * n) in
     (check bool)
       (sprintf "deg(%d) == e6(%d)" n (1000000 * n))
@@ -284,7 +283,7 @@ let test_degrees_vs_e7 fixture () =
   let cases = to_list (member "degrees_vs_e7" fixture) in
   List.iter cases ~f:(fun c ->
     let n = int_of_json_exn (member "n" c) in
-    let from_deg = S2.S1_angle.of_degrees (Float_u.of_float (Float.of_int n)) in
+    let from_deg = S2.S1_angle.of_degrees (Float_u.of_int n) in
     let from_e7 = S2.S1_angle.of_e7 (10000000 * n) in
     (check bool)
       (sprintf "deg(%d) == e7(%d)" n (10000000 * n))
@@ -293,13 +292,12 @@ let test_degrees_vs_e7 fixture () =
 ;;
 
 let test_degrees_vs_radians fixture () =
+  let open Float_u.O in
   let cases = to_list (member "degrees_vs_radians" fixture) in
   List.iter cases ~f:(fun c ->
     let k = int_of_json_exn (member "k" c) in
-    let from_deg = S2.S1_angle.of_degrees (Float_u.of_float (45.0 *. Float.of_int k)) in
-    let from_rad =
-      S2.S1_angle.of_radians (Float_u.of_float (Float.of_int k *. Float.pi /. 4.0))
-    in
+    let from_deg = S2.S1_angle.of_degrees (#45.0 * Float_u.of_int k) in
+    let from_rad = S2.S1_angle.of_radians (Float_u.of_int k * Float_u.pi () / #4.0) in
     (check bool)
       (sprintf "deg(45*%d) == rad(%d*pi/4)" k k)
       (bool_of_json_exn (member "equal" c))
@@ -313,9 +311,9 @@ let test_degrees_vs_radians fixture () =
 let test_sin_cos fixture () =
   let cases = to_list (member "sin_cos" fixture) in
   List.iter cases ~f:(fun c ->
-    let deg = float_of_json_exn (member "degrees" c) in
-    let angle = S2.S1_angle.of_degrees (Float_u.of_float deg) in
-    let label = sprintf "sin_cos(%g)" deg in
+    let deg = float_u_of_json_exn (member "degrees" c) in
+    let angle = S2.S1_angle.of_degrees deg in
+    let label = sprintf "sin_cos(%s)" (Float_u.to_string deg) in
     let #(s, co) = S2.S1_angle.sin_cos angle in
     check_float_u_exact
       (label ^ " sin")

@@ -16,8 +16,12 @@
    Generator-only (no TEST(...) macro in s2cell_id_test.cc):
    -  TEST(S2CellIdGolden, LatLngFace) - latlng_face (S2LatLng::FromDegrees + face/leaf)
 
+   -  TEST(S2CellId, DefaultConstructor)                - default_constructor
+   -  TEST(S2CellId, Inverses)                         - quickcheck: leaf cell -> latlng ->
+      cell id roundtrip
+
    Deliberately omitted (no OCaml equivalent yet, or I/O-only in C++):
-   -  DefaultConstructor, S2CellIdHash, Inverses, EncodeDecode*, LegacyCoder*,
+   -  S2CellIdHash, EncodeDecode*, LegacyCoder*,
       Neighbors*, ExpandedByDistanceUV, ToString, FromDebugString, OutputOperator,
       S2CoderWorks, AbslParseFlag*, SupportsAbslHash. *)
 
@@ -51,6 +55,48 @@ let qc_config =
   { T.default_config with test_count = 400; shrink_count = 100 }
 ;;
 
+let test_default_constructor () =
+  let id = S2.S2_cell_id.of_int64 0L in
+  assert (Int64.equal (S2.S2_cell_id.id id) 0L);
+  assert (not (S2.S2_cell_id.is_valid id))
+;;
+
+(* TEST(S2CellId, Inverses) - leaf cell -> latlng -> cell id roundtrip *)
+module Leaf_cell_id_int = struct
+  type t = Int64.t [@@deriving sexp_of]
+
+  let quickcheck_generator =
+    let open Base_quickcheck.Generator in
+    let rec descend depth id =
+      let cell = S2.S2_cell_id.of_int64 id in
+      if S2.S2_cell_id.is_leaf cell
+      then return id
+      else if depth = 0
+      then return (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell 0))
+      else
+        bind (int_uniform_inclusive 0 3) ~f:(fun k ->
+          descend (depth - 1) (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell k)))
+    in
+    bind (int_uniform_inclusive 0 5) ~f:(fun f ->
+      descend 30 (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn f)))
+  ;;
+
+  let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+end
+
+let quickcheck_inverses () =
+  Base_quickcheck.Test.run_exn
+    (module Leaf_cell_id_int)
+    ~config:{ qc_config with test_count = 1000 }
+    ~f:(fun id ->
+      let cell = S2.S2_cell_id.of_int64 id in
+      assert (S2.S2_cell_id.is_leaf cell);
+      assert (S2.S2_cell_id.level cell = S2.S2_cell_id.max_level);
+      let center = S2.S2_latlng.of_point (S2.S2_cell_id.to_point cell) in
+      let roundtripped = S2.S2_cell_id.from_latlng center in
+      assert (S2.S2_cell_id.equal cell roundtripped))
+;;
+
 let quickcheck_token_roundtrip () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
     let t = S2.S2_cell_id.of_int64 id in
@@ -82,7 +128,7 @@ let quickcheck_parent_of_child () =
 
 (* C++ vs OCaml geometry can differ slightly; full Continuity walk (~400k steps)
    needs a margin above ~1e-9 on some cells. *)
-let angle_eps = 5e-9
+let angle_eps = #5e-9
 
 let check_cell_id msg expected actual =
   let expected = S2.S2_cell_id.id expected in
@@ -536,20 +582,25 @@ let test_continuity_geometry fixture () =
     let next_w = S2.S2_cell_id.next_wrap id in
     let p = S2.S2_cell_id.to_point_raw id in
     let q = S2.S2_cell_id.to_point_raw next_w in
-    let ang = Float_u.to_float (S2.S1_angle.radians (S2.R3_vector.angle p q)) in
-    let expected_ang = float_of_json_exn (member "angle" c) in
-    let diff = Float.abs (expected_ang -. ang) in
-    if Float.( > ) diff angle_eps
+    let ang = S2.S1_angle.radians (S2.R3_vector.angle p q) in
+    let expected_ang = float_u_of_json_exn (member "angle" c) in
+    let diff = Float_u.abs Float_u.O.(expected_ang - ang) in
+    if Float_u.O.(diff > angle_eps)
     then
       Alcotest.failf
         "%s: angle expected %.17g, got %.17g (diff %g)"
         msg
-        expected_ang
-        ang
-        diff;
-    let max_ang = float_of_json_exn (member "max_angle" c) in
-    if Float.( > ) ang max_ang
-    then Alcotest.failf "%s: angle %g exceeds C++ kMaxEdge bound %g" msg ang max_ang)
+        (Float_u.to_float expected_ang)
+        (Float_u.to_float ang)
+        (Float_u.to_float diff);
+    let max_ang = float_u_of_json_exn (member "max_angle" c) in
+    if Float_u.O.(ang > max_ang)
+    then
+      Alcotest.failf
+        "%s: angle %g exceeds C++ kMaxEdge bound %g"
+        msg
+        (Float_u.to_float ang)
+        (Float_u.to_float max_ang))
 ;;
 
 let test_coverage_sample fixture () =
@@ -559,20 +610,25 @@ let test_coverage_sample fixture () =
     let p = r3_vector_of_json (member "p" c) in
     let cell = S2.S2_cell_id.from_point p in
     let q = S2.S2_cell_id.to_point_raw cell in
-    let ang = Float_u.to_float (S2.S1_angle.radians (S2.R3_vector.angle p q)) in
-    let expected_ang = float_of_json_exn (member "angle" c) in
-    let diff = Float.abs (expected_ang -. ang) in
-    if Float.( > ) diff angle_eps
+    let ang = S2.S1_angle.radians (S2.R3_vector.angle p q) in
+    let expected_ang = float_u_of_json_exn (member "angle" c) in
+    let diff = Float_u.abs Float_u.O.(expected_ang - ang) in
+    if Float_u.O.(diff > angle_eps)
     then
       Alcotest.failf
         "%s: angle expected %.17g, got %.17g (diff %g)"
         msg
-        expected_ang
-        ang
-        diff;
-    let max_ang = float_of_json_exn (member "max_angle" c) in
-    if Float.( > ) ang max_ang
-    then Alcotest.failf "%s: angle %g exceeds C++ kMaxDiag bound %g" msg ang max_ang)
+        (Float_u.to_float expected_ang)
+        (Float_u.to_float ang)
+        (Float_u.to_float diff);
+    let max_ang = float_u_of_json_exn (member "max_angle" c) in
+    if Float_u.O.(ang > max_ang)
+    then
+      Alcotest.failf
+        "%s: angle %g exceeds C++ kMaxDiag bound %g"
+        msg
+        (Float_u.to_float ang)
+        (Float_u.to_float max_ang))
 ;;
 
 let () =
@@ -608,6 +664,8 @@ let () =
       , [ test_case "GetCommonAncestorLevel" `Quick (test_common_ancestor fixture) ] )
     ; "maximum_tile", [ test_case "MaximumTile" `Quick (test_maximum_tile fixture) ]
     ; "coverage_sample", [ test_case "Coverage" `Quick (test_coverage_sample fixture) ]
+    ; ( "default_constructor"
+      , [ test_case "DefaultConstructor" `Quick test_default_constructor ] )
     ; ( "quickcheck"
       , [ test_case "token_roundtrip" `Quick quickcheck_token_roundtrip
         ; test_case
@@ -615,6 +673,7 @@ let () =
             `Quick
             quickcheck_contains_immediate_children
         ; test_case "parent_of_child" `Quick quickcheck_parent_of_child
+        ; test_case "inverses" `Quick quickcheck_inverses
         ] )
     ]
 ;;

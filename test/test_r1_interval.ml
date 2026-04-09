@@ -62,7 +62,7 @@ let quickcheck_add_point_contains () =
     (module Interval_gen)
     ~config:qc_config
     ~f:(fun { Interval_gen.interval } ->
-      let p = Float_u.of_float 1.23 in
+      let p = #1.23 in
       let added = S2.R1_interval.add_point interval p in
       assert (S2.R1_interval.contains added p))
 ;;
@@ -76,9 +76,8 @@ end
 
 let quickcheck_from_point_pair_contains () =
   Base_quickcheck.Test.run_exn (module Finite_float) ~config:qc_config ~f:(fun p1_f ->
-    let p2_f = 4.56 in
     let p1 = Float_u.of_float p1_f in
-    let p2 = Float_u.of_float p2_f in
+    let p2 = #4.56 in
     let i = S2.R1_interval.from_point_pair p1 p2 in
     assert (S2.R1_interval.contains i p1);
     assert (S2.R1_interval.contains i p2))
@@ -91,7 +90,7 @@ let quickcheck_project_in_range () =
     ~f:(fun { Interval_gen.interval } ->
       if not (S2.R1_interval.is_empty interval)
       then (
-        let p = Float_u.of_float 7.89 in
+        let p = #7.89 in
         let proj = S2.R1_interval.project_exn interval p in
         assert (S2.R1_interval.contains interval proj)))
 ;;
@@ -103,7 +102,7 @@ let quickcheck_expanded_contains () =
     ~f:(fun { Interval_gen.interval } ->
       if not (S2.R1_interval.is_empty interval)
       then (
-        let expanded = S2.R1_interval.expanded interval (Float_u.of_float 0.5) in
+        let expanded = S2.R1_interval.expanded interval #0.5 in
         assert (S2.R1_interval.contains_interval expanded interval)))
 ;;
 
@@ -113,9 +112,7 @@ let quickcheck_length_nonneg () =
     ~config:qc_config
     ~f:(fun { Interval_gen.interval } ->
       if not (S2.R1_interval.is_empty interval)
-      then (
-        let len = Float_u.to_float (S2.R1_interval.length interval) in
-        assert (Float.( >= ) len 0.0)))
+      then assert (Float_u.O.(S2.R1_interval.length interval >= #0.0)))
 ;;
 
 let quickcheck_equal_reflexive () =
@@ -341,8 +338,7 @@ let test_directed_hausdorff fixture () =
         (S2.R1_interval.to_string y)
     in
     match member "distance" c with
-    | `Null ->
-      (check bool) (label ^ " infinity") true (Float.is_inf (Float_u.to_float result))
+    | `Null -> (check bool) (label ^ " infinity") true (Float_u.is_inf result)
     | j -> check_float_u_exact label ~expected:(float_u_of_json_exn j) ~actual:result)
 ;;
 
@@ -366,22 +362,19 @@ let test_approx_equal_custom fixture () =
   List.iter cases ~f:(fun c ->
     let x = r1_interval_of_json (member "x" c) in
     let y = r1_interval_of_json (member "y" c) in
-    let me = float_of_json_exn (member "max_error" c) in
+    let me = float_u_of_json_exn (member "max_error" c) in
     let expected = bool_of_json_exn (member "approx_equal" c) in
     let label =
       sprintf
-        "approx_custom max_error=%.15g %s vs %s"
-        me
+        "approx_custom max_error=%s %s vs %s"
+        (Float_u.to_string me)
         (S2.R1_interval.to_string x)
         (S2.R1_interval.to_string y)
     in
     (check bool)
       label
       expected
-      (S2.R1_interval.approx_equal
-         ~max_error:(Packed_float_option.Unboxed.some (Float_u.of_float me))
-         x
-         y))
+      (S2.R1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.some me) x y))
 ;;
 
 let test_equal fixture () =
