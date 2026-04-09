@@ -417,8 +417,8 @@ let test_expanded fixture () =
     let expected_empty = bool_of_json_exn (member "expected_empty" c) in
     let result =
       match member "margin_scalar" c with
-      | `Float s -> S2.R2_rect.expanded_scalar r s
-      | `Int s -> S2.R2_rect.expanded_scalar r (Float.of_int s)
+      | `Float s -> S2.R2_rect.expanded_scalar r (Float_u.of_float s)
+      | `Int s -> S2.R2_rect.expanded_scalar r (Float_u.of_int s)
       | _ ->
         let margin = r2_point_of_json (member "margin" c) in
         S2.R2_rect.expanded r margin

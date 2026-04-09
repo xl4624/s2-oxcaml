@@ -163,7 +163,7 @@ module Option = struct
     else (sexp_of_t [@alloc a]) t [@exclave_if_stack a]
   ;;
 
-  let none = Float_u.of_float Float.nan
+  let none = Float_u.nan ()
   let some v = v
   let is_none t = Float_u.is_nan t
   let is_some t = not (Float_u.is_nan t)

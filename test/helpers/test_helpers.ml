@@ -79,12 +79,14 @@ let check_bool msg ~expected ~actual = Alcotest.(check bool) msg expected actual
 
 (** Two-element JSON array of floats: low and high endpoints (R1). *)
 let r1_interval_of_json j =
-  let lo, hi =
+  let #(lo, hi) =
     match to_list j with
-    | [ lo; hi ] -> float_of_json_exn lo, float_of_json_exn hi
-    | _ -> failwith "expected [lo, hi]"
+    | [ lo; hi ] -> #(float_u_of_json_exn lo, float_u_of_json_exn hi)
+    | _ ->
+      (match failwith "expected [lo, hi]" with
+       | (_ : Nothing.t) -> .)
   in
-  S2.R1_interval.create ~lo:(Float_u.of_float lo) ~hi:(Float_u.of_float hi)
+  S2.R1_interval.create ~lo ~hi
 ;;
 
 (** Two-element JSON array of floats: low and high endpoints (S1). *)
@@ -246,4 +248,16 @@ let check_r3_vector msg ~(expected : S2.R3_vector.t) ~actual =
     (msg ^ " z")
     ~expected:(S2.R3_vector.z expected)
     ~actual:(S2.R3_vector.z actual)
+;;
+
+(** Two-element JSON array of floats (lat, lng) for S2LatLng fixtures. *)
+let latlng_of_json_exn j =
+  match to_list j with
+  | [ lat; lng ] ->
+    S2.S2_latlng.of_radians
+      ~lat:(Float_u.of_float (float_of_json_exn lat))
+      ~lng:(Float_u.of_float (float_of_json_exn lng))
+  | _ ->
+    (match failwith "expected [lat, lng]" with
+     | (_ : Nothing.t) -> .)
 ;;

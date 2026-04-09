@@ -172,7 +172,7 @@ val project_exn : t -> R2_point.t -> R2_point.t
 val expanded : t -> R2_point.t -> t
 
 (** [expanded_scalar t margin] expands the rectangle on each side by the scalar [margin]. *)
-val expanded_scalar : t -> float -> t
+val expanded_scalar : t -> float# -> t
 
 (** [union t other] returns the smallest rectangle containing both rectangles. *)
 val union : t -> t -> t

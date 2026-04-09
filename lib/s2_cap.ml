@@ -269,44 +269,39 @@ let[@zero_alloc ignore] rec union t other =
       of_center_angle result_center result_r))
 ;;
 
+(* TODO: clean this up *)
 let[@zero_alloc ignore] rect_bound t =
+  let open Float_u.O in
   if is_empty t
   then { lat = R1_interval.empty; lng = S1_interval.empty }
   else (
     let center_ll = S2_latlng.of_point t.#center in
-    let cap_angle = Float_u.to_float (S1_angle.radians (radius_angle t)) in
+    let cap_angle = S1_angle.radians (radius_angle t) in
     let mutable all_longitudes = false in
-    let mutable lat_lo =
-      Float_u.to_float (S1_angle.radians (S2_latlng.lat center_ll)) -. cap_angle
-    in
-    let mutable lat_hi =
-      Float_u.to_float (S1_angle.radians (S2_latlng.lat center_ll)) +. cap_angle
-    in
-    let mutable lng_lo = Float.neg Float.pi in
-    let mutable lng_hi = Float.pi in
-    if Float.( <= ) lat_lo (Float.neg (Float.pi /. 2.0))
+    let mutable lat_lo = S1_angle.radians (S2_latlng.lat center_ll) - cap_angle in
+    let mutable lat_hi = S1_angle.radians (S2_latlng.lat center_ll) + cap_angle in
+    let mutable lng_lo = Float_u.neg (Float_u.pi ()) in
+    let mutable lng_hi = Float_u.pi () in
+    if lat_lo <= Float_u.neg (Float_u.pi () / #2.0)
     then (
-      lat_lo <- Float.neg (Float.pi /. 2.0);
+      lat_lo <- Float_u.neg (Float_u.pi () / #2.0);
       all_longitudes <- true);
-    if Float.( >= ) lat_hi (Float.pi /. 2.0)
+    if lat_hi >= Float_u.pi () / #2.0
     then (
-      lat_hi <- Float.pi /. 2.0;
+      lat_hi <- Float_u.pi () / #2.0;
       all_longitudes <- true);
     if not all_longitudes
     then (
       let sin_a = S1_chord_angle.sin t.#radius in
-      let sin_c =
-        Float_u.of_float
-          (Float.cos (Float_u.to_float (S1_angle.radians (S2_latlng.lat center_ll))))
-      in
+      let sin_c = Float_u.cos (S1_angle.radians (S2_latlng.lat center_ll)) in
       if Float_u.O.(sin_a <= sin_c)
       then (
-        let angle_a = Float.asin (Float_u.to_float Float_u.O.(sin_a / sin_c)) in
-        let lng = Float_u.to_float (S1_angle.radians (S2_latlng.lng center_ll)) in
-        lng_lo <- Float_util.ieee_remainder (lng -. angle_a) (2.0 *. Float.pi);
-        lng_hi <- Float_util.ieee_remainder (lng +. angle_a) (2.0 *. Float.pi)));
-    { lat = R1_interval.create ~lo:(Float_u.of_float lat_lo) ~hi:(Float_u.of_float lat_hi)
-    ; lng = S1_interval.create ~lo:(Float_u.of_float lng_lo) ~hi:(Float_u.of_float lng_hi)
+        let angle_a = Float_u.asin (sin_a / sin_c) in
+        let lng = S1_angle.radians (S2_latlng.lng center_ll) in
+        lng_lo <- Float_util.ieee_remainder_u (lng - angle_a) (#2.0 * Float_u.pi ());
+        lng_hi <- Float_util.ieee_remainder_u (lng + angle_a) (#2.0 * Float_u.pi ())));
+    { lat = R1_interval.create ~lo:lat_lo ~hi:lat_hi
+    ; lng = S1_interval.create ~lo:lng_lo ~hi:lng_hi
     })
 ;;
 

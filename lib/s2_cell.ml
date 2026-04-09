@@ -146,7 +146,7 @@ let contains_point t p =
   match%optional_u.R2_point.Option uv with
   | None -> false
   | Some uv ->
-    let margin = 5.0 /. 3.0 *. Float.epsilon_float in
+    let margin = Float_u.O.(#5.0 / #3.0 * Float_u.epsilon_float ()) in
     R2_rect.contains_point (R2_rect.expanded_scalar t.uv margin) uv
 ;;
 

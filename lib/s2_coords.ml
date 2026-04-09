@@ -25,7 +25,7 @@ let uv_to_st u =
   Float_u.of_float res
 ;;
 
-let ij_to_st_min i = Float_u.of_float (1.0 /. Float.of_int limit_ij *. Float.of_int i)
+let ij_to_st_min i = Float_u.O.(#1.0 / Float_u.of_int limit_ij * Float_u.of_int i)
 
 let st_to_ij s =
   let s = Float_u.to_float s in
@@ -146,21 +146,18 @@ let xyz_to_face_si_ti (p : R3_vector.t) =
 ;;
 
 let k_face_uvw_axes =
-  [| [| [| 0.; 1.; 0. |]; [| 0.; 0.; 1. |]; [| 1.; 0.; 0. |] |]
-   ; [| [| -1.; 0.; 0. |]; [| 0.; 0.; 1. |]; [| 0.; 1.; 0. |] |]
-   ; [| [| -1.; 0.; 0. |]; [| 0.; -1.; 0. |]; [| 0.; 0.; 1. |] |]
-   ; [| [| 0.; 0.; -1. |]; [| 0.; -1.; 0. |]; [| -1.; 0.; 0. |] |]
-   ; [| [| 0.; 0.; -1. |]; [| 1.; 0.; 0. |]; [| 0.; -1.; 0. |] |]
-   ; [| [| 0.; 1.; 0. |]; [| 1.; 0.; 0. |]; [| 0.; 0.; -1. |] |]
+  [| [| [| #0.; #1.; #0. |]; [| #0.; #0.; #1. |]; [| #1.; #0.; #0. |] |]
+   ; [| [| -#1.; #0.; #0. |]; [| #0.; #0.; #1. |]; [| #0.; #1.; #0. |] |]
+   ; [| [| -#1.; #0.; #0. |]; [| #0.; -#1.; #0. |]; [| #0.; #0.; #1. |] |]
+   ; [| [| #0.; #0.; -#1. |]; [| #0.; -#1.; #0. |]; [| -#1.; #0.; #0. |] |]
+   ; [| [| #0.; #0.; -#1. |]; [| #1.; #0.; #0. |]; [| #0.; -#1.; #0. |] |]
+   ; [| [| #0.; #1.; #0. |]; [| #1.; #0.; #0. |]; [| #0.; #0.; -#1. |] |]
   |]
 ;;
 
 let get_uvw_axis face axis : R3_vector.t =
   let a = k_face_uvw_axes.(face).(axis) in
-  R3_vector.create
-    ~x:(Float_u.of_float a.(0))
-    ~y:(Float_u.of_float a.(1))
-    ~z:(Float_u.of_float a.(2))
+  R3_vector.create ~x:a.(0) ~y:a.(1) ~z:a.(2)
 ;;
 
 let get_norm face : R3_vector.t = get_uvw_axis face 2

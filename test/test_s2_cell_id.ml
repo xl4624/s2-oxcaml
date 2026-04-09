@@ -23,6 +23,7 @@
 
 open Core
 open Test_helpers
+open Alcotest
 
 module Cell_id_int = struct
   type t = Int64.t [@@deriving sexp_of]
@@ -101,19 +102,19 @@ let uint64_le (a : S2.S2_cell_id.t) (b : S2.S2_cell_id.t) =
 let check_cell_props msg expected_json actual =
   let expected_id = s2_cell_id_of_json (member "id" expected_json) in
   check_cell_id (msg ^ " id") expected_id actual;
-  Alcotest.(check int)
+  (check int)
     (msg ^ " face")
     (int_of_json_exn (member "face" expected_json))
     (S2.S2_cell_id.face actual);
-  Alcotest.(check int)
+  (check int)
     (msg ^ " level")
     (int_of_json_exn (member "level" expected_json))
     (S2.S2_cell_id.level actual);
-  Alcotest.(check bool)
+  (check bool)
     (msg ^ " is_valid")
     (bool_of_json_exn (member "is_valid" expected_json))
     (S2.S2_cell_id.is_valid actual);
-  Alcotest.(check string)
+  (check string)
     (msg ^ " token")
     (string_of_json_exn (member "token" expected_json))
     (S2.S2_cell_id.to_token actual)
@@ -121,13 +122,14 @@ let check_cell_props msg expected_json actual =
 
 (** Matches [S2LatLng::FromDegrees] -> unit-sphere point used by [S2CellId(point)]. *)
 let r3_from_lat_lng_deg ~lat_deg ~lng_deg =
-  let lat = lat_deg *. Float.pi /. 180. in
-  let lng = lng_deg *. Float.pi /. 180. in
-  let clat = Float.cos lat in
+  let open Float_u.O in
+  let lat = lat_deg * Float_u.pi () / #180. in
+  let lng = lng_deg * Float_u.pi () / #180. in
+  let clat = Float_u.cos lat in
   S2.R3_vector.create
-    ~x:(Float_u.of_float (clat *. Float.cos lng))
-    ~y:(Float_u.of_float (clat *. Float.sin lng))
-    ~z:(Float_u.of_float (Float.sin lat))
+    ~x:(clat * Float_u.cos lng)
+    ~y:(clat * Float_u.sin lng)
+    ~z:(Float_u.sin lat)
 ;;
 
 let test_faces fixture () =
@@ -158,7 +160,7 @@ let test_hierarchy fixture () =
     | parent_json ->
       let expected_parent = s2_cell_id_of_json (member "id" parent_json) in
       check_cell_id (msg ^ " parent") expected_parent (S2.S2_cell_id.parent_exn id);
-      Alcotest.(check int)
+      (check int)
         (msg ^ " child_pos")
         (int_of_json_exn (member "child_pos" c))
         (S2.S2_cell_id.child_position id))
@@ -199,46 +201,43 @@ let test_parent_child fixture () =
   let level = int_of_json_exn (member "construct_level" pc) in
   let id = S2.S2_cell_id.from_face_pos_level face pos level in
   check_cell_id "parent_child id" (s2_cell_id_of_json (member "id" pc)) id;
-  Alcotest.(check int)
+  (check int)
     "parent_child face"
     (int_of_json_exn (member "face" pc))
     (S2.S2_cell_id.face id);
-  Alcotest.(check bool)
+  (check bool)
     "parent_child is_leaf"
     (bool_of_json_exn (member "is_leaf" pc))
     (S2.S2_cell_id.is_leaf id);
-  Alcotest.(check int)
+  (check int)
     "parent_child level"
     (int_of_json_exn (member "level" pc))
     (S2.S2_cell_id.level id);
   let expected_pos = Int64.of_string (string_of_json_exn (member "pos" pc)) in
-  Alcotest.(check bool)
-    "parent_child pos"
-    true
-    (Int64.equal expected_pos (S2.S2_cell_id.pos id));
+  (check bool) "parent_child pos" true (Int64.equal expected_pos (S2.S2_cell_id.pos id));
   let l2 = S2.S2_cell_id.level id + 2 in
   let child_begin_l2 = S2.S2_cell_id.child_begin_at_level id l2 in
-  Alcotest.(check bool)
+  (check bool)
     "parent_child child_begin_l2_pos"
     true
     (Int64.equal
        (Int64.of_string (string_of_json_exn (member "child_begin_l2_pos" pc)))
        (S2.S2_cell_id.pos child_begin_l2));
   let child_begin_immediate = S2.S2_cell_id.child_begin id in
-  Alcotest.(check bool)
+  (check bool)
     "parent_child child_begin_pos"
     true
     (Int64.equal
        (Int64.of_string (string_of_json_exn (member "child_begin_pos" pc)))
        (S2.S2_cell_id.pos child_begin_immediate));
-  Alcotest.(check bool)
+  (check bool)
     "parent_child parent_pos"
     true
     (Int64.equal
        (Int64.of_string (string_of_json_exn (member "parent_pos" pc)))
        (S2.S2_cell_id.pos (S2.S2_cell_id.parent_exn id)));
   let pll = S2.S2_cell_id.level id - 2 in
-  Alcotest.(check bool)
+  (check bool)
     "parent_child parent_level_minus_2_pos"
     true
     (Int64.equal
@@ -259,7 +258,7 @@ let test_parent_child fixture () =
   let id64 = S2.S2_cell_id.id id in
   let lo = S2.S2_cell_id.id (S2.S2_cell_id.range_min id) in
   let hi = S2.S2_cell_id.id (S2.S2_cell_id.range_max id) in
-  Alcotest.(check bool)
+  (check bool)
     "parent_child hilbert_midpoint"
     (bool_of_json_exn (member "hilbert_midpoint" pc))
     (Int64.equal (Stdlib.Int64.add id64 id64) (Stdlib.Int64.add lo hi));
@@ -385,11 +384,11 @@ let test_latlng_face fixture () =
   let cases = to_list (member "latlng_face" fixture) in
   List.iteri cases ~f:(fun i c ->
     let msg = sprintf "latlng_face %d" i in
-    let lat = float_of_json_exn (member "lat" c) in
-    let lng = float_of_json_exn (member "lng" c) in
+    let lat = float_u_of_json_exn (member "lat" c) in
+    let lng = float_u_of_json_exn (member "lng" c) in
     let p = r3_from_lat_lng_deg ~lat_deg:lat ~lng_deg:lng in
     let id = S2.S2_cell_id.from_point p in
-    Alcotest.(check int)
+    (check int)
       (msg ^ " face")
       (int_of_json_exn (member "face" c))
       (S2.S2_cell_id.face id);
@@ -401,7 +400,7 @@ let test_tokens fixture () =
   List.iteri cases ~f:(fun i c ->
     let msg = sprintf "tokens %d" i in
     let raw_id = s2_cell_id_of_json (member "id" c) in
-    Alcotest.(check string)
+    (check string)
       (msg ^ " to_token")
       (string_of_json_exn (member "token" c))
       (S2.S2_cell_id.to_token raw_id);
@@ -501,7 +500,7 @@ let test_common_ancestor fixture () =
     let msg = sprintf "common_ancestor %d" i in
     let a = s2_cell_id_of_json (member "a" c) in
     let b = s2_cell_id_of_json (member "b" c) in
-    Alcotest.(check int)
+    (check int)
       (msg ^ " level")
       (int_of_json_exn (member "level" c))
       (S2.S2_cell_id.get_common_ancestor_level a b))
@@ -580,60 +579,42 @@ let () =
   let fixture = load_fixture "s2cellid.json" in
   Alcotest.run
     "S2_cell_id"
-    [ "faces", [ Alcotest.test_case "FaceDefinitions" `Quick (test_faces fixture) ]
+    [ "faces", [ test_case "FaceDefinitions" `Quick (test_faces fixture) ]
     ; ( "hierarchy"
-      , [ Alcotest.test_case "ParentChildRelationships" `Quick (test_hierarchy fixture) ]
-      )
-    ; "points", [ Alcotest.test_case "CenterSiTi" `Quick (test_points fixture) ]
-    ; "advance", [ Alcotest.test_case "Advance" `Quick (test_advance fixture) ]
+      , [ test_case "ParentChildRelationships" `Quick (test_hierarchy fixture) ] )
+    ; "points", [ test_case "CenterSiTi" `Quick (test_points fixture) ]
+    ; "advance", [ test_case "Advance" `Quick (test_advance fixture) ]
     ; ( "parent_child"
-      , [ Alcotest.test_case "ParentChildRelationships" `Quick (test_parent_child fixture)
-        ] )
+      , [ test_case "ParentChildRelationships" `Quick (test_parent_child fixture) ] )
     ; ( "sentinel_range"
-      , [ Alcotest.test_case "SentinelRangeMinMax" `Quick (test_sentinel_range fixture) ]
-      )
-    ; "wrapping", [ Alcotest.test_case "Wrapping" `Quick (test_wrapping fixture) ]
+      , [ test_case "SentinelRangeMinMax" `Quick (test_sentinel_range fixture) ] )
+    ; "wrapping", [ test_case "Wrapping" `Quick (test_wrapping fixture) ]
     ; ( "advance_extended"
-      , [ Alcotest.test_case "AdvanceExtended" `Quick (test_advance_extended fixture) ] )
+      , [ test_case "AdvanceExtended" `Quick (test_advance_extended fixture) ] )
     ; ( "advance_wrap_equiv"
-      , [ Alcotest.test_case "AdvanceWrapEquiv" `Quick (test_advance_wrap_equiv fixture) ]
-      )
-    ; "latlng_face", [ Alcotest.test_case "LatLngFace" `Quick (test_latlng_face fixture) ]
-    ; "tokens", [ Alcotest.test_case "Tokens" `Quick (test_tokens fixture) ]
+      , [ test_case "AdvanceWrapEquiv" `Quick (test_advance_wrap_equiv fixture) ] )
+    ; "latlng_face", [ test_case "LatLngFace" `Quick (test_latlng_face fixture) ]
+    ; "tokens", [ test_case "Tokens" `Quick (test_tokens fixture) ]
     ; ( "token_invalid"
-      , [ Alcotest.test_case "LegacyCoderTokenInvalid" `Quick (test_token_invalid fixture)
-        ] )
-    ; ( "containment"
-      , [ Alcotest.test_case "Containment" `Quick (test_containment fixture) ] )
+      , [ test_case "LegacyCoderTokenInvalid" `Quick (test_token_invalid fixture) ] )
+    ; "containment", [ test_case "Containment" `Quick (test_containment fixture) ]
     ; ( "continuity_level8"
-      , [ Alcotest.test_case "ContinuityLevel8" `Quick (test_continuity_level8 fixture) ]
-      )
+      , [ test_case "ContinuityLevel8" `Quick (test_continuity_level8 fixture) ] )
     ; ( "continuity_geometry"
-      , [ Alcotest.test_case
-            "ContinuityGeometry"
-            `Quick
-            (test_continuity_geometry fixture)
-        ] )
+      , [ test_case "ContinuityGeometry" `Quick (test_continuity_geometry fixture) ] )
     ; ( "distance_from_begin"
-      , [ Alcotest.test_case "DistanceFromBegin" `Quick (test_distance_from_begin fixture)
-        ] )
+      , [ test_case "DistanceFromBegin" `Quick (test_distance_from_begin fixture) ] )
     ; ( "common_ancestor"
-      , [ Alcotest.test_case
-            "GetCommonAncestorLevel"
-            `Quick
-            (test_common_ancestor fixture)
-        ] )
-    ; ( "maximum_tile"
-      , [ Alcotest.test_case "MaximumTile" `Quick (test_maximum_tile fixture) ] )
-    ; ( "coverage_sample"
-      , [ Alcotest.test_case "Coverage" `Quick (test_coverage_sample fixture) ] )
+      , [ test_case "GetCommonAncestorLevel" `Quick (test_common_ancestor fixture) ] )
+    ; "maximum_tile", [ test_case "MaximumTile" `Quick (test_maximum_tile fixture) ]
+    ; "coverage_sample", [ test_case "Coverage" `Quick (test_coverage_sample fixture) ]
     ; ( "quickcheck"
-      , [ Alcotest.test_case "token_roundtrip" `Quick quickcheck_token_roundtrip
-        ; Alcotest.test_case
+      , [ test_case "token_roundtrip" `Quick quickcheck_token_roundtrip
+        ; test_case
             "contains_immediate_children"
             `Quick
             quickcheck_contains_immediate_children
-        ; Alcotest.test_case "parent_of_child" `Quick quickcheck_parent_of_child
+        ; test_case "parent_of_child" `Quick quickcheck_parent_of_child
         ] )
     ]
 ;;

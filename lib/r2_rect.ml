@@ -236,9 +236,8 @@ let[@inline] [@zero_alloc] expanded t (margin : R2_point.t) =
 ;;
 
 let[@inline] [@zero_alloc] expanded_scalar t margin =
-  let marginu = Float_u.of_float margin in
-  let xx = R1_interval.expanded t.#x marginu in
-  let yy = R1_interval.expanded t.#y marginu in
+  let xx = R1_interval.expanded t.#x margin in
+  let yy = R1_interval.expanded t.#y margin in
   if R1_interval.is_empty xx || R1_interval.is_empty yy
   then empty
   else #{ x = xx; y = yy }

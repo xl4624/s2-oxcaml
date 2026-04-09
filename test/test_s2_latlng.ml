@@ -22,14 +22,6 @@ open Core
 open Test_helpers
 open Alcotest
 
-let of_degrees ~lat ~lng =
-  S2.S2_latlng.of_degrees ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng)
-;;
-
-let of_radians ~lat ~lng =
-  S2.S2_latlng.of_radians ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng)
-;;
-
 (* -- Quickcheck generators ------------------------------------------------ *)
 
 module Latlng_gen = struct
@@ -47,7 +39,10 @@ module Latlng_gen = struct
   ;;
 
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-  let to_latlng t = of_degrees ~lat:t.lat ~lng:t.lng
+
+  let to_latlng t =
+    S2.S2_latlng.of_degrees ~lat:(Float_u.of_float t.lat) ~lng:(Float_u.of_float t.lng)
+  ;;
 end
 
 module Latlng_pair = struct
@@ -100,8 +95,16 @@ let quickcheck_add_commutative () =
     (module Latlng_pair)
     ~config:qc_config
     ~f:(fun { Latlng_pair.a_lat; a_lng; b_lat; b_lng } ->
-      let a = of_degrees ~lat:a_lat ~lng:a_lng in
-      let b = of_degrees ~lat:b_lat ~lng:b_lng in
+      let a =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float a_lat)
+          ~lng:(Float_u.of_float a_lng)
+      in
+      let b =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float b_lat)
+          ~lng:(Float_u.of_float b_lng)
+      in
       let ab = S2.S2_latlng.add a b in
       let ba = S2.S2_latlng.add b a in
       assert (S2.S2_latlng.equal ab ba))
@@ -120,7 +123,12 @@ let quickcheck_normalized_is_valid () =
     (module Latlng_any)
     ~config:qc_config
     ~f:(fun { Latlng_any.lat; lng } ->
-      let ll = of_degrees ~lat ~lng in
+      let ll =
+        (fun ~lat ~lng ->
+          S2.S2_latlng.of_degrees ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng))
+          ~lat
+          ~lng
+      in
       let n = S2.S2_latlng.normalized ll in
       assert (S2.S2_latlng.is_valid n))
 ;;
@@ -130,7 +138,9 @@ let quickcheck_normalized_idempotent () =
     (module Latlng_any)
     ~config:qc_config
     ~f:(fun { Latlng_any.lat; lng } ->
-      let ll = of_degrees ~lat ~lng in
+      let ll =
+        S2.S2_latlng.of_degrees ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng)
+      in
       let n = S2.S2_latlng.normalized ll in
       let nn = S2.S2_latlng.normalized n in
       assert (S2.S2_latlng.equal n nn))
@@ -141,8 +151,16 @@ let quickcheck_distance_nonneg () =
     (module Latlng_pair)
     ~config:qc_config
     ~f:(fun { Latlng_pair.a_lat; a_lng; b_lat; b_lng } ->
-      let a = of_degrees ~lat:a_lat ~lng:a_lng in
-      let b = of_degrees ~lat:b_lat ~lng:b_lng in
+      let a =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float a_lat)
+          ~lng:(Float_u.of_float a_lng)
+      in
+      let b =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float b_lat)
+          ~lng:(Float_u.of_float b_lng)
+      in
       let d = Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng.distance a b)) in
       assert (Float.( >= ) d 0.0))
 ;;
@@ -152,8 +170,16 @@ let quickcheck_distance_symmetric () =
     (module Latlng_pair)
     ~config:qc_config
     ~f:(fun { Latlng_pair.a_lat; a_lng; b_lat; b_lng } ->
-      let a = of_degrees ~lat:a_lat ~lng:a_lng in
-      let b = of_degrees ~lat:b_lat ~lng:b_lng in
+      let a =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float a_lat)
+          ~lng:(Float_u.of_float a_lng)
+      in
+      let b =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float b_lat)
+          ~lng:(Float_u.of_float b_lng)
+      in
       let d1 = Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng.distance a b)) in
       let d2 = Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng.distance b a)) in
       assert (Float.( <= ) (Float.abs (d1 -. d2)) 1e-15))
@@ -161,31 +187,23 @@ let quickcheck_distance_symmetric () =
 
 (* -- End quickcheck ------------------------------------------------------- *)
 
-let latlng_of_json j =
-  match to_list j with
-  | [ lat; lng ] -> of_radians ~lat:(float_of_json_exn lat) ~lng:(float_of_json_exn lng)
-  | _ ->
-    (match failwith "expected [lat, lng]" with
-     | (_ : Nothing.t) -> .)
-;;
-
 let test_constructors fixture () =
   let cases = to_list (member "constructors" fixture) in
   List.iter cases ~f:(fun c ->
     let op = string_of_json_exn (member "op" c) in
-    let expected_lat = float_of_json_exn (member "lat" c) in
-    let expected_lng = float_of_json_exn (member "lng" c) in
+    let expected_lat = float_u_of_json_exn (member "lat" c) in
+    let expected_lng = float_u_of_json_exn (member "lng" c) in
     let expected_valid = bool_of_json_exn (member "is_valid" c) in
     let result =
       match op with
       | "from_radians" ->
-        of_radians
-          ~lat:(float_of_json_exn (member "lat_rad" c))
-          ~lng:(float_of_json_exn (member "lng_rad" c))
+        S2.S2_latlng.of_radians
+          ~lat:(Float_u.of_float (float_of_json_exn (member "lat_rad" c)))
+          ~lng:(Float_u.of_float (float_of_json_exn (member "lng_rad" c)))
       | "from_degrees" ->
-        of_degrees
-          ~lat:(float_of_json_exn (member "lat_deg" c))
-          ~lng:(float_of_json_exn (member "lng_deg" c))
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float (float_of_json_exn (member "lat_deg" c)))
+          ~lng:(Float_u.of_float (float_of_json_exn (member "lng_deg" c)))
       | "default" -> S2.S2_latlng.zero
       | "invalid" -> S2.S2_latlng.invalid
       | _ ->
@@ -194,11 +212,11 @@ let test_constructors fixture () =
     in
     check_float_u_exact
       (op ^ " lat")
-      ~expected:(Float_u.of_float expected_lat)
+      ~expected:expected_lat
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.lat result));
     check_float_u_exact
       (op ^ " lng")
-      ~expected:(Float_u.of_float expected_lng)
+      ~expected:expected_lng
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.lng result));
     check_bool
       (op ^ " is_valid")
@@ -211,9 +229,9 @@ let test_is_valid fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let ll =
-      of_degrees
-        ~lat:(float_of_json_exn (member "lat_deg" c))
-        ~lng:(float_of_json_exn (member "lng_deg" c))
+      S2.S2_latlng.of_degrees
+        ~lat:(float_u_of_json_exn (member "lat_deg" c))
+        ~lng:(float_u_of_json_exn (member "lng_deg" c))
     in
     let expected = bool_of_json_exn (member "is_valid" c) in
     check_bool name ~expected ~actual:(S2.S2_latlng.is_valid ll))
@@ -224,21 +242,21 @@ let test_normalized fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let ll =
-      of_degrees
-        ~lat:(float_of_json_exn (member "lat_deg" c))
-        ~lng:(float_of_json_exn (member "lng_deg" c))
+      S2.S2_latlng.of_degrees
+        ~lat:(float_u_of_json_exn (member "lat_deg" c))
+        ~lng:(float_u_of_json_exn (member "lng_deg" c))
     in
     let n = S2.S2_latlng.normalized ll in
-    let expected_lat = float_of_json_exn (member "result_lat" c) in
-    let expected_lng = float_of_json_exn (member "result_lng" c) in
+    let expected_lat = float_u_of_json_exn (member "result_lat" c) in
+    let expected_lng = float_u_of_json_exn (member "result_lng" c) in
     let expected_valid = bool_of_json_exn (member "result_is_valid" c) in
     check_float_u
       (name ^ " lat")
-      ~expected:(Float_u.of_float expected_lat)
+      ~expected:expected_lat
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.lat n));
     check_float_u
       (name ^ " lng")
-      ~expected:(Float_u.of_float expected_lng)
+      ~expected:expected_lng
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.lng n));
     check_bool
       (name ^ " is_valid")
@@ -250,19 +268,19 @@ let test_arithmetic fixture () =
   let cases = to_list (member "arithmetic" fixture) in
   List.iter cases ~f:(fun c ->
     let op = string_of_json_exn (member "op" c) in
-    let a = latlng_of_json (member "a" c) in
-    let expected = latlng_of_json (member "result" c) in
+    let a = latlng_of_json_exn (member "a" c) in
+    let expected = latlng_of_json_exn (member "result" c) in
     let result =
       match op with
       | "add" ->
-        let b = latlng_of_json (member "b" c) in
+        let b = latlng_of_json_exn (member "b" c) in
         S2.S2_latlng.add a b
       | "sub" ->
-        let b = latlng_of_json (member "b" c) in
+        let b = latlng_of_json_exn (member "b" c) in
         S2.S2_latlng.sub a b
       | "mul" ->
-        let s = float_of_json_exn (member "scalar" c) in
-        S2.S2_latlng.mul a (Float_u.of_float s)
+        let s = float_u_of_json_exn (member "scalar" c) in
+        S2.S2_latlng.mul a s
       | _ ->
         (match failwith ("unknown op: " ^ op) with
          | (_ : Nothing.t) -> .)
@@ -282,9 +300,9 @@ let test_conversion fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let ll =
-      of_degrees
-        ~lat:(float_of_json_exn (member "lat_deg" c))
-        ~lng:(float_of_json_exn (member "lng_deg" c))
+      S2.S2_latlng.of_degrees
+        ~lat:(float_u_of_json_exn (member "lat_deg" c))
+        ~lng:(float_u_of_json_exn (member "lng_deg" c))
     in
     let p = S2.S2_latlng.to_point ll in
     let expected_point = r3_vector_of_json (member "point" c) in
@@ -307,25 +325,26 @@ let test_lat_lng_from_point fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let p = r3_vector_of_json (member "point" c) in
-    let expected_lat = float_of_json_exn (member "lat" c) in
-    let expected_lng = float_of_json_exn (member "lng" c) in
+    let expected_lat = float_u_of_json_exn (member "lat" c) in
+    let expected_lng = float_u_of_json_exn (member "lng" c) in
     check_float_u
       (name ^ " lat")
-      ~expected:(Float_u.of_float expected_lat)
+      ~expected:expected_lat
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.latitude p));
     check_float_u
       (name ^ " lng")
-      ~expected:(Float_u.of_float expected_lng)
+      ~expected:expected_lng
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.longitude p)))
 ;;
 
 let test_negative_zeros fixture () =
+  let open Float_u.O in
   let cases = to_list (member "negative_zeros" fixture) in
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let p = r3_vector_of_json (member "point" c) in
     let which = string_of_json_exn (member "which" c) in
-    let expected = float_of_json_exn (member "value" c) in
+    let expected = float_u_of_json_exn (member "value" c) in
     let is_neg_zero = bool_of_json_exn (member "is_negative_zero" c) in
     let actual =
       S2.S1_angle.radians
@@ -336,13 +355,12 @@ let test_negative_zeros fixture () =
            (match failwith "bad which" with
             | (_ : Nothing.t) -> .))
     in
-    check_float_u_exact (name ^ " value") ~expected:(Float_u.of_float expected) ~actual;
+    check_float_u_exact (name ^ " value") ~expected:expected ~actual;
     check_bool
       (name ^ " not neg zero")
       ~expected:is_neg_zero
       ~actual:
-        (let actual_boxed = Float_u.to_float actual in
-         Float.( = ) actual_boxed 0.0 && Float.is_negative actual_boxed))
+        (actual = #0.0 && Float_u.ieee_negative actual))
 ;;
 
 let test_distance fixture () =
@@ -350,12 +368,14 @@ let test_distance fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let a =
-      of_degrees
+      (fun ~lat ~lng ->
+        S2.S2_latlng.of_degrees ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng))
         ~lat:(float_of_json_exn (member "a_lat_deg" c))
         ~lng:(float_of_json_exn (member "a_lng_deg" c))
     in
     let b =
-      of_degrees
+      (fun ~lat ~lng ->
+        S2.S2_latlng.of_degrees ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng))
         ~lat:(float_of_json_exn (member "b_lat_deg" c))
         ~lng:(float_of_json_exn (member "b_lng_deg" c))
     in
@@ -370,8 +390,8 @@ let test_approx_equal fixture () =
   let cases = to_list (member "approx_equal" fixture) in
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
-    let a = latlng_of_json (member "a" c) in
-    let b = latlng_of_json (member "b" c) in
+    let a = latlng_of_json_exn (member "a" c) in
+    let b = latlng_of_json_exn (member "b" c) in
     let expected = bool_of_json_exn (member "approx_equal" c) in
     check_bool name ~expected ~actual:(S2.S2_latlng.approx_equal a b))
 ;;
@@ -380,8 +400,8 @@ let test_e_constructors fixture () =
   let cases = to_list (member "e_constructors" fixture) in
   List.iter cases ~f:(fun c ->
     let op = string_of_json_exn (member "op" c) in
-    let expected_lat = float_of_json_exn (member "lat" c) in
-    let expected_lng = float_of_json_exn (member "lng" c) in
+    let expected_lat = float_u_of_json_exn (member "lat" c) in
+    let expected_lng = float_u_of_json_exn (member "lng" c) in
     let result =
       match op with
       | "from_e5" ->
@@ -402,11 +422,11 @@ let test_e_constructors fixture () =
     in
     check_float_u_exact
       (op ^ " lat")
-      ~expected:(Float_u.of_float expected_lat)
+      ~expected:expected_lat
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.lat result));
     check_float_u_exact
       (op ^ " lng")
-      ~expected:(Float_u.of_float expected_lng)
+      ~expected:expected_lng
       ~actual:(S2.S1_angle.radians (S2.S2_latlng.lng result)))
 ;;
 
@@ -415,9 +435,9 @@ let test_to_point fixture () =
   List.iter cases ~f:(fun c ->
     let name = string_of_json_exn (member "name" c) in
     let ll =
-      of_degrees
-        ~lat:(float_of_json_exn (member "lat_deg" c))
-        ~lng:(float_of_json_exn (member "lng_deg" c))
+      S2.S2_latlng.of_degrees
+        ~lat:(float_u_of_json_exn (member "lat_deg" c))
+        ~lng:(float_u_of_json_exn (member "lng_deg" c))
     in
     let expected = r3_vector_of_json (member "point" c) in
     let result = S2.S2_latlng.to_point ll in

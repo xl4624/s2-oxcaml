@@ -131,7 +131,7 @@ let quickcheck_rotate_preserves_length () =
     (module S2_point_pair)
     ~config:qc_config
     ~f:(fun { S2_point_pair.a; b } ->
-      let angle = S2.S1_angle.of_radians (Float_u.of_float 1.23) in
+      let angle = S2.S1_angle.of_radians #1.23 in
       let rotated = S2.S2_point.rotate a ~axis:b ~angle in
       assert (S2.S2_point.is_unit_length rotated))
 ;;
@@ -142,12 +142,7 @@ let quickcheck_frame_roundtrip () =
     ~config:qc_config
     ~f:(fun { S2_point_gen.p } ->
       let frame = S2.S2_point.get_frame p in
-      let q =
-        S2.S2_point.of_coords
-          ~x:(Float_u.of_float 0.6)
-          ~y:(Float_u.of_float 0.8)
-          ~z:(Float_u.of_float 0.0)
-      in
+      let q = S2.S2_point.of_coords ~x:#0.6 ~y:#0.8 ~z:#0.0 in
       let local = S2.S2_point.to_frame frame q in
       let back = S2.S2_point.from_frame frame local in
       assert (S2.S2_point.approx_equal ~max_error:1e-14 q back))
