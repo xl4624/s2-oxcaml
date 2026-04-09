@@ -84,18 +84,16 @@ let average_area level =
      AvgArea = 4*pi / (6 * 4^level)
   *)
   let open Float_u.O in
-  #4.0 * Float_u.of_float Float.pi / #6.0 / (#4.0 ** Float_u.of_int level)
+  Float_u.of_float Float.pi * #4.0 / #6.0 / (#4.0 ** Float_u.of_int level)
 ;;
 
 let spherical_area a b c =
   let open Float_u.O in
   let area =
     #2.0
-    * Float_u.of_float
-        (Float.atan2
-           (Float_u.to_float (R3_vector.dot a (R3_vector.cross b c)))
-           (Float_u.to_float
-              (#1.0 + R3_vector.dot a b + R3_vector.dot a c + R3_vector.dot b c)))
+    * Float_u.atan2
+        (R3_vector.dot a (R3_vector.cross b c))
+        (#1.0 + R3_vector.dot a b + R3_vector.dot a c + R3_vector.dot b c)
   in
   Float_u.abs area
 ;;
@@ -123,10 +121,7 @@ let approx_area t =
     flat_area
     * #2.0
     / (#1.0
-       + Float_u.of_float
-           (Float.sqrt
-              (Float_u.to_float
-                 (#1.0 - Float_u.min #1.0 (flat_area / Float_u.of_float Float.pi)))))
+       + Float_u.sqrt (#1.0 - Float_u.min #1.0 (flat_area / Float_u.of_float Float.pi)))
 ;;
 
 let contains_point t p =
@@ -229,46 +224,47 @@ let v_edge_is_closest t p u_end =
 ;;
 
 let edge_distance dir_ij uv =
-  let pq2 = dir_ij *. dir_ij /. (1.0 +. (uv *. uv)) in
-  let qr = 1.0 -. Float.sqrt (1.0 -. pq2) in
-  S1_chord_angle.of_length2 (Float_u.of_float (pq2 +. (qr *. qr)))
+  let open Float_u.O in
+  let pq2 = dir_ij * dir_ij / (#1.0 + (uv * uv)) in
+  let qr = #1.0 - Float_u.sqrt (#1.0 - pq2) in
+  S1_chord_angle.of_length2 (pq2 + (qr * qr))
 ;;
 
 let distance_to_point_internal t target_xyz to_interior =
   let target = S2_coords.face_xyz_to_uvw t.#face target_xyz in
-  let u0 = Float_u.to_float (R1_interval.lo (R2_rect.x t.#uv)) in
-  let u1 = Float_u.to_float (R1_interval.hi (R2_rect.x t.#uv)) in
-  let v0 = Float_u.to_float (R1_interval.lo (R2_rect.y t.#uv)) in
-  let v1 = Float_u.to_float (R1_interval.hi (R2_rect.y t.#uv)) in
-  let tx = Float_u.to_float (R3_vector.x target) in
-  let ty = Float_u.to_float (R3_vector.y target) in
-  let tz = Float_u.to_float (R3_vector.z target) in
-  let dir00 = tx -. (tz *. u0) in
-  let dir01 = tx -. (tz *. u1) in
-  let dir10 = ty -. (tz *. v0) in
-  let dir11 = ty -. (tz *. v1) in
+  let u0 = R1_interval.lo (R2_rect.x t.#uv) in
+  let u1 = R1_interval.hi (R2_rect.x t.#uv) in
+  let v0 = R1_interval.lo (R2_rect.y t.#uv) in
+  let v1 = R1_interval.hi (R2_rect.y t.#uv) in
+  let tx = R3_vector.x target in
+  let ty = R3_vector.y target in
+  let tz = R3_vector.z target in
+  let dir00 = Float_u.O.(tx - (tz * u0)) in
+  let dir01 = Float_u.O.(tx - (tz * u1)) in
+  let dir10 = Float_u.O.(ty - (tz * v0)) in
+  let dir11 = Float_u.O.(ty - (tz * v1)) in
   let inside = ref true in
   let module Res = struct
     type t = { mutable r : S1_chord_angle.t }
   end
   in
   let res = { Res.r = S1_chord_angle.Option.none } in
-  if Float.(dir00 < 0.0)
+  if Float_u.O.(dir00 < #0.0)
   then (
     inside := false;
     if v_edge_is_closest t target 0
-    then res.r <- S1_chord_angle.Option.some (edge_distance (-.dir00) u0));
-  if S1_chord_angle.Option.is_none res.r && Float.(dir01 > 0.0)
+    then res.r <- S1_chord_angle.Option.some (edge_distance (Float_u.neg dir00) u0));
+  if S1_chord_angle.Option.is_none res.r && Float_u.O.(dir01 > #0.0)
   then (
     inside := false;
     if v_edge_is_closest t target 1
     then res.r <- S1_chord_angle.Option.some (edge_distance dir01 u1));
-  if S1_chord_angle.Option.is_none res.r && Float.(dir10 < 0.0)
+  if S1_chord_angle.Option.is_none res.r && Float_u.O.(dir10 < #0.0)
   then (
     inside := false;
     if u_edge_is_closest t target 0
-    then res.r <- S1_chord_angle.Option.some (edge_distance (-.dir10) v0));
-  if S1_chord_angle.Option.is_none res.r && Float.(dir11 > 0.0)
+    then res.r <- S1_chord_angle.Option.some (edge_distance (Float_u.neg dir10) v0));
+  if S1_chord_angle.Option.is_none res.r && Float_u.O.(dir11 > #0.0)
   then (
     inside := false;
     if u_edge_is_closest t target 1
@@ -282,9 +278,9 @@ let distance_to_point_internal t target_xyz to_interior =
       if to_interior
       then S1_chord_angle.zero
       else (
-        let d0 = edge_distance (-.dir00) u0 in
+        let d0 = edge_distance (Float_u.neg dir00) u0 in
         let d1 = edge_distance dir01 u1 in
-        let d2 = edge_distance (-.dir10) v0 in
+        let d2 = edge_distance (Float_u.neg dir10) v0 in
         let d3 = edge_distance dir11 v1 in
         min_ca (min_ca d0 d1) (min_ca d2 d3))
     else (

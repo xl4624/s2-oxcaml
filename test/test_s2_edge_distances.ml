@@ -46,17 +46,23 @@ let point_of_json j =
 let test_update_min_distance_max_error () =
   let cases = to_list (member "update_min_distance_max_error" (Lazy.force fixture)) in
   List.iteri cases ~f:(fun i c ->
-    let input_radians = float_of_json_exn (member "input_radians" c) in
-    let max_error = float_of_json_exn (member "max_error" c) in
-    let bound_radians = float_of_json_exn (member "bound_radians" c) in
+    let input_radians = float_u_of_json_exn (member "input_radians" c) in
+    let max_error = float_u_of_json_exn (member "max_error" c) in
+    let bound_radians = float_u_of_json_exn (member "bound_radians" c) in
     let ca = S2.S1_chord_angle.of_radians input_radians in
     let err = S2.S2_edge_distances.get_update_min_distance_max_error ca in
     let bound = S2.S1_chord_angle.to_angle (S2.S1_chord_angle.plus_error ca err) in
-    let actual_bound = Float_u.to_float (S2.S1_angle.radians bound) in
-    check_float (sprintf "bound[%d]" i) ~expected:bound_radians ~actual:actual_bound;
-    let diff = actual_bound -. input_radians in
-    if Float.( > ) diff max_error
-    then Alcotest.fail (sprintf "case %d: bound-input=%g > max_error=%g" i diff max_error))
+    let actual_bound = S2.S1_angle.radians bound in
+    check_float_u (sprintf "bound[%d]" i) ~expected:bound_radians ~actual:actual_bound;
+    let diff = Float_u.O.(actual_bound - input_radians) in
+    if Float_u.O.(diff > max_error)
+    then
+      Alcotest.fail
+        (sprintf
+           "case %d: bound-input=%s > max_error=%s"
+           i
+           (Float_u.to_string diff)
+           (Float_u.to_string max_error)))
 ;;
 
 (* ---------- Distance ---------- *)
@@ -67,11 +73,9 @@ let test_distance () =
     let x = point_of_json (member "x" c) in
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let expected_dist = float_of_json_exn (member "distance_radians" c) in
-    let actual_dist =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a b))
-    in
-    check_float (sprintf "dist[%d]" i) ~expected:expected_dist ~actual:actual_dist;
+    let expected_dist = float_u_of_json_exn (member "distance_radians" c) in
+    let actual_dist = S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a b) in
+    check_float_u (sprintf "dist[%d]" i) ~expected:expected_dist ~actual:actual_dist;
     (* Also test update_min_distance with zero: should not update *)
     let result_zero =
       S2.S2_edge_distances.update_min_distance x a b S2.S1_chord_angle.zero
@@ -92,7 +96,7 @@ let test_distance () =
     | None -> Alcotest.fail (sprintf "dist_inf[%d]: expected Some" i)
     | Some d ->
       let radians = S2.S1_chord_angle.radians d in
-      check_float (sprintf "dist_inf[%d]" i) ~expected:expected_dist ~actual:radians)
+      check_float_u (sprintf "dist_inf[%d]" i) ~expected:expected_dist ~actual:radians)
 ;;
 
 (* ---------- Project ---------- *)
@@ -131,7 +135,7 @@ let test_max_distance () =
     let x = point_of_json (member "x" c) in
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let expected_dist = float_of_json_exn (member "distance_radians" c) in
+    let expected_dist = float_u_of_json_exn (member "distance_radians" c) in
     (* UpdateMaxDistance with Straight should not update *)
     let result_straight =
       S2.S2_edge_distances.update_max_distance x a b S2.S1_chord_angle.straight
@@ -152,7 +156,7 @@ let test_max_distance () =
     | None -> Alcotest.fail (sprintf "max_dist[%d]: expected Some" i)
     | Some d ->
       let radians = S2.S1_chord_angle.radians d in
-      check_float (sprintf "max_dist[%d]" i) ~expected:expected_dist ~actual:radians)
+      check_float_u (sprintf "max_dist[%d]" i) ~expected:expected_dist ~actual:radians)
 ;;
 
 (* ---------- Interpolate ---------- *)
@@ -162,7 +166,7 @@ let test_interpolate () =
   List.iteri cases ~f:(fun i c ->
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let t = float_of_json_exn (member "t" c) in
+    let t = float_u_of_json_exn (member "t" c) in
     let expected = point_of_json (member "actual" c) in
     let actual = S2.S2_edge_distances.interpolate a b t in
     let angle = S2.S1_angle.radians (S2.S2_point.distance actual expected) in
@@ -177,14 +181,14 @@ let test_interpolate_extrapolate () =
   List.iteri cases ~f:(fun i c ->
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let t = float_of_json_exn (member "t" c) in
+    let t = float_u_of_json_exn (member "t" c) in
     let expected = point_of_json (member "actual" c) in
     let actual = S2.S2_edge_distances.interpolate a b t in
-    let angle =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance actual expected))
-    in
-    if Float.( > ) angle 3e-15
-    then Alcotest.fail (sprintf "extrapolate[%d]: angle=%g > 3e-15" i angle))
+    let angle = S2.S1_angle.radians (S2.S2_point.distance actual expected) in
+    if Float_u.O.(angle > #3e-15)
+    then
+      Alcotest.fail
+        (sprintf "extrapolate[%d]: angle=%s > 3e-15" i (Float_u.to_string angle)))
 ;;
 
 (* ---------- InteriorDistance conservative ---------- *)
@@ -226,9 +230,9 @@ let test_distance_fraction () =
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
     let x = point_of_json (member "x" c) in
-    let expected = float_of_json_exn (member "expected_fraction" c) in
+    let expected = float_u_of_json_exn (member "expected_fraction" c) in
     let actual = S2.S2_edge_distances.get_distance_fraction x a b in
-    check_float ~eps:1e-14 (sprintf "frac[%d]" i) ~expected ~actual)
+    check_float_u ~eps:1e-14 (sprintf "frac[%d]" i) ~expected ~actual)
 ;;
 
 (* ---------- GetPointOnLine ---------- *)
@@ -238,14 +242,9 @@ let test_get_point_on_line () =
   List.iteri cases ~f:(fun i c ->
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let r = float_of_json_exn (member "distance_radians" c) in
+    let r = float_u_of_json_exn (member "distance_radians" c) in
     let expected = point_of_json (member "result" c) in
-    let actual =
-      S2.S2_edge_distances.get_point_on_line
-        a
-        b
-        (S2.S1_angle.of_radians (Float_u.of_float r))
-    in
+    let actual = S2.S2_edge_distances.get_point_on_line a b (S2.S1_angle.of_radians r) in
     let angle =
       Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance actual expected))
     in
@@ -259,12 +258,12 @@ let test_point_to_left_right () =
   let c = member "point_to_left_right" (Lazy.force fixture) in
   let a = point_of_json (member "a" c) in
   let b = point_of_json (member "b" c) in
-  let r = float_of_json_exn (member "distance_radians" c) in
+  let r = float_u_of_json_exn (member "distance_radians" c) in
   let expected_left = point_of_json (member "left" c) in
   let expected_right = point_of_json (member "right" c) in
   let expected_left_dist = float_of_json_exn (member "left_dist" c) in
   let expected_right_dist = float_of_json_exn (member "right_dist" c) in
-  let angle = S2.S1_angle.of_radians (Float_u.of_float r) in
+  let angle = S2.S1_angle.of_radians r in
   let actual_left = S2.S2_edge_distances.get_point_to_left a b angle in
   let actual_right = S2.S2_edge_distances.get_point_to_right a b angle in
   let left_dist =

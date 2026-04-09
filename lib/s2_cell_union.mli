@@ -118,14 +118,14 @@ val leaf_cells_covered : t -> int64
 
 (** [average_based_area t] returns the approximate area by summing each cell's average
     area. Accurate to within a factor of 1.7. *)
-val average_based_area : t -> float
+val average_based_area : t -> float#
 
 (** [approx_area t] returns the approximate area. Accurate to within 3% for all sizes and
     0.1% for cells at level 5 or higher. *)
-val approx_area : t -> float
+val approx_area : t -> float#
 
 (** [exact_area t] returns the area as accurately as possible. *)
-val exact_area : t -> float
+val exact_area : t -> float#
 
 (** {1 Comparison} *)
 

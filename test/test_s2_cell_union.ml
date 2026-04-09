@@ -260,21 +260,21 @@ let test_area () =
   List.iter data ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
     let cu = make_union_verbatim (member "cell_ids" case) in
-    let expected_avg = float_of_json_exn (member "average_based_area" case) in
-    let expected_approx = float_of_json_exn (member "approx_area" case) in
-    let expected_exact = float_of_json_exn (member "exact_area" case) in
+    let expected_avg = float_u_of_json_exn (member "average_based_area" case) in
+    let expected_approx = float_u_of_json_exn (member "approx_area" case) in
+    let expected_exact = float_u_of_json_exn (member "exact_area" case) in
     (* Area computations can differ by up to ~2e-15 due to rounding in spherical_area. *)
-    check_float
+    check_float_u
       ~eps:1e-14
       (label ^ " average_based")
       ~expected:expected_avg
       ~actual:(S2.S2_cell_union.average_based_area cu);
-    check_float
+    check_float_u
       ~eps:1e-14
       (label ^ " approx")
       ~expected:expected_approx
       ~actual:(S2.S2_cell_union.approx_area cu);
-    check_float
+    check_float_u
       ~eps:1e-14
       (label ^ " exact")
       ~expected:expected_exact

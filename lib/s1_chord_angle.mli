@@ -77,8 +77,8 @@ val of_length2 : float# -> t
 
 (** Convenience constructors via {!S1_angle.t}. *)
 
-val of_radians : float -> t
-val of_degrees : float -> t
+val of_radians : float# -> t
+val of_degrees : float# -> t
 val of_e5 : int -> t
 val of_e6 : int -> t
 val of_e7 : int -> t
@@ -93,10 +93,10 @@ val length2 : t -> float#
 val to_angle : t -> S1_angle.t
 
 (** Convert to radians via {!to_angle}. *)
-val radians : t -> float [@@zero_alloc ignore]
+val radians : t -> float#
 
 (** Convert to degrees via {!to_angle}. *)
-val degrees : t -> float [@@zero_alloc ignore]
+val degrees : t -> float#
 
 (** {1 Predicates} *)
 

@@ -158,9 +158,10 @@ let[@zero_alloc ignore] project x a b =
 ;;
 
 let[@zero_alloc ignore] get_distance_fraction x a b =
+  let open Float_u.O in
   let da = S1_angle.radians (R3_vector.angle x a) in
   let db = S1_angle.radians (R3_vector.angle x b) in
-  Float_u.to_float Float_u.O.(da / (da + db))
+  da / (da + db)
 ;;
 
 let[@zero_alloc ignore] get_point_on_ray origin dir r =
@@ -177,13 +178,14 @@ let[@zero_alloc ignore] get_point_on_line a b r =
 ;;
 
 let[@zero_alloc ignore] interpolate a b t =
-  if Float.( = ) t 0.0
+  let open Float_u.O in
+  if t = #0.0
   then a
-  else if Float.( = ) t 1.0
+  else if t = #1.0
   then b
   else (
     let ab = R3_vector.angle a b in
-    let r = S1_angle.of_radians Float_u.O.(Float_u.of_float t * S1_angle.radians ab) in
+    let r = S1_angle.of_radians (t * S1_angle.radians ab) in
     get_point_on_line a b r)
 ;;
 

@@ -6,36 +6,32 @@ let limit_ij = 1 lsl max_cell_level
 let max_si_ti = 1 lsl (max_cell_level + 1)
 
 let st_to_uv s =
-  let s = Float_u.to_float s in
-  let res =
-    if Float.( >= ) s 0.5
-    then 1.0 /. 3.0 *. ((4.0 *. s *. s) -. 1.0)
-    else 1.0 /. 3.0 *. (1.0 -. (4.0 *. (1.0 -. s) *. (1.0 -. s)))
-  in
-  Float_u.of_float res
+  let open Float_u.O in
+  if s >= #0.5
+  then #1.0 / #3.0 * ((#4.0 * s * s) - #1.0)
+  else #1.0 / #3.0 * (#1.0 - (#4.0 * (#1.0 - s) * (#1.0 - s)))
 ;;
 
 let uv_to_st u =
-  let u = Float_u.to_float u in
-  let res =
-    if Float.( >= ) u 0.0
-    then 0.5 *. Float.sqrt (1.0 +. (3.0 *. u))
-    else 1.0 -. (0.5 *. Float.sqrt (1.0 -. (3.0 *. u)))
-  in
-  Float_u.of_float res
+  let open Float_u.O in
+  if u >= #0.0
+  then #0.5 * Float_u.sqrt (#1.0 + (#3.0 * u))
+  else #1.0 - (#0.5 * Float_u.sqrt (#1.0 - (#3.0 * u)))
 ;;
 
 let ij_to_st_min i = Float_u.O.(#1.0 / Float_u.of_int limit_ij * Float_u.of_int i)
 
 let st_to_ij s =
-  let s = Float_u.to_float s in
-  if not (Float.( > ) s 0.0)
+  if not Float_u.O.(s > #0.0)
   then 0
-  else Int.min (Int.of_float (Float.of_int limit_ij *. s)) (limit_ij - 1)
+  else Int.min (Float_u.to_int Float_u.O.(Float_u.of_int limit_ij * s)) (limit_ij - 1)
 ;;
 
-let si_ti_to_st si = Float_u.of_float (1.0 /. Float.of_int max_si_ti *. Float.of_int si)
-let st_to_si_ti s = Float.iround_nearest_exn (Float_u.to_float s *. Float.of_int max_si_ti)
+let si_ti_to_st si = Float_u.O.(#1.0 / Float_u.of_int max_si_ti * Float_u.of_int si)
+
+let st_to_si_ti s =
+  Float.iround_nearest_exn (Float_u.to_float Float_u.O.(s * Float_u.of_int max_si_ti))
+;;
 
 let face_uv_to_xyz face u v : R3_vector.t =
   let one = #1.0 in

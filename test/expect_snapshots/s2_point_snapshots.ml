@@ -56,7 +56,7 @@ let%expect_test "chord_angle_between" =
   printf
     "length2=%s degrees=%.17g\n"
     (Float_u.to_string (S2.S1_chord_angle.length2 ca))
-    (S2.S1_chord_angle.degrees ca);
+    (Float_u.to_float (S2.S1_chord_angle.degrees ca));
   [%expect {| length2=2. degrees=90.000000000000014 |}]
 ;;
 

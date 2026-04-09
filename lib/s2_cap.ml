@@ -282,14 +282,16 @@ let[@inline] [@zero_alloc] equal t other =
 ;;
 
 let approx_equal ?(max_error = 1e-14) t other =
+  let open Float_u.O in
   let r2 = S1_chord_angle.length2 t.#radius in
   let o2 = S1_chord_angle.length2 other.#radius in
-  (S2_point.approx_equal ~max_error t.#center other.#center
-   && Float.( <= ) (Float.abs (Float_u.to_float Float_u.O.(r2 - o2))) max_error)
-  || (is_empty t && Float.( <= ) (Float_u.to_float o2) max_error)
-  || (is_empty other && Float.( <= ) (Float_u.to_float r2) max_error)
-  || (is_full t && Float.( >= ) (Float_u.to_float o2) (2.0 -. max_error))
-  || (is_full other && Float.( >= ) (Float_u.to_float r2) (2.0 -. max_error))
+  let max_error = Float_u.of_float max_error in
+  (S2_point.approx_equal ~max_error:(Float_u.to_float max_error) t.#center other.#center
+   && Float_u.abs (r2 - o2) <= max_error)
+  || (is_empty t && o2 <= max_error)
+  || (is_empty other && r2 <= max_error)
+  || (is_full t && o2 >= #2.0 - max_error)
+  || (is_full other && r2 >= #2.0 - max_error)
 ;;
 
 let[@inline] set_le_f64_into buf off f =

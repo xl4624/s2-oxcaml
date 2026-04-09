@@ -123,9 +123,14 @@ expected format.
 - Load fixtures with `Yojson.Safe.from_file`.
 - Use `Test_helpers` for shared assertions such as `check_float` and
   `check_float_exact`.
+- Prefer the unboxed variants when working with `float#` values:
+  - `float_u_of_json_exn` to parse JSON floats directly to `float#`.
+  - `check_float_u ?eps msg ~expected ~actual` for `float#` comparisons.
+  - `check_float_u_exact msg ~expected ~actual` for exact `float#` equality.
+  - These avoid unnecessary boxing/unboxing round-trips in tests.
 - Use floating-point epsilon `1e-15` unless the upstream reference requires a
   stricter comparison.
-- Use `Test_helpers.check_float ?eps` when the reference uses a looser
+- Use `Test_helpers.check_float_u ?eps` when the reference uses a looser
   tolerance (for example degree-scale quantities from lat/lng).
 - Compare integer identifiers exactly.
 

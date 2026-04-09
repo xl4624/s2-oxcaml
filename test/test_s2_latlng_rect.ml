@@ -340,6 +340,7 @@ let test_interval_ops () =
 ;;
 
 let test_add_point () =
+  let open Float_u.O in
   let d = get "add_point" in
   let p = S2.S2_latlng_rect.empty in
   let p = S2.S2_latlng_rect.add_point p (S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#0.0) in
@@ -350,9 +351,7 @@ let test_add_point () =
   let p =
     S2.S2_latlng_rect.add_point
       p
-      (S2.S2_latlng.of_radians
-         ~lat:#0.0
-         ~lng:(Float_u.neg (Float_u.of_float (Float.pi /. 2.0))))
+      (S2.S2_latlng.of_radians ~lat:#0.0 ~lng:(Float_u.neg (Float_u.pi () / #2.0)))
   in
   check_bool
     "after_second is_point"
@@ -362,8 +361,8 @@ let test_add_point () =
     S2.S2_latlng_rect.add_point
       p
       (S2.S2_latlng.of_radians
-         ~lat:(Float_u.of_float (Float.pi /. 4.0))
-         ~lng:(Float_u.neg (Float_u.of_float Float.pi)))
+         ~lat:(Float_u.pi () / #4.0)
+         ~lng:(Float_u.neg (Float_u.pi ())))
   in
   let p =
     S2.S2_latlng_rect.add_point
@@ -429,8 +428,8 @@ let test_area () =
   (* quarter sphere: lat=[0,pi/2], lng=[0,pi/2] *)
   let quarter =
     S2.S2_latlng_rect.create
-      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:(Float_u.of_float (Float.pi /. 2.0)))
-      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.of_float (Float.pi /. 2.0)))
+      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
+      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
   in
   check_float
     "quarter"
@@ -449,8 +448,8 @@ let test_centroid () =
   let quarter_c = r3_vector_of_json (member "quarter" d) in
   let quarter =
     S2.S2_latlng_rect.create
-      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:(Float_u.of_float (Float.pi /. 2.0)))
-      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.of_float (Float.pi /. 2.0)))
+      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
+      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
   in
   let actual_quarter_c = S2.S2_latlng_rect.centroid quarter in
   check_r3_vector "quarter centroid" ~expected:quarter_c ~actual:actual_quarter_c
@@ -515,14 +514,8 @@ let test_distance_overlapping () =
   in
   let make_rect lat_lo lng_lo lat_hi lng_hi =
     S2.S2_latlng_rect.of_lo_hi
-      ~lo:
-        (S2.S2_latlng.of_degrees
-           ~lat:(Float_u.of_float lat_lo)
-           ~lng:(Float_u.of_float lng_lo))
-      ~hi:
-        (S2.S2_latlng.of_degrees
-           ~lat:(Float_u.of_float lat_hi)
-           ~lng:(Float_u.of_float lng_hi))
+      ~lo:(S2.S2_latlng.of_degrees ~lat:lat_lo ~lng:lng_lo)
+      ~hi:(S2.S2_latlng.of_degrees ~lat:lat_hi ~lng:lng_hi)
   in
   let check key other =
     let expected = float_of_json_exn (member key d) in
@@ -532,12 +525,12 @@ let test_distance_overlapping () =
     check_float key ~eps:1e-10 ~expected ~actual
   in
   check "self" a;
-  check "overlap1" (make_rect 0. 1. 2. 3.);
-  check "overlap2" (make_rect 0. 2. 2. 4.);
-  check "overlap3" (make_rect 1. 0. 3. 2.);
-  check "overlap4" (make_rect 2. 0. 4. 2.);
-  check "overlap5" (make_rect 1. 1. 3. 3.);
-  check "overlap6" (make_rect 2. 2. 4. 4.)
+  check "overlap1" (make_rect #0. #1. #2. #3.);
+  check "overlap2" (make_rect #0. #2. #2. #4.);
+  check "overlap3" (make_rect #1. #0. #3. #2.);
+  check "overlap4" (make_rect #2. #0. #4. #2.);
+  check "overlap5" (make_rect #1. #1. #3. #3.);
+  check "overlap6" (make_rect #2. #2. #4. #4.)
 ;;
 
 let test_distance_rect_vs_rect () =
@@ -546,11 +539,9 @@ let test_distance_rect_vs_rect () =
     let label = string_of_json_exn (member "label" case) in
     let a = rect_of_json (member "a" case) in
     let b = rect_of_json (member "b" case) in
-    let expected = float_of_json_exn (member "distance_rad" case) in
-    let actual =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng_rect.distance a b))
-    in
-    check_float (label ^ " dist") ~eps:1e-10 ~expected ~actual)
+    let expected = float_u_of_json_exn (member "distance_rad" case) in
+    let actual = S2.S1_angle.radians (S2.S2_latlng_rect.distance a b) in
+    check_float_u (label ^ " dist") ~eps:1e-10 ~expected ~actual)
 ;;
 
 let test_hausdorff_contained () =
@@ -562,14 +553,8 @@ let test_hausdorff_contained () =
   in
   let make_rect lat_lo lng_lo lat_hi lng_hi =
     S2.S2_latlng_rect.of_lo_hi
-      ~lo:
-        (S2.S2_latlng.of_degrees
-           ~lat:(Float_u.of_float lat_lo)
-           ~lng:(Float_u.of_float lng_lo))
-      ~hi:
-        (S2.S2_latlng.of_degrees
-           ~lat:(Float_u.of_float lat_hi)
-           ~lng:(Float_u.of_float lng_hi))
+      ~lo:(S2.S2_latlng.of_degrees ~lat:lat_lo ~lng:lng_lo)
+      ~hi:(S2.S2_latlng.of_degrees ~lat:lat_hi ~lng:lng_hi)
   in
   let check key rect =
     let expected = float_of_json_exn (member key d) in
@@ -579,10 +564,10 @@ let test_hausdorff_contained () =
     in
     check_float key ~eps:1e-10 ~expected ~actual
   in
-  check "same" (make_rect (-10.) 20. (-5.) 90.);
-  check "bigger" (make_rect (-10.) 19. (-5.) 91.);
-  check "bigger2" (make_rect (-11.) 20. (-4.) 90.);
-  check "bigger3" (make_rect (-11.) 19. (-4.) 91.)
+  check "same" (make_rect (-#10.) #20. (-#5.) #90.);
+  check "bigger" (make_rect (-#10.) #19. (-#5.) #91.);
+  check "bigger2" (make_rect (-#11.) #20. (-#4.) #90.);
+  check "bigger3" (make_rect (-#11.) #19. (-#4.) #91.)
 ;;
 
 let test_hausdorff_point_to_rect () =
@@ -618,20 +603,18 @@ let test_hausdorff_distance () =
       ~lo:(S2.S2_latlng.of_degrees ~lat:(-#85.0) ~lng:(-#50.0))
       ~hi:(S2.S2_latlng.of_degrees ~lat:(-#80.0) ~lng:#10.0)
   in
-  let expected_ab = float_of_json_exn (member "ab" d) in
-  let expected_ba = float_of_json_exn (member "ba" d) in
-  check_float
+  let expected_ab = float_u_of_json_exn (member "ab" d) in
+  let expected_ba = float_u_of_json_exn (member "ba" d) in
+  check_float_u
     "ab"
     ~eps:1e-10
     ~expected:expected_ab
-    ~actual:
-      (Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng_rect.hausdorff_distance a b)));
-  check_float
+    ~actual:(S2.S1_angle.radians (S2.S2_latlng_rect.hausdorff_distance a b));
+  check_float_u
     "ba"
     ~eps:1e-10
     ~expected:expected_ba
-    ~actual:
-      (Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng_rect.hausdorff_distance b a)))
+    ~actual:(S2.S1_angle.radians (S2.S2_latlng_rect.hausdorff_distance b a))
 ;;
 
 let () =

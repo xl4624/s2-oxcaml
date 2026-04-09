@@ -90,14 +90,14 @@ let%expect_test "successor_predecessor" =
 ;;
 
 let%expect_test "add_sub" =
-  let d30 = S2.S1_chord_angle.of_degrees 30.0 in
-  let d60 = S2.S1_chord_angle.of_degrees 60.0 in
+  let d30 = S2.S1_chord_angle.of_degrees #30.0 in
+  let d60 = S2.S1_chord_angle.of_degrees #60.0 in
   let sum = S2.S1_chord_angle.add d30 d60 in
   let diff = S2.S1_chord_angle.sub d60 d30 in
   printf
     "sum_deg=%.17g diff_deg=%.17g\n"
-    (S2.S1_chord_angle.degrees sum)
-    (S2.S1_chord_angle.degrees diff);
+    (Float_u.to_float (S2.S1_chord_angle.degrees sum))
+    (Float_u.to_float (S2.S1_chord_angle.degrees diff));
   [%expect {| sum_deg=89.999999999999986 diff_deg=29.999999999999996 |}]
 ;;
 
@@ -109,7 +109,7 @@ let%expect_test "option_none_sexp" =
 ;;
 
 let%expect_test "option_some_sexp" =
-  let ca = S2.S1_chord_angle.of_degrees 45.0 in
+  let ca = S2.S1_chord_angle.of_degrees #45.0 in
   let opt = S2.S1_chord_angle.Option.some ca in
   Stdlib.print_endline (Sexp.to_string ([%sexp_of: S2.S1_chord_angle.Option.t] opt));
   [%expect {| ((length2 0.585786437626905)) |}]
@@ -124,12 +124,12 @@ let%expect_test "option_value_exn_none" =
 ;;
 
 let%expect_test "option_match_optional_u_some" =
-  let ca = S2.S1_chord_angle.of_degrees 90.0 in
+  let ca = S2.S1_chord_angle.of_degrees #90.0 in
   let opt = S2.S1_chord_angle.Option.some ca in
   let result =
     match%optional_u.S2.S1_chord_angle.Option opt with
     | None -> "none"
-    | Some v -> sprintf "%.17g" (S2.S1_chord_angle.degrees v)
+    | Some v -> sprintf "%.17g" (Float_u.to_float (S2.S1_chord_angle.degrees v))
   in
   printf "%s\n" result;
   [%expect {| 89.999999999999986 |}]

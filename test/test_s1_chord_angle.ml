@@ -41,7 +41,7 @@ module Chord_angle_valid = struct
   ;;
 
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-  let to_chord t = S2.S1_chord_angle.of_degrees t.degrees
+  let to_chord t = S2.S1_chord_angle.of_degrees (Float_u.of_float t.degrees)
 end
 
 module Chord_angle_pair = struct
@@ -70,8 +70,8 @@ let quickcheck_add_commutative () =
     (module Chord_angle_pair)
     ~config:qc_config
     ~f:(fun { Chord_angle_pair.a; b } ->
-      let ca = S2.S1_chord_angle.of_degrees a in
-      let cb = S2.S1_chord_angle.of_degrees b in
+      let ca = S2.S1_chord_angle.of_degrees (Float_u.of_float a) in
+      let cb = S2.S1_chord_angle.of_degrees (Float_u.of_float b) in
       let sum_ab = S2.S1_chord_angle.add ca cb in
       let sum_ba = S2.S1_chord_angle.add cb ca in
       assert (S2.S1_chord_angle.equal sum_ab sum_ba))
@@ -82,8 +82,8 @@ let quickcheck_monotone_with_angle () =
     (module Chord_angle_pair)
     ~config:qc_config
     ~f:(fun { Chord_angle_pair.a; b } ->
-      let ca = S2.S1_chord_angle.of_degrees a in
-      let cb = S2.S1_chord_angle.of_degrees b in
+      let ca = S2.S1_chord_angle.of_degrees (Float_u.of_float a) in
+      let cb = S2.S1_chord_angle.of_degrees (Float_u.of_float b) in
       (* If a ≤ b as chord angles, then to_angle(a) ≤ to_angle(b) *)
       if S2.S1_chord_angle.compare ca cb <= 0
       then
@@ -136,8 +136,8 @@ let quickcheck_compare_consistent () =
     (module Chord_angle_pair)
     ~config:qc_config
     ~f:(fun { Chord_angle_pair.a; b } ->
-      let ca = S2.S1_chord_angle.of_degrees a in
-      let cb = S2.S1_chord_angle.of_degrees b in
+      let ca = S2.S1_chord_angle.of_degrees (Float_u.of_float a) in
+      let cb = S2.S1_chord_angle.of_degrees (Float_u.of_float b) in
       let cmp = S2.S1_chord_angle.compare ca cb in
       let l2_cmp =
         Float_u.compare (S2.S1_chord_angle.length2 ca) (S2.S1_chord_angle.length2 cb)
@@ -153,23 +153,23 @@ let chord_angle_of_name = function
   | "right" -> S2.S1_chord_angle.right
   | "straight" -> S2.S1_chord_angle.straight
   | "infinity" -> S2.S1_chord_angle.infinity
-  | "d30" -> S2.S1_chord_angle.of_degrees 30.0
-  | "d60" -> S2.S1_chord_angle.of_degrees 60.0
-  | "d90" -> S2.S1_chord_angle.of_degrees 90.0
-  | "d120" -> S2.S1_chord_angle.of_degrees 120.0
+  | "d30" -> S2.S1_chord_angle.of_degrees #30.0
+  | "d60" -> S2.S1_chord_angle.of_degrees #60.0
+  | "d90" -> S2.S1_chord_angle.of_degrees #90.0
+  | "d120" -> S2.S1_chord_angle.of_degrees #120.0
   | "d180" -> S2.S1_chord_angle.straight
-  | "degrees_1" -> S2.S1_chord_angle.of_degrees 1.0
-  | "degrees_45" -> S2.S1_chord_angle.of_degrees 45.0
-  | "from_radians_1" -> S2.S1_chord_angle.of_radians 1.0
+  | "degrees_1" -> S2.S1_chord_angle.of_degrees #1.0
+  | "degrees_45" -> S2.S1_chord_angle.of_degrees #45.0
+  | "from_radians_1" -> S2.S1_chord_angle.of_radians #1.0
   | name ->
     (match failwith (sprintf "unknown chord angle name: %s" name) with
      | (_ : Nothing.t) -> .)
 ;;
 
-let float_or_infinity_of_json_exn = function
-  | `String "infinity" -> Float.infinity
-  | `String "-infinity" -> Float.neg_infinity
-  | j -> float_of_json_exn j
+let float_u_or_infinity_of_json_exn = function
+  | `String "infinity" -> Float_u.infinity ()
+  | `String "-infinity" -> Float_u.neg_infinity ()
+  | j -> float_u_of_json_exn j
 ;;
 
 let test_constructors fixture () =
@@ -179,7 +179,7 @@ let test_constructors fixture () =
     let result =
       match op with
       | "from_angle" ->
-        let input = float_or_infinity_of_json_exn (member "input_radians" c) in
+        let input = float_u_or_infinity_of_json_exn (member "input_radians" c) in
         S2.S1_chord_angle.of_radians input
       | "from_length2" ->
         S2.S1_chord_angle.of_length2 (float_u_of_json_exn (member "input" c))
@@ -197,16 +197,16 @@ let test_constructors fixture () =
     (match member "radians" c with
      | `Null -> ()
      | j ->
-       check_float
+       check_float_u
          (op ^ " radians")
-         ~expected:(float_of_json_exn j)
+         ~expected:(float_u_of_json_exn j)
          ~actual:(S2.S1_chord_angle.radians result));
     (match member "degrees" c with
      | `Null -> ()
      | j ->
-       check_float
+       check_float_u
          (op ^ " degrees")
-         ~expected:(float_of_json_exn j)
+         ~expected:(float_u_of_json_exn j)
          ~actual:(S2.S1_chord_angle.degrees result));
     match member "is_infinity" c with
     | `Null -> ()
@@ -221,7 +221,7 @@ let test_convenience fixture () =
   let cases = to_list (member "convenience" fixture) in
   List.iter cases ~f:(fun c ->
     let op = string_of_json_exn (member "op" c) in
-    let input = float_of_json_exn (member "input" c) in
+    let input = float_u_of_json_exn (member "input" c) in
     let result =
       match op with
       | "radians" -> S2.S1_chord_angle.of_radians input
@@ -361,26 +361,26 @@ let test_arithmetic fixture () =
       "sum length2"
       ~expected:(float_u_of_json_exn (member "sum_length2" c))
       ~actual:(S2.S1_chord_angle.length2 sum);
-    check_float
+    check_float_u
       "sum degrees"
-      ~expected:(float_of_json_exn (member "sum_degrees" c))
+      ~expected:(float_u_of_json_exn (member "sum_degrees" c))
       ~actual:(S2.S1_chord_angle.degrees sum);
     check_float_u
       "diff length2"
       ~expected:(float_u_of_json_exn (member "diff_length2" c))
       ~actual:(S2.S1_chord_angle.length2 diff);
-    check_float
+    check_float_u
       "diff degrees"
-      ~expected:(float_of_json_exn (member "diff_degrees" c))
+      ~expected:(float_u_of_json_exn (member "diff_degrees" c))
       ~actual:(S2.S1_chord_angle.degrees diff))
 ;;
 
 let test_trigonometry fixture () =
   let cases = to_list (member "trigonometry" fixture) in
   List.iter cases ~f:(fun c ->
-    let rad = float_of_json_exn (member "radians" c) in
+    let rad = float_u_of_json_exn (member "radians" c) in
     let angle = S2.S1_chord_angle.of_radians rad in
-    let label = sprintf "trig(%g)" rad in
+    let label = sprintf "trig(%s)" (Float_u.to_string rad) in
     check_float_u
       (label ^ " sin")
       ~expected:(float_u_of_json_exn (member "sin" c))

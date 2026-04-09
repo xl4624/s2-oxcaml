@@ -363,18 +363,29 @@ let leaf_cells_covered t =
 ;;
 
 let average_based_area t =
-  Float_u.to_float (S2_cell.average_area S2_cell_id.max_level)
-  *. Int64.to_float (leaf_cells_covered t)
+  let open Float_u.O in
+  S2_cell.average_area S2_cell_id.max_level
+  * Float_u.of_float (Int64.to_float (leaf_cells_covered t))
 ;;
 
 let approx_area t =
-  Array.fold t.cell_ids ~init:0.0 ~f:(fun acc raw_id ->
-    acc +. Float_u.to_float (S2_cell.approx_area (S2_cell.of_cell_id (to_cid raw_id))))
+  let n = Array.length t.cell_ids in
+  let mutable acc = #0.0 in
+  for i = 0 to n - 1 do
+    acc
+    <- Float_u.O.(acc + S2_cell.approx_area (S2_cell.of_cell_id (to_cid t.cell_ids.(i))))
+  done;
+  acc
 ;;
 
 let exact_area t =
-  Array.fold t.cell_ids ~init:0.0 ~f:(fun acc raw_id ->
-    acc +. Float_u.to_float (S2_cell.exact_area (S2_cell.of_cell_id (to_cid raw_id))))
+  let n = Array.length t.cell_ids in
+  let mutable acc = #0.0 in
+  for i = 0 to n - 1 do
+    acc
+    <- Float_u.O.(acc + S2_cell.exact_area (S2_cell.of_cell_id (to_cid t.cell_ids.(i))))
+  done;
+  acc
 ;;
 
 (* {1 Comparison} *)

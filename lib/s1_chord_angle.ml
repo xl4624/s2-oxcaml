@@ -15,7 +15,7 @@ let max_length2 = #4.0
 let zero = #0.0
 let right = #2.0
 let straight = max_length2
-let infinity = Float_u.of_float Float.infinity
+let infinity = Float_u.infinity ()
 let negative = -#1.0
 
 let[@inline] [@zero_alloc] rec of_angle angle =
@@ -23,7 +23,7 @@ let[@inline] [@zero_alloc] rec of_angle angle =
   if Float_u.O.(radians < #0.0)
   then negative
   else if S1_angle.is_inf angle
-  then infinity
+  then Float_u.infinity ()
   else if Float_u.O.(radians >= Float_u.pi ())
   then straight
   else
@@ -35,37 +35,24 @@ and[@inline] [@zero_alloc] of_length2 length2 =
   if Float_u.O.(length2 > max_length2) then straight else length2
 ;;
 
-let[@inline] [@zero_alloc] of_radians radians =
-  of_angle (S1_angle.of_radians (Float_u.of_float radians))
-;;
-
-let[@inline] [@zero_alloc] of_degrees degrees =
-  of_angle (S1_angle.of_degrees (Float_u.of_float degrees))
-;;
-
+let[@inline] [@zero_alloc] of_radians radians = of_angle (S1_angle.of_radians radians)
+let[@inline] [@zero_alloc] of_degrees degrees = of_angle (S1_angle.of_degrees degrees)
 let[@inline] [@zero_alloc] of_e5 e5 = of_angle (S1_angle.of_e5 e5)
 let[@inline] [@zero_alloc] of_e6 e6 = of_angle (S1_angle.of_e6 e6)
 let[@inline] [@zero_alloc] of_e7 e7 = of_angle (S1_angle.of_e7 e7)
 let[@inline] [@zero_alloc] length2 t = t
 
 let[@zero_alloc] to_angle t =
-  if Float_u.O.(t < #0.0)
+  let open Float_u.O in
+  if t < #0.0
   then S1_angle.of_radians (-#1.0)
   else if Float_u.is_inf t
   then S1_angle.infinity
-  else
-    let open Float_u.O in
-    S1_angle.of_radians (#2.0 * Float_u.asin (#0.5 * Float_u.sqrt t))
+  else S1_angle.of_radians (#2.0 * Float_u.asin (#0.5 * Float_u.sqrt t))
 ;;
 
-let[@inline] [@zero_alloc ignore] radians t =
-  Float_u.to_float (S1_angle.radians (to_angle t))
-;;
-
-let[@inline] [@zero_alloc ignore] degrees t =
-  Float_u.to_float (S1_angle.degrees (to_angle t))
-;;
-
+let[@inline] [@zero_alloc] radians t = S1_angle.radians (to_angle t)
+let[@inline] [@zero_alloc] degrees t = S1_angle.degrees (to_angle t)
 let[@inline] [@zero_alloc] is_zero t = Float_u.O.(t = #0.0)
 let[@inline] [@zero_alloc] is_negative t = Float_u.O.(t < #0.0)
 let[@inline] [@zero_alloc] is_infinity t = Float_u.is_inf t
@@ -77,7 +64,7 @@ let[@inline] [@zero_alloc] is_valid t =
 
 let[@inline] [@zero_alloc] successor t =
   if Float_u.O.(t >= max_length2)
-  then infinity
+  then Float_u.infinity ()
   else if Float_u.O.(t < #0.0)
   then zero
   else

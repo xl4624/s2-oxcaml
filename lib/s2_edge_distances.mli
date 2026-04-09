@@ -88,13 +88,13 @@ val project : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t
 (** [get_distance_fraction x a b] returns the distance ratio AX / (AX + BX). If [x] is on
     edge [ab], this is the fraction [t] such that [x = interpolate a b t]. Requires
     [a <> b]. *)
-val get_distance_fraction : S2_point.t -> S2_point.t -> S2_point.t -> float
+val get_distance_fraction : S2_point.t -> S2_point.t -> S2_point.t -> float#
 [@@zero_alloc ignore]
 
 (** [interpolate a b t] returns the point along edge [ab] whose distance from [a] is
     fraction [t] of the distance [ab]. Does not require [t] to be in [[0, 1]]. Distances
     are measured on the sphere surface. *)
-val interpolate : S2_point.t -> S2_point.t -> float -> S2_point.t
+val interpolate : S2_point.t -> S2_point.t -> float# -> S2_point.t
 [@@zero_alloc ignore]
 
 (** [get_point_on_line a b r] returns the point at distance [r] from [a] along the line
