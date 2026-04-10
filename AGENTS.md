@@ -128,6 +128,11 @@ expected format.
   - `check_float_u ?eps msg ~expected ~actual` for `float#` comparisons.
   - `check_float_u_exact msg ~expected ~actual` for exact `float#` equality.
   - These avoid unnecessary boxing/unboxing round-trips in tests.
+- If you find yourself reaching for the boxed `float_of_json_exn` in a
+  fixture-driven test, that is almost always a smell: the S2 API takes
+  `float#`, so `float_u_of_json_exn` is the right call. The only legitimate
+  use of the boxed variant is inside a Quickcheck generator or shrinker
+  where boxed `float` values are already in hand.
 - Use floating-point epsilon `1e-15` unless the upstream reference requires a
   stricter comparison.
 - Use `Test_helpers.check_float_u ?eps` when the reference uses a looser

@@ -77,7 +77,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/cellunion.go` | C++: `s2cell_union.h`, `s2cell_union.cc`
   - Deps: `s2_cell_id`, `s1_angle`
 
-- [ ] **s2_edge_crossings** - `S2_edge_crossings`
+- [x] **s2_edge_crossings** - `S2_edge_crossings`
   - Go: `s2/edge_crossings.go` | C++: `s2edge_crossings.h`, `s2edge_crossings.cc`
   - Deps: `s2_point`, `r3_vector`
 
@@ -85,7 +85,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/edge_distances.go` | C++: `s2edge_distances.h`, `s2edge_distances.cc`
   - Deps: `s2_point`, `s1_angle`, `s1_chord_angle`
 
-- [ ] **s2_centroids** - `S2_centroids`
+- [x] **s2_centroids** - `S2_centroids`
   - Go: `s2/centroids.go` | C++: `s2centroids.h`, `s2centroids.cc`
   - Deps: `s2_point`, `r3_vector`
 
@@ -109,7 +109,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/metric.go` | C++: `s2metrics.h`
   - Deps: none
 
-- [ ] **s2_pointutil** - `S2_pointutil`
+- [x] **s2_pointutil** - `S2_pointutil`
   - Go: (scattered in `s2/point.go`) | C++: `s2pointutil.h`, `s2pointutil.cc`
   - Deps: `s2_point`
 
