@@ -105,7 +105,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/wedge_relations.go` | C++: `s2wedge_relations.h`, `s2wedge_relations.cc`
   - Deps: `s2_point`
 
-- [ ] **s2_metrics** - `S2_metrics`
+- [x] **s2_metrics** - `S2_metrics`
   - Go: `s2/metric.go` | C++: `s2metrics.h`
   - Deps: none
 
