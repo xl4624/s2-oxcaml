@@ -119,7 +119,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/edge_crosser.go` | C++: `s2edge_crosser.h`
   - Deps: `s2_edge_crossings`, `s2_point`
 
-- [ ] **s2_padded_cell** - `S2_padded_cell`
+- [x] **s2_padded_cell** - `S2_padded_cell`
   - Go: `s2/paddedcell.go` | C++: `s2padded_cell.h`, `s2padded_cell.cc`
   - Deps: `s2_cell_id`, `r2_rect`, `s2_coords`
 
