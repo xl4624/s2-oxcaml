@@ -115,7 +115,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
 
 ## Tier 5 - Depends on Tier 4
 
-- [ ] **s2_edge_crosser** - `S2_edge_crosser`
+- [x] **s2_edge_crosser** - `S2_edge_crosser`
   - Go: `s2/edge_crosser.go` | C++: `s2edge_crosser.h`
   - Deps: `s2_edge_crossings`, `s2_point`
 

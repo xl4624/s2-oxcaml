@@ -11,6 +11,18 @@ open Core
     version that uses exact arithmetic and symbolic perturbations to ensure consistency. *)
 val sign : S2_point.t -> S2_point.t -> S2_point.t -> int
 
+(** [triage_sign a b c] is a fast triage version of [sign] that returns 0 whenever the
+    orientation is numerically indeterminate. Callers should fall back to [expensive_sign]
+    if 0 is returned. Used internally by [S2_edge_crosser] to avoid redundant work when
+    cached state already rules out a crossing. *)
+val triage_sign : S2_point.t -> S2_point.t -> S2_point.t -> int
+
+(** [expensive_sign a b c] is the slow path of [sign] that handles degenerate cases and
+    uses stable/exact arithmetic with symbolic perturbations to guarantee a non-zero
+    result whenever A, B, C are distinct. Returns 0 only if two of the arguments are
+    equal. *)
+val expensive_sign : S2_point.t -> S2_point.t -> S2_point.t -> int
+
 (** {1 Ordering} *)
 
 (** [ordered_ccw a b c o] returns true if the edges OA, OB, and OC are encountered in that
