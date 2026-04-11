@@ -15,6 +15,7 @@ ABSL_RANDOM_LIBS := -labsl_random_internal_randen \
 
 LDFLAGS  := -L$(S2_LIB) -ls2 -Wl,-rpath,$(S2_LIB) \
             $(shell pkg-config --libs absl_base absl_log_internal_check_op absl_strings absl_str_format 2>/dev/null) \
+            -labsl_raw_hash_set -labsl_hashtablez_sampler \
             $(ABSL_RANDOM_LIBS)
 
 FIXTURES := ../fixtures
