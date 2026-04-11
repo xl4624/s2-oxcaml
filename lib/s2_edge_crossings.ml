@@ -326,11 +326,12 @@ let sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
 (* --- OrderedCCW ----------------------------------------------------------- *)
 
 let ordered_ccw (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) (o : S2_point.t) =
-  let sum = ref 0 in
-  if not (Int.equal (sign b o a) (-1)) then sum := !sum + 1;
-  if not (Int.equal (sign c o b) (-1)) then sum := !sum + 1;
-  if Int.equal (sign a o c) 1 then sum := !sum + 1;
-  !sum >= 2
+  let sum =
+    (if not (Int.equal (sign b o a) (-1)) then 1 else 0)
+    + (if not (Int.equal (sign c o b) (-1)) then 1 else 0)
+    + if Int.equal (sign a o c) 1 then 1 else 0
+  in
+  sum >= 2
 ;;
 
 (* --- Crossing predicates -------------------------------------------------- *)

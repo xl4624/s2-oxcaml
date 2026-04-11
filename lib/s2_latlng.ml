@@ -60,18 +60,23 @@ let[@inline] [@zero_alloc] of_e5 ~lat ~lng : Option.t =
   else Option.some (create ~lat:lat_a ~lng:lng_a)
 ;;
 
-let[@inline] [@zero_alloc] of_e5_exn ~lat ~lng =
-  let lat_a = S1_angle.of_e5 lat in
-  let lng_a = S1_angle.of_e5 lng in
+let[@inline] [@zero_alloc] validate_lat_exn ~fn_name ~lat_a ~lat ~lng =
   let deg = S1_angle.degrees lat_a in
   if Float_u.O.(deg < -#90.0 || deg > #90.0)
   then (
     match
       raise_s
-        [%message "S2LatLng.of_e5_exn: latitude out of range" (lat : int) (lng : int)]
+        [%message
+          "S2LatLng: latitude out of range" ~_:(fn_name : string) (lat : int) (lng : int)]
     with
     | (_ : Nothing.t) -> .)
-  else create ~lat:lat_a ~lng:lng_a
+;;
+
+let[@inline] [@zero_alloc] of_e5_exn ~lat ~lng =
+  let lat_a = S1_angle.of_e5 lat in
+  let lng_a = S1_angle.of_e5 lng in
+  validate_lat_exn ~fn_name:"of_e5_exn" ~lat_a ~lat ~lng;
+  create ~lat:lat_a ~lng:lng_a
 ;;
 
 let[@inline] [@zero_alloc] of_e6 ~lat ~lng : Option.t =
@@ -86,15 +91,8 @@ let[@inline] [@zero_alloc] of_e6 ~lat ~lng : Option.t =
 let[@inline] [@zero_alloc] of_e6_exn ~lat ~lng =
   let lat_a = S1_angle.of_e6 lat in
   let lng_a = S1_angle.of_e6 lng in
-  let deg = S1_angle.degrees lat_a in
-  if Float_u.O.(deg < -#90.0 || deg > #90.0)
-  then (
-    match
-      raise_s
-        [%message "S2LatLng.of_e6_exn: latitude out of range" (lat : int) (lng : int)]
-    with
-    | (_ : Nothing.t) -> .)
-  else create ~lat:lat_a ~lng:lng_a
+  validate_lat_exn ~fn_name:"of_e6_exn" ~lat_a ~lat ~lng;
+  create ~lat:lat_a ~lng:lng_a
 ;;
 
 let[@inline] [@zero_alloc] of_e7 ~lat ~lng : Option.t =
@@ -109,15 +107,8 @@ let[@inline] [@zero_alloc] of_e7 ~lat ~lng : Option.t =
 let[@inline] [@zero_alloc] of_e7_exn ~lat ~lng =
   let lat_a = S1_angle.of_e7 lat in
   let lng_a = S1_angle.of_e7 lng in
-  let deg = S1_angle.degrees lat_a in
-  if Float_u.O.(deg < -#90.0 || deg > #90.0)
-  then (
-    match
-      raise_s
-        [%message "S2LatLng.of_e7_exn: latitude out of range" (lat : int) (lng : int)]
-    with
-    | (_ : Nothing.t) -> .)
-  else create ~lat:lat_a ~lng:lng_a
+  validate_lat_exn ~fn_name:"of_e7_exn" ~lat_a ~lat ~lng;
+  create ~lat:lat_a ~lng:lng_a
 ;;
 
 let[@inline] [@zero_alloc] lat t = S1_angle.of_radians t.#lat
