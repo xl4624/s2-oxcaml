@@ -253,19 +253,19 @@ end
 (* ============================================================ *)
 
 (* dblEpsilon = 2^-52. *)
-let dbl_epsilon () = Float_u.of_float 2.220446049250313e-16
+let[@inline] dbl_epsilon () = Float_u.of_float 2.220446049250313e-16
 
 (* roundingEpsilon for float64 = 2^-53. *)
-let dbl_error () = Float_u.of_float 1.110223024625156e-16
+let[@inline] dbl_error () = Float_u.of_float 1.110223024625156e-16
 
 (* Maximum error in triageSign's determinant. *)
-let max_determinant_error () =
+let[@inline] max_determinant_error () =
   let open Float_u.O in
   #1.8274 * dbl_epsilon ()
 ;;
 
 (* Scaling factor for stableSign. *)
-let det_error_multiplier () =
+let[@inline] det_error_multiplier () =
   let open Float_u.O in
   #3.2321 * dbl_epsilon ()
 ;;
@@ -287,14 +287,14 @@ module Direction = struct
   ;;
 end
 
-let sign a b c =
+let[@inline] sign a b c =
   let open Float_u.O in
   (* (C x A) . B > 0. *)
   V.dot (V.cross c a) b > #0.0
 ;;
 
 (* triageSign: compute det = (A x B) . C and compare to error bound. *)
-let triage_sign a b c =
+let[@inline] triage_sign a b c =
   let open Float_u.O in
   let det = V.dot (V.cross a b) c in
   if det > max_determinant_error ()
@@ -308,7 +308,7 @@ let triage_sign a b c =
    intermediate product [e1n2 * e2n2] has already underflowed to zero. This
    guard mirrors kMinNoUnderflowError in the C++ port; the Go port omits it,
    which is why the Go-flavored version mishandles cases like Sign.StableSignUnderflow. *)
-let min_no_underflow_error () =
+let[@inline] min_no_underflow_error () =
   let open Float_u.O in
   (* DBL_MIN = 2.2250738585072014e-308 *)
   det_error_multiplier () * Float_u.sqrt (Float_u.of_float 2.2250738585072014e-308)
@@ -473,7 +473,7 @@ let ordered_ccw a b c o =
 ;;
 
 (* cosDistance returns (cos, err) where cos = x.y and err is the bound. *)
-let cos_distance_err x y =
+let[@inline] cos_distance_err x y =
   let open Float_u.O in
   let cos = V.dot x y in
   let err = (#9.5 * dbl_error () * Float_u.abs cos) + (#1.5 * dbl_error ()) in
@@ -481,7 +481,7 @@ let cos_distance_err x y =
 ;;
 
 (* sin2Distance returns (sin2, err) via the (x-y) x (x+y) trick. *)
-let sin2_distance_err x y =
+let[@inline] sin2_distance_err x y =
   let open Float_u.O in
   let n = V.cross (V.sub x y) (V.add x y) in
   let sin2 = #0.25 * V.norm2 n in
@@ -495,7 +495,7 @@ let sin2_distance_err x y =
   #(sin2, err)
 ;;
 
-let triage_compare_cos_distances x a b =
+let[@inline] triage_compare_cos_distances x a b =
   let open Float_u.O in
   let #(cos_ax, err_ax) = cos_distance_err a x in
   let #(cos_bx, err_bx) = cos_distance_err b x in
@@ -504,7 +504,7 @@ let triage_compare_cos_distances x a b =
   if diff > err then -1 else if diff < Float_u.neg err then 1 else 0
 ;;
 
-let triage_compare_sin2_distances x a b =
+let[@inline] triage_compare_sin2_distances x a b =
   let open Float_u.O in
   let #(sin2_ax, err_ax) = sin2_distance_err a x in
   let #(sin2_bx, err_bx) = sin2_distance_err b x in
@@ -515,7 +515,7 @@ let triage_compare_sin2_distances x a b =
 
 (* Symbolic perturbation for a != b with equal projected distance: if A < B
    lexicographically then A's pedestal is higher, so AX > BX, so return -1. *)
-let symbolic_compare_distances _x a b =
+let[@inline] symbolic_compare_distances _x a b =
   let c = V.compare a b in
   if c < 0 then 1 else if c > 0 then -1 else 0
 ;;
@@ -567,9 +567,9 @@ let compare_distances x a b =
 ;;
 
 (* ca45Degrees length^2 = 2 - sqrt(2). *)
-let ca_45_degrees_length2 () = Float_u.of_float (2.0 -. 1.4142135623730951)
+let[@inline] ca_45_degrees_length2 () = Float_u.of_float (2.0 -. 1.4142135623730951)
 
-let triage_compare_cos_distance x y r2 =
+let[@inline] triage_compare_cos_distance x y r2 =
   let open Float_u.O in
   let #(cos_xy, err_xy) = cos_distance_err x y in
   let cos_r = #1.0 - (#0.5 * r2) in
@@ -579,7 +579,7 @@ let triage_compare_cos_distance x y r2 =
   if diff > err then -1 else if diff < Float_u.neg err then 1 else 0
 ;;
 
-let triage_compare_sin2_distance x y r2 =
+let[@inline] triage_compare_sin2_distance x y r2 =
   let open Float_u.O in
   let #(sin2_xy, err_xy) = sin2_distance_err x y in
   let sin2_r = r2 * (#1.0 - (#0.25 * r2)) in
