@@ -12,13 +12,120 @@
    -  is_unit_length on a dozen representative points
    -  approx_equals with explicit max_error_radians values
    -  ortho negation identity: ortho(-a) = -ortho(a)
-   -  ref_dir (aliased to ortho in upstream C++) *)
+   -  ref_dir (aliased to ortho in upstream C++)
+   -  quickcheck: is_unit_length, ortho perpendicularity/unit-length,
+      ortho negation identity, frame round-trip, frame col2 = z *)
 
 open Core
 open Test_helpers
 open Alcotest
 
 let fixture = load_fixture "s2pointutil.json"
+
+(* -- Quickcheck generators ------------------------------------------------ *)
+
+module Unit_point = struct
+  type t = { p : S2.S2_point.t } [@@deriving sexp_of]
+
+  let quickcheck_generator =
+    let open Base_quickcheck.Generator in
+    let coord = float_inclusive (-1.0) 1.0 in
+    create (fun ~size:_ ~random:rnd ->
+      let x = generate coord ~size:30 ~random:rnd in
+      let y = generate coord ~size:30 ~random:rnd in
+      let z = generate coord ~size:30 ~random:rnd in
+      { p =
+          S2.S2_point.of_coords
+            ~x:(Float_u.of_float x)
+            ~y:(Float_u.of_float y)
+            ~z:(Float_u.of_float z)
+      })
+  ;;
+
+  let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+end
+
+let qc_config =
+  let module T = Base_quickcheck.Test in
+  { T.default_config with test_count = 400; shrink_count = 100 }
+;;
+
+let quickcheck_is_unit_length () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } -> assert (S2.S2_pointutil.is_unit_length p))
+;;
+
+let quickcheck_neg_is_unit_length () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } ->
+      assert (S2.S2_pointutil.is_unit_length (S2.R3_vector.neg p)))
+;;
+
+let quickcheck_ortho_perpendicular () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } ->
+      let o = S2.S2_pointutil.ortho p in
+      let dot = S2.R3_vector.dot p o in
+      assert (Float_u.O.(Float_u.abs dot <= #1e-14)))
+;;
+
+let quickcheck_ortho_unit () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } ->
+      let o = S2.S2_pointutil.ortho p in
+      assert (S2.S2_pointutil.is_unit_length o))
+;;
+
+let quickcheck_ortho_negation () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } ->
+      let o = S2.S2_pointutil.ortho p in
+      let o_neg = S2.S2_pointutil.ortho (S2.R3_vector.neg p) in
+      let sum = S2.R3_vector.add o o_neg in
+      let norm = Float_u.to_float (S2.R3_vector.norm sum) in
+      assert (Float.(norm <= 1e-14)))
+;;
+
+let quickcheck_approx_equals_self () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } -> assert (S2.S2_pointutil.approx_equals p p))
+;;
+
+let quickcheck_frame_roundtrip () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } ->
+      let frame = S2.S2_pointutil.get_frame p in
+      let q = S2.S2_point.of_coords ~x:#0.6 ~y:#0.8 ~z:#0.0 in
+      let local = S2.S2_pointutil.to_frame frame q in
+      let back = S2.S2_pointutil.from_frame frame local in
+      assert (S2.S2_pointutil.approx_equals ~max_error_radians:1e-14 q back))
+;;
+
+let quickcheck_frame_col2_equals_z () =
+  Base_quickcheck.Test.run_exn
+    (module Unit_point)
+    ~config:qc_config
+    ~f:(fun { Unit_point.p } ->
+      let frame = S2.S2_pointutil.get_frame p in
+      let #{ S2.S2_point.col0 = _; col1 = _; col2 } = frame in
+      assert (S2.S2_pointutil.approx_equals ~max_error_radians:1e-14 col2 p))
+;;
+
+(* -- End quickcheck ------------------------------------------------------- *)
 
 let point_of_json j =
   match to_list j with
@@ -230,5 +337,15 @@ let () =
     ; "ref_dir", [ test_case "cases" `Quick test_ref_dir ]
     ; "rotate", [ test_case "cases" `Quick test_rotate ]
     ; "frames", [ test_case "cases" `Quick test_frames ]
+    ; ( "quickcheck"
+      , [ test_case "is_unit_length" `Quick quickcheck_is_unit_length
+        ; test_case "neg_is_unit_length" `Quick quickcheck_neg_is_unit_length
+        ; test_case "ortho_perpendicular" `Quick quickcheck_ortho_perpendicular
+        ; test_case "ortho_unit" `Quick quickcheck_ortho_unit
+        ; test_case "ortho_negation" `Quick quickcheck_ortho_negation
+        ; test_case "approx_equals_self" `Quick quickcheck_approx_equals_self
+        ; test_case "frame_roundtrip" `Quick quickcheck_frame_roundtrip
+        ; test_case "frame_col2_equals_z" `Quick quickcheck_frame_col2_equals_z
+        ] )
     ]
 ;;
