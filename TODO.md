@@ -135,7 +135,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/projections.go` | C++: `s2projections.h`, `s2projections.cc`
   - Deps: `s2_latlng`, `r2_point`
 
-- [ ] **s2_loop_measures** - `S2_loop_measures`
+- [x] **s2_loop_measures** - `S2_loop_measures`
   - Go: (in `s2/loop.go`) | C++: `s2loop_measures.h`, `s2loop_measures.cc`
   - Deps: `s2_point`, `s2_measures`, `s2_centroids`
 
