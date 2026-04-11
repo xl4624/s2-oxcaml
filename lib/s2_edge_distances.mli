@@ -118,3 +118,72 @@ val get_point_to_left : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
     from [a], orthogonal to the edge. *)
 val get_point_to_right : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
 [@@zero_alloc ignore]
+
+(** {1 Edge-Pair Distance} *)
+
+(** Unboxed pair of points returned by {!get_edge_pair_closest_points}. *)
+type closest_points = #{ a : S2_point.t; b : S2_point.t }
+
+(** [update_edge_pair_min_distance a0 a1 b0 b1 min_dist] returns [Some dist] if the
+    minimum distance between edges [a0a1] and [b0b1] is less than [min_dist], where [dist]
+    is the new minimum. Returns [None] otherwise. If the two edges cross, the distance is
+    zero. The cases [a0 = a1] and [b0 = b1] are handled correctly. *)
+val update_edge_pair_min_distance
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S1_chord_angle.t
+  -> S1_chord_angle.Option.t
+[@@zero_alloc ignore]
+
+(** [update_edge_pair_max_distance a0 a1 b0 b1 max_dist] returns [Some dist] if the
+    maximum distance between edges [a0a1] and [b0b1] is greater than [max_dist]. Returns
+    [None] otherwise. If one edge crosses the antipodal reflection of the other, the
+    distance is pi. *)
+val update_edge_pair_max_distance
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S1_chord_angle.t
+  -> S1_chord_angle.Option.t
+[@@zero_alloc ignore]
+
+(** [is_edge_pair_distance_less a0 a1 b0 b1 limit] returns true if the minimum distance
+    between edges [a0a1] and [b0b1] is less than [limit]. This is faster than computing
+    the exact distance. *)
+val is_edge_pair_distance_less
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S1_chord_angle.t
+  -> bool
+[@@zero_alloc ignore]
+
+(** [get_edge_pair_closest_points a0 a1 b0 b1] returns the pair [(a, b)] of points that
+    achieves the minimum distance between edges [a0a1] and [b0b1], where [a] is a point
+    on [a0a1] and [b] is a point on [b0b1]. If the two edges intersect, [a] and [b] are
+    both equal to the intersection point. Handles [a0 = a1] and [b0 = b1] correctly. *)
+val get_edge_pair_closest_points
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> closest_points
+[@@zero_alloc ignore]
+
+(** [is_edge_b_near_edge_a a0 a1 b0 b1 tolerance] returns true if every point on edge
+    [b0b1] is no further than [tolerance] from some point on edge [a0a1]. Equivalently,
+    returns true if the directed Hausdorff distance from [b0b1] to [a0a1] is no more
+    than [tolerance]. Requires [tolerance] to be strictly less than 90 degrees and
+    strictly greater than zero. *)
+val is_edge_b_near_edge_a
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S1_angle.t
+  -> bool
+[@@zero_alloc ignore]

@@ -198,3 +198,180 @@ let[@zero_alloc ignore] get_point_to_right a b r =
   let dir = R3_vector.normalize (S2_point.robust_cross_prod b a) in
   get_point_on_ray a dir r
 ;;
+
+type closest_points = #{ a : S2_point.t; b : S2_point.t }
+
+(* Project that takes a precomputed a_cross_b (not necessarily normalized).
+   Mirrors the three-argument C++ Project overload. *)
+let[@zero_alloc ignore] project_with_cross x a b a_cross_b =
+  if S2_point.equal x a || S2_point.equal x b
+  then x
+  else (
+    let n = R3_vector.normalize a_cross_b in
+    let nx = S2_point.robust_cross_prod n x in
+    let p = R3_vector.normalize (R3_vector.cross nx n) in
+    let pn = R3_vector.cross p n in
+    let open Float_u.O in
+    if R3_vector.dot pn a > #0.0 && R3_vector.dot pn b < #0.0
+    then p
+    else if R3_vector.norm2 (R3_vector.sub x a) <= R3_vector.norm2 (R3_vector.sub x b)
+    then a
+    else b)
+;;
+
+(* Thread a running minimum chord distance through a single vertex->edge
+   update.  Returns the smaller of [cur] and the minimum distance from [x]
+   to edge [ab]. *)
+let[@zero_alloc ignore] min_step cur x a b =
+  match%optional_u.S1_chord_angle.Option update_min_distance x a b cur with
+  | Some d -> d
+  | None -> cur
+;;
+
+let[@zero_alloc ignore] max_step cur x a b =
+  match%optional_u.S1_chord_angle.Option update_max_distance x a b cur with
+  | Some d -> d
+  | None -> cur
+;;
+
+(* Fold the four vertex-to-edge updates into a running minimum. *)
+let[@zero_alloc ignore] update_edge_pair_min_distance a0 a1 b0 b1 min_dist =
+  if S1_chord_angle.is_zero min_dist
+  then S1_chord_angle.Option.none
+  else if S2_edge_crossings.crossing_sign a0 a1 b0 b1 >= 0
+  then S1_chord_angle.Option.some S1_chord_angle.zero
+  else (
+    let cur = min_dist in
+    let cur = min_step cur a0 b0 b1 in
+    let cur = min_step cur a1 b0 b1 in
+    let cur = min_step cur b0 a0 a1 in
+    let cur = min_step cur b1 a0 a1 in
+    if S1_chord_angle.compare cur min_dist < 0
+    then S1_chord_angle.Option.some cur
+    else S1_chord_angle.Option.none)
+;;
+
+let[@zero_alloc ignore] update_edge_pair_max_distance a0 a1 b0 b1 max_dist =
+  if S1_chord_angle.compare max_dist S1_chord_angle.straight >= 0
+  then S1_chord_angle.Option.none
+  else if S2_edge_crossings.crossing_sign a0 a1 (R3_vector.neg b0) (R3_vector.neg b1) >= 0
+  then S1_chord_angle.Option.some S1_chord_angle.straight
+  else (
+    let cur = max_dist in
+    let cur = max_step cur a0 b0 b1 in
+    let cur = max_step cur a1 b0 b1 in
+    let cur = max_step cur b0 a0 a1 in
+    let cur = max_step cur b1 a0 a1 in
+    if S1_chord_angle.compare cur max_dist > 0
+    then S1_chord_angle.Option.some cur
+    else S1_chord_angle.Option.none)
+;;
+
+let[@zero_alloc ignore] is_edge_pair_distance_less a0 a1 b0 b1 distance =
+  if S2_edge_crossings.crossing_sign a0 a1 b0 b1 >= 0
+  then not (S1_chord_angle.is_zero distance)
+  else
+    is_distance_less a0 b0 b1 distance
+    || is_distance_less a1 b0 b1 distance
+    || is_distance_less b0 a0 a1 distance
+    || is_distance_less b1 a0 a1 distance
+;;
+
+(* Compute the length2 of the minimum chord distance from x to edge ab.
+   Always updates, hence always returns a valid chord length. *)
+let[@zero_alloc ignore] vertex_edge_length2 x a b =
+  match%optional_u.S1_chord_angle.Option
+    update_min_distance_impl ~always_update:true x a b S1_chord_angle.infinity
+  with
+  | Some d -> S1_chord_angle.length2 d
+  | None -> S1_chord_angle.length2 S1_chord_angle.infinity
+;;
+
+let[@zero_alloc ignore] get_edge_pair_closest_points a0 a1 b0 b1 =
+  if S2_edge_crossings.crossing_sign a0 a1 b0 b1 > 0
+  then (
+    let x = S2_edge_crossings.get_intersection a0 a1 b0 b1 in
+    #{ a = x; b = x })
+  else (
+    let d0 = vertex_edge_length2 a0 b0 b1 in
+    let d1 = vertex_edge_length2 a1 b0 b1 in
+    let d2 = vertex_edge_length2 b0 a0 a1 in
+    let d3 = vertex_edge_length2 b1 a0 a1 in
+    let open Float_u.O in
+    let closest =
+      if d0 <= d1 && d0 <= d2 && d0 <= d3
+      then 0
+      else if d1 <= d2 && d1 <= d3
+      then 1
+      else if d2 <= d3
+      then 2
+      else 3
+    in
+    match closest with
+    | 0 -> #{ a = a0; b = project a0 b0 b1 }
+    | 1 -> #{ a = a1; b = project a1 b0 b1 }
+    | 2 -> #{ a = project b0 a0 a1; b = b0 }
+    | _ -> #{ a = project b1 a0 a1; b = b1 })
+;;
+
+(* TODO(ericv): Optimize to use S1_chord_angle rather than S1_angle, as the
+   upstream C++ TODO suggests. *)
+let[@zero_alloc ignore] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
+  let open Float_u.O in
+  (* Compute an orthogonal to the plane containing A.  We use the raw
+     robust_cross_prod when projecting (the Project helper normalizes it
+     internally). *)
+  let a_ortho_raw = S2_point.robust_cross_prod a0 a1 in
+  let a_ortho0 = R3_vector.normalize a_ortho_raw in
+  let a_nearest_b0 = project_with_cross b0 a0 a1 a_ortho_raw in
+  let a_nearest_b1 = project_with_cross b1 a0 a1 a_ortho_raw in
+  (* If the two projections have opposite orientation relative to a_ortho,
+     flip a_ortho so that it agrees with a_nearest_b0 x a_nearest_b1.  This
+     mirrors s2pred::Sign(a_ortho, a_nearest_b0, a_nearest_b1) < 0, where
+     Sign(a, b, c) = (c x a) . b. *)
+  let s =
+    R3_vector.dot (R3_vector.cross a_nearest_b1 a_ortho0) a_nearest_b0
+  in
+  let a_ortho = if s < #0.0 then R3_vector.neg a_ortho0 else a_ortho0 in
+  let tol_rad = S1_angle.radians tolerance in
+  let b0_dist = S1_angle.radians (R3_vector.angle b0 a_nearest_b0) in
+  let b1_dist = S1_angle.radians (R3_vector.angle b1 a_nearest_b1) in
+  if b0_dist > tol_rad || b1_dist > tol_rad
+  then false
+  else (
+    let b_ortho = R3_vector.normalize (S2_point.robust_cross_prod b0 b1) in
+    let planar_angle = S1_angle.radians (R3_vector.angle a_ortho b_ortho) in
+    if planar_angle <= tol_rad
+    then true
+    else if planar_angle >= Float_u.pi () / #2.0
+    then (
+      (* When the planes meet at >= 90 degrees, edge B is near A iff b0 and
+         b1 are closest to the same endpoint of A.  Compare planar distances
+         (norm2) rather than geodesic distances for speed. *)
+      let b0_close_to_a0 =
+        R3_vector.norm2 (R3_vector.sub b0 a0) < R3_vector.norm2 (R3_vector.sub b0 a1)
+      in
+      let b1_close_to_a0 =
+        R3_vector.norm2 (R3_vector.sub b1 a0) < R3_vector.norm2 (R3_vector.sub b1 a1)
+      in
+      Bool.equal b0_close_to_a0 b1_close_to_a0)
+    else (
+      (* Find the two points on circ(B) furthest from circ(A), then check
+         whether either lies on the edge b0b1. *)
+      let furthest =
+        R3_vector.normalize
+          (R3_vector.cross b_ortho (S2_point.robust_cross_prod a_ortho b_ortho))
+      in
+      let furthest_inv = R3_vector.neg furthest in
+      (* A point p lies on edge b0b1 if we can traverse b_ortho -> b0 -> p ->
+         b1 -> b_ortho without turning right. *)
+      let furthest_on_b =
+        S2_predicates.sign b_ortho b0 furthest
+        && S2_predicates.sign furthest b1 b_ortho
+      in
+      let furthest_inv_on_b =
+        S2_predicates.sign b_ortho b0 furthest_inv
+        && S2_predicates.sign furthest_inv b1 b_ortho
+      in
+      not (furthest_on_b || furthest_inv_on_b)))
+;;
