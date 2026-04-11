@@ -94,8 +94,11 @@ let add_internal (t : t) (b : S2_point.t) (b_latlng : S2_latlng.t) : t =
     #{ a = b; a_latlng = b_latlng; bound = new_bound }
 ;;
 
-let[@inline] add_point t b = add_internal t b (S2_latlng.of_point b)
-let[@inline] add_latlng t b_latlng = add_internal t (S2_latlng.to_point b_latlng) b_latlng
+let[@inline] [@zero_alloc] add_point t b = add_internal t b (S2_latlng.of_point b)
+
+let[@inline] [@zero_alloc] add_latlng t b_latlng =
+  add_internal t (S2_latlng.to_point b_latlng) b_latlng
+;;
 
 let[@zero_alloc ignore] get_bound t =
   (* Expand the bound by a small amount to account for the latitude error in

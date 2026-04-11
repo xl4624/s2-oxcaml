@@ -2,9 +2,6 @@ open Core
 
 [@@@zero_alloc all]
 
-let dbl_epsilon = Float_u.epsilon_float ()
-let sqrt3 = Float_u.sqrt #3.0
-
 (* If the minimum distance from X to AB is attained at an interior point of AB
    (not an endpoint), and that distance is less than min_dist (or always_update
    is true), return Some(dist). Otherwise return None. *)
@@ -20,7 +17,8 @@ let[@zero_alloc ignore] update_min_interior_distance_impl
   let open Float_u.O in
   let ab2 = R3_vector.norm2 (R3_vector.sub a b) in
   let max_error =
-    (#4.75 * dbl_epsilon * (xa2 + xb2 + ab2)) + (#8.0 * dbl_epsilon * dbl_epsilon)
+    (#4.75 * Float_u.epsilon_float () * (xa2 + xb2 + ab2))
+    + (#8.0 * Float_u.epsilon_float () * Float_u.epsilon_float ())
   in
   if Float_u.abs (xa2 - xb2) >= ab2 + max_error
   then S1_chord_angle.Option.none
@@ -123,10 +121,10 @@ let[@zero_alloc ignore] get_update_min_interior_distance_max_error dist =
     let open Float_u.O in
     let b = Float_u.min #1.0 (#0.5 * S1_chord_angle.length2 dist) in
     let a = Float_u.sqrt (b * (#2.0 - b)) in
-    (((#2.5 + (#2.0 * sqrt3) + (#8.5 * a)) * a)
-     + ((#2.0 + (#2.0 * sqrt3 / #3.0) + (#6.5 * (#1.0 - b))) * b)
-     + ((#23.0 + (#16.0 / sqrt3)) * dbl_epsilon))
-    * dbl_epsilon
+    (((#2.5 + (#2.0 * Float_u.sqrt #3.0) + (#8.5 * a)) * a)
+     + ((#2.0 + (#2.0 * Float_u.sqrt #3.0 / #3.0) + (#6.5 * (#1.0 - b))) * b)
+     + ((#23.0 + (#16.0 / Float_u.sqrt #3.0)) * Float_u.epsilon_float ()))
+    * Float_u.epsilon_float ()
 ;;
 
 let[@zero_alloc ignore] get_update_min_distance_max_error dist =

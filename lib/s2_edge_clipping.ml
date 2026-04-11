@@ -1,14 +1,19 @@
 open Core
 
 (* Error bound constants, matching s2/s2edge_clipping.h. *)
-(* Boxed lookup is fine here - module-init cost, not a hot path. *)
-let dbl_epsilon = Float_u.of_float Float.epsilon_float
-let face_clip_error_radians = Float_u.O.(#3.0 * dbl_epsilon)
-let face_clip_error_uv_dist = Float_u.O.(#9.0 * dbl_epsilon)
-let face_clip_error_uv_coord = Float_u.O.(#9.0 * (#1.0 / Float_u.sqrt #2.0) * dbl_epsilon)
-let intersects_rect_error_uv_dist = Float_u.O.(#3.0 * Float_u.sqrt #2.0 * dbl_epsilon)
-let edge_clip_error_uv_coord = Float_u.O.(#2.25 * dbl_epsilon)
-let edge_clip_error_uv_dist = Float_u.O.(#2.25 * dbl_epsilon)
+let face_clip_error_radians = Float_u.O.(#3.0 * Float_u.epsilon_float ())
+let face_clip_error_uv_dist = Float_u.O.(#9.0 * Float_u.epsilon_float ())
+
+let face_clip_error_uv_coord =
+  Float_u.O.(#9.0 * (#1.0 / Float_u.sqrt #2.0) * Float_u.epsilon_float ())
+;;
+
+let intersects_rect_error_uv_dist =
+  Float_u.O.(#3.0 * Float_u.sqrt #2.0 * Float_u.epsilon_float ())
+;;
+
+let edge_clip_error_uv_coord = Float_u.O.(#2.25 * Float_u.epsilon_float ())
+let edge_clip_error_uv_dist = Float_u.O.(#2.25 * Float_u.epsilon_float ())
 
 (* A face segment is an edge clipped to a single cube face. *)
 type face_segment =

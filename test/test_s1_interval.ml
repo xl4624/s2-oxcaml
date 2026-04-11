@@ -157,25 +157,26 @@ let test_empty_full_sexp () =
 
 let named_interval =
   let open Float_u.O in
-  let pi = Float_u.pi () in
-  let mipi = Float_u.neg (Float_u.pi ()) in
   function
   | "empty" -> S2.S1_interval.empty
   | "full" -> S2.S1_interval.full
   | "zero" -> S2.S1_interval.create ~lo:#0.0 ~hi:#0.0
-  | "pi" -> S2.S1_interval.create ~lo:pi ~hi:pi
-  | "mipi" -> S2.S1_interval.create ~lo:mipi ~hi:mipi
+  | "pi" -> S2.S1_interval.create ~lo:(Float_u.pi ()) ~hi:(Float_u.pi ())
+  | "mipi" ->
+    S2.S1_interval.create
+      ~lo:(Float_u.neg (Float_u.pi ()))
+      ~hi:(Float_u.neg (Float_u.pi ()))
   | "pi2" -> S2.S1_interval.create ~lo:(Float_u.pi () / #2.) ~hi:(Float_u.pi () / #2.)
   | "mipi2" ->
     S2.S1_interval.create
       ~lo:(Float_u.neg (Float_u.pi () / #2.))
       ~hi:(Float_u.neg (Float_u.pi () / #2.))
-  | "quad12" -> S2.S1_interval.create ~lo:#0.0 ~hi:pi
+  | "quad12" -> S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.pi ())
   | "quad23" ->
     S2.S1_interval.create
       ~lo:(Float_u.pi () / #2.)
       ~hi:(Float_u.neg (Float_u.pi () / #2.))
-  | "quad34" -> S2.S1_interval.create ~lo:pi ~hi:#0.0
+  | "quad34" -> S2.S1_interval.create ~lo:(Float_u.pi ()) ~hi:#0.0
   | "quad123" -> S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.neg (Float_u.pi () / #2.))
   | name ->
     (match failwith (sprintf "unknown named interval: %s" name) with

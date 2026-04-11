@@ -1,39 +1,39 @@
 open Core
 
-let max_xyz_to_uv_error = Float_u.of_float (0.5 *. Float.epsilon_float)
+let max_xyz_to_uv_error = Float_u.O.(#0.5 * Float_u.epsilon_float ())
 let max_cell_level = 30
 let limit_ij = 1 lsl max_cell_level
 let max_si_ti = 1 lsl (max_cell_level + 1)
 
-let[@inline] st_to_uv s =
+let[@inline] [@zero_alloc] st_to_uv s =
   let open Float_u.O in
   if s >= #0.5
   then #1.0 / #3.0 * ((#4.0 * s * s) - #1.0)
   else #1.0 / #3.0 * (#1.0 - (#4.0 * (#1.0 - s) * (#1.0 - s)))
 ;;
 
-let[@inline] uv_to_st u =
+let[@inline] [@zero_alloc] uv_to_st u =
   let open Float_u.O in
   if u >= #0.0
   then #0.5 * Float_u.sqrt (#1.0 + (#3.0 * u))
   else #1.0 - (#0.5 * Float_u.sqrt (#1.0 - (#3.0 * u)))
 ;;
 
-let[@inline] ij_to_st_min i =
+let[@inline] [@zero_alloc] ij_to_st_min i =
   Float_u.O.(#1.0 / Float_u.of_int limit_ij * Float_u.of_int i)
 ;;
 
-let[@inline] st_to_ij s =
+let[@inline] [@zero_alloc] st_to_ij s =
   if not Float_u.O.(s > #0.0)
   then 0
   else Int.min (Float_u.to_int Float_u.O.(Float_u.of_int limit_ij * s)) (limit_ij - 1)
 ;;
 
-let[@inline] si_ti_to_st si =
+let[@inline] [@zero_alloc] si_ti_to_st si =
   Float_u.O.(#1.0 / Float_u.of_int max_si_ti * Float_u.of_int si)
 ;;
 
-let[@inline] st_to_si_ti s =
+let[@inline] [@zero_alloc] st_to_si_ti s =
   Float_u.iround_nearest_exn Float_u.O.(s * Float_u.of_int max_si_ti)
 ;;
 
@@ -155,16 +155,16 @@ let k_face_uvw_axes =
   |]
 ;;
 
-let[@inline] get_uvw_axis face axis : R3_vector.t =
+let[@inline] [@zero_alloc] get_uvw_axis face axis : R3_vector.t =
   let a = k_face_uvw_axes.(face).(axis) in
   R3_vector.create ~x:a.(0) ~y:a.(1) ~z:a.(2)
 ;;
 
-let[@inline] get_norm face : R3_vector.t = get_uvw_axis face 2
-let[@inline] get_u_axis face : R3_vector.t = get_uvw_axis face 0
-let[@inline] get_v_axis face : R3_vector.t = get_uvw_axis face 1
+let[@inline] [@zero_alloc] get_norm face : R3_vector.t = get_uvw_axis face 2
+let[@inline] [@zero_alloc] get_u_axis face : R3_vector.t = get_uvw_axis face 0
+let[@inline] [@zero_alloc] get_v_axis face : R3_vector.t = get_uvw_axis face 1
 
-let[@inline] get_u_norm face u : R3_vector.t =
+let[@inline] [@zero_alloc] get_u_norm face u : R3_vector.t =
   match face with
   | 0 -> R3_vector.create ~x:u ~y:(-#1.0) ~z:#0.0
   | 1 -> R3_vector.create ~x:#1.0 ~y:u ~z:#0.0
@@ -174,7 +174,7 @@ let[@inline] get_u_norm face u : R3_vector.t =
   | _ -> R3_vector.create ~x:#0.0 ~y:(-#1.0) ~z:(Float_u.neg u)
 ;;
 
-let[@inline] get_v_norm face v : R3_vector.t =
+let[@inline] [@zero_alloc] get_v_norm face v : R3_vector.t =
   match face with
   | 0 -> R3_vector.create ~x:(Float_u.neg v) ~y:#0.0 ~z:#1.0
   | 1 -> R3_vector.create ~x:#0.0 ~y:(Float_u.neg v) ~z:#1.0
@@ -194,4 +194,6 @@ let k_face_uvw_faces =
   |]
 ;;
 
-let[@inline] get_uvw_face face axis direction = k_face_uvw_faces.(face).(axis).(direction)
+let[@inline] [@zero_alloc] get_uvw_face face axis direction =
+  k_face_uvw_faces.(face).(axis).(direction)
+;;

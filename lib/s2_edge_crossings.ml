@@ -11,15 +11,13 @@ external arr_set
 [@@layout_poly]
 
 (* Precision constants, matching C++ s2predicates. *)
-(* Boxed lookup is fine here - module-init cost, not a hot path. *)
-let dbl_epsilon = Float_u.of_float Float.epsilon_float
-let dbl_error = Float_u.O.(#0.5 * dbl_epsilon)
+let dbl_error = Float_u.O.(#0.5 * Float_u.epsilon_float ())
 
 (* Maximum error in the determinant (AxB).C for unit-length vectors. *)
-let max_determinant_error = Float_u.O.(#1.8274 * dbl_epsilon)
+let max_determinant_error = Float_u.O.(#1.8274 * Float_u.epsilon_float ())
 
 (* Multiplier for the stable-sign error bound. *)
-let det_error_multiplier = Float_u.O.(#3.2321 * dbl_epsilon)
+let det_error_multiplier = Float_u.O.(#3.2321 * Float_u.epsilon_float ())
 
 (* --- Robust sign predicate ------------------------------------------------ *)
 

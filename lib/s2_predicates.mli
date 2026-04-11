@@ -9,6 +9,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** {1 Orientation} *)
 
 (** The relative orientation of three points on the sphere. *)

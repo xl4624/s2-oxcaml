@@ -25,9 +25,8 @@ let[@inline] [@zero_alloc] z t = R3_vector.z t
 let[@inline] [@zero_alloc] to_r3 t = t
 
 let[@inline] [@zero_alloc] is_unit_length t =
-  Float.( <= )
-    (Float.abs (Float_u.to_float (R3_vector.norm2 t) -. 1.0))
-    (5.0 *. Float.epsilon_float)
+  let open Float_u.O in
+  Float_u.abs (R3_vector.norm2 t - #1.0) <= #5.0 * Float_u.epsilon_float ()
 ;;
 
 let[@inline] [@zero_alloc] ortho a =

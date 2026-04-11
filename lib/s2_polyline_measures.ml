@@ -5,7 +5,7 @@ open Core
 external arr_get : ('a : any mod separable). 'a array -> int -> 'a = "%array_safe_get"
 [@@layout_poly]
 
-let[@zero_alloc] length (polyline : S2_point.t array) =
+let[@inline] [@zero_alloc] length (polyline : S2_point.t array) =
   let n = Array.length polyline in
   if n < 2
   then S1_angle.zero
@@ -20,7 +20,7 @@ let[@zero_alloc] length (polyline : S2_point.t array) =
     S1_angle.of_radians acc)
 ;;
 
-let[@zero_alloc] centroid (polyline : S2_point.t array) =
+let[@inline] [@zero_alloc] centroid (polyline : S2_point.t array) =
   let n = Array.length polyline in
   if n < 2
   then R3_vector.zero
