@@ -143,7 +143,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: (in `s2/polyline.go`) | C++: `s2polyline_measures.h`, `s2polyline_measures.cc`
   - Deps: `s2_point`, `s1_angle`
 
-- [ ] **earth** - `Earth`
+- [x] **earth** - `Earth`
   - Go: `earth/earth.go` | C++: (no direct C++ equivalent)
   - Deps: `s1_angle`, `s2_point`, `s2_latlng`
 
