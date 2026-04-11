@@ -127,7 +127,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/rect_bounder.go` | C++: `s2latlng_rect_bounder.h`, `s2latlng_rect_bounder.cc`
   - Deps: `s2_latlng_rect`, `s2_point`
 
-- [ ] **s2_contains_vertex_query** - `S2_contains_vertex_query`
+- [x] **s2_contains_vertex_query** - `S2_contains_vertex_query`
   - Go: `s2/contains_vertex_query.go` | C++: `s2contains_vertex_query.h`, `s2contains_vertex_query.cc`
   - Deps: `s2_point`
 
@@ -139,7 +139,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: (in `s2/loop.go`) | C++: `s2loop_measures.h`, `s2loop_measures.cc`
   - Deps: `s2_point`, `s2_measures`, `s2_centroids`
 
-- [ ] **s2_polyline_measures** - `S2_polyline_measures`
+- [x] **s2_polyline_measures** - `S2_polyline_measures`
   - Go: (in `s2/polyline.go`) | C++: `s2polyline_measures.h`, `s2polyline_measures.cc`
   - Deps: `s2_point`, `s1_angle`
 
