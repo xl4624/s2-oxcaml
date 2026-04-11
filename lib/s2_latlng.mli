@@ -107,9 +107,9 @@ val mul : t -> float# -> t
 
 (** {1 Comparison} *)
 
-(** Approximate equality: each coordinate differs by at most [max_error] radians (default
-    1e-15). *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+(** Approximate equality: each coordinate differs by at most [max_error] radians. Default
+    tolerance is [1e-15] when [max_error] is [none]. *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]
 
 val equal : t -> t -> bool

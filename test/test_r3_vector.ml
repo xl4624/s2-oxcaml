@@ -76,7 +76,7 @@ let quickcheck_cross_antisymmetric () =
     ~f:(fun { R3_pair.a; b } ->
       assert (
         S2.R3_vector.approx_equal
-          ~max_error:1e-10
+          ~max_error:(Packed_float_option.Unboxed.some #1e-10)
           (S2.R3_vector.cross b a)
           (S2.R3_vector.neg (S2.R3_vector.cross a b))))
 ;;
@@ -302,11 +302,14 @@ let test_approx_equal fixture () =
   List.iter cases ~f:(fun c ->
     let a = r3_vector_of_json (member "a" c) in
     let b = r3_vector_of_json (member "b" c) in
-    let margin = float_of_json_exn (member "margin" c) in
+    let margin = float_u_of_json_exn (member "margin" c) in
     (check bool)
       "approx_equal vs C++ aequal"
       (bool_of_json_exn (member "aequal" c))
-      (S2.R3_vector.approx_equal ~max_error:margin a b))
+      (S2.R3_vector.approx_equal
+         ~max_error:(Packed_float_option.Unboxed.some margin)
+         a
+         b))
 ;;
 
 let test_compare_equal fixture () =

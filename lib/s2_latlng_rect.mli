@@ -164,9 +164,10 @@ val hausdorff_distance : t -> t -> S1_angle.t
 
 val equal : t -> t -> bool
 
-(** Approximate equality with default tolerance 1e-15 radians. *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+(** Approximate equality. Default tolerance is [1e-15] radians when [max_error] is
+    [none]. *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]
 
 (** Approximate equality with separate latitude and longitude tolerances. *)
 val approx_equal_latlng : max_error:S2_latlng.t -> t -> t -> bool

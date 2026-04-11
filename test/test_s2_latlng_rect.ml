@@ -175,7 +175,11 @@ let quickcheck_expanded_zero_identity () =
       then (
         let zero = S2.S2_latlng.of_radians ~lat:#0.0 ~lng:#0.0 in
         let e = S2.S2_latlng_rect.expanded rect zero in
-        assert (S2.S2_latlng_rect.approx_equal rect e)))
+        assert (
+          S2.S2_latlng_rect.approx_equal
+            ~max_error:(Packed_float_option.Unboxed.none ())
+            rect
+            e)))
 ;;
 
 let rect_of_json j =
@@ -310,7 +314,11 @@ let test_from_center_size () =
       check_bool
         (sprintf "case %d approx_equals" i)
         ~expected:(bool_of_json_exn (member "approx_equals" case))
-        ~actual:(S2.S2_latlng_rect.approx_equal result expected))
+        ~actual:
+          (S2.S2_latlng_rect.approx_equal
+             ~max_error:(Packed_float_option.Unboxed.none ())
+             result
+             expected))
 ;;
 
 let test_from_point () =
@@ -597,7 +605,14 @@ let test_approx_equals () =
     let a = rect_of_json (member "a" case) in
     let b = rect_of_json (member "b" case) in
     let expected = bool_of_json_exn (member "expected" case) in
-    check_bool label ~expected ~actual:(S2.S2_latlng_rect.approx_equal a b))
+    check_bool
+      label
+      ~expected
+      ~actual:
+        (S2.S2_latlng_rect.approx_equal
+           ~max_error:(Packed_float_option.Unboxed.none ())
+           a
+           b))
 ;;
 
 let test_approx_equals_margin () =

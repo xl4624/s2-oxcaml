@@ -115,7 +115,11 @@ let quickcheck_point_roundtrip () =
     let ll = Latlng_gen.to_latlng t in
     let p = S2.S2_latlng.to_point ll in
     let back = S2.S2_latlng.of_point p in
-    assert (S2.S2_latlng.approx_equal ~max_error:1e-14 ll back))
+    assert (
+      S2.S2_latlng.approx_equal
+        ~max_error:(Packed_float_option.Unboxed.some #1e-14)
+        ll
+        back))
 ;;
 
 let quickcheck_normalized_is_valid () =
@@ -390,7 +394,11 @@ let test_approx_equal fixture () =
     let a = latlng_of_json_exn (member "a" c) in
     let b = latlng_of_json_exn (member "b" c) in
     let expected = bool_of_json_exn (member "approx_equal" c) in
-    check_bool name ~expected ~actual:(S2.S2_latlng.approx_equal a b))
+    check_bool
+      name
+      ~expected
+      ~actual:
+        (S2.S2_latlng.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) a b))
 ;;
 
 let test_e_constructors fixture () =

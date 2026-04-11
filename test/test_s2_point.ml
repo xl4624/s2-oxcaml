@@ -144,7 +144,11 @@ let quickcheck_frame_roundtrip () =
       let q = S2.S2_point.of_coords ~x:#0.6 ~y:#0.8 ~z:#0.0 in
       let local = S2.S2_point.to_frame frame q in
       let back = S2.S2_point.from_frame frame local in
-      assert (S2.S2_point.approx_equal ~max_error:1e-14 q back))
+      assert (
+        S2.S2_point.approx_equal
+          ~max_error:(Packed_float_option.Unboxed.some #1e-14)
+          q
+          back))
 ;;
 
 (* -- End quickcheck ------------------------------------------------------- *)
@@ -177,12 +181,15 @@ let test_approx_equal fixture () =
   List.iter cases ~f:(fun c ->
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let max_error = float_of_json_exn (member "max_error" c) in
+    let max_error = float_u_of_json_exn (member "max_error" c) in
     let expected = bool_of_json_exn (member "expected" c) in
     Alcotest.(check bool)
       "approx_equal"
       expected
-      (S2.S2_point.approx_equal ~max_error a b))
+      (S2.S2_point.approx_equal
+         ~max_error:(Packed_float_option.Unboxed.some max_error)
+         a
+         b))
 ;;
 
 let test_ortho fixture () =

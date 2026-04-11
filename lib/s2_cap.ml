@@ -281,12 +281,13 @@ let[@inline] [@zero_alloc] equal t other =
   || (is_full t && is_full other)
 ;;
 
-let approx_equal ?(max_error = 1e-14) t other =
+let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t other =
   let open Float_u.O in
   let r2 = S1_chord_angle.length2 t.#radius in
   let o2 = S1_chord_angle.length2 other.#radius in
-  let max_error = Float_u.of_float max_error in
-  (S2_point.approx_equal ~max_error:(Float_u.to_float max_error) t.#center other.#center
+  let max_error = Packed_float_option.Unboxed.value max_error ~default:#1e-14 in
+  let max_error_opt = Packed_float_option.Unboxed.some max_error in
+  (S2_point.approx_equal ~max_error:max_error_opt t.#center other.#center
    && Float_u.abs (r2 - o2) <= max_error)
   || (is_empty t && o2 <= max_error)
   || (is_empty other && r2 <= max_error)

@@ -276,8 +276,8 @@ let[@inline] [@zero_alloc] directed_hausdorff_distance t y =
       Float_u.max hi_hi lo_lo))
 ;;
 
-let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) t y =
-  let max_error = Float_u.of_float max_error in
+let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t y =
+  let max_error = Packed_float_option.Unboxed.value max_error ~default:#1e-15 in
   if is_empty t
   then length y <= #2.0 * max_error
   else if is_empty y

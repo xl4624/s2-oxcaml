@@ -102,8 +102,8 @@ let[@inline] [@zero_alloc] rotate p ~axis ~angle =
 let[@inline] [@zero_alloc] compare a b = R3_vector.compare a b
 let[@inline] [@zero_alloc] equal a b = R3_vector.equal a b
 
-let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) a b =
-  let max_error = Float_u.of_float max_error in
+let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) a b =
+  let max_error = Packed_float_option.Unboxed.value max_error ~default:#1e-15 in
   let angle = R3_vector.angle a b in
   S1_angle.compare angle (S1_angle.of_radians max_error) <= 0
 ;;

@@ -308,7 +308,7 @@ let quickcheck_r3_cross_antisymmetric () =
     ~f:(fun { R3_pair.a; b } ->
       assert (
         S2.R3_vector.approx_equal
-          ~max_error:1e-10
+          ~max_error:(Packed_float_option.Unboxed.some #1e-10)
           (S2.R3_vector.cross b a)
           (S2.R3_vector.neg (S2.R3_vector.cross a b))))
 ;;

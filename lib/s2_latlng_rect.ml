@@ -466,20 +466,20 @@ let[@inline] [@zero_alloc] equal t other =
   R1_interval.equal t.#lat other.#lat && S1_interval.equal t.#lng other.#lng
 ;;
 
-let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) t other =
-  R1_interval.approx_equal
-    ~max_error:(Packed_float_option.Unboxed.some (Float_u.of_float max_error))
-    t.#lat
-    other.#lat
+let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t other =
+  R1_interval.approx_equal ~max_error t.#lat other.#lat
   && S1_interval.approx_equal ~max_error t.#lng other.#lng
 ;;
 
-let[@zero_alloc ignore] approx_equal_latlng ~max_error t other =
-  let lat_err = Float_u.to_float (S1_angle.radians (S2_latlng.lat max_error)) in
-  let lng_err = Float_u.to_float (S1_angle.radians (S2_latlng.lng max_error)) in
+let[@inline] [@zero_alloc] approx_equal_latlng ~max_error t other =
+  let lat_err = S1_angle.radians (S2_latlng.lat max_error) in
+  let lng_err = S1_angle.radians (S2_latlng.lng max_error) in
   R1_interval.approx_equal
-    ~max_error:(Packed_float_option.Unboxed.some (Float_u.of_float lat_err))
+    ~max_error:(Packed_float_option.Unboxed.some lat_err)
     t.#lat
     other.#lat
-  && S1_interval.approx_equal ~max_error:lng_err t.#lng other.#lng
+  && S1_interval.approx_equal
+       ~max_error:(Packed_float_option.Unboxed.some lng_err)
+       t.#lng
+       other.#lng
 ;;

@@ -105,7 +105,7 @@ val smallest_component : t -> int
 val compare : t -> t -> int
 val equal : t -> t -> bool
 
-(** [approx_equal ?max_error a b] returns true iff each coordinate differs by at most
-    [max_error] (default [1e-16]). *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+(** [approx_equal ~max_error a b] returns true iff each coordinate differs by at most
+    [max_error] (default [1e-16] when [max_error] is [none]). *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]

@@ -19,11 +19,16 @@ val origin : unit -> S2_point.t
     tolerance of [5 * DBL_EPSILON] on [|p|^2 - 1]. *)
 val is_unit_length : S2_point.t -> bool
 
-(** [approx_equals ?max_error_radians a b] returns true if the angle between [a] and [b]
-    is at most [max_error_radians]. The default tolerance matches C++'s
-    [S1Angle::Radians(1e-15)]. Both [a] and [b] must be non-zero vectors. *)
-val approx_equals : ?max_error_radians:float -> S2_point.t -> S2_point.t -> bool
-[@@zero_alloc ignore]
+(** [approx_equals ~max_error_radians a b] returns true if the angle between [a] and [b]
+    is at most [max_error_radians]. The default tolerance (when [max_error_radians] is
+    [none]) matches C++'s [S1Angle::Radians(1e-15)]. Both [a] and [b] must be non-zero
+    vectors. *)
+val approx_equals
+  :  max_error_radians:Packed_float_option.Unboxed.t
+  -> S2_point.t
+  -> S2_point.t
+  -> bool
+[@@zero_alloc]
 
 (** [ortho a] returns a unit-length vector orthogonal to [a]. Satisfies
     [ortho (-a) = -(ortho a)]. Matches C++ [S2::Ortho]; prefers results whose coordinates

@@ -422,7 +422,13 @@ let test_expanded fixture () =
     if not expected_empty
     then (
       let expected = r2_rect_of_json (member "expected" c) in
-      (check bool) "approx_equal" true (S2.R2_rect.approx_equal expected result)))
+      (check bool)
+        "approx_equal"
+        true
+        (S2.R2_rect.approx_equal
+           ~max_error:(Packed_float_option.Unboxed.none ())
+           expected
+           result)))
 ;;
 
 let test_approx_equal fixture () =
@@ -431,7 +437,13 @@ let test_approx_equal fixture () =
     let r1 = r2_rect_of_json (member "r1" c) in
     let r2 = r2_rect_of_json (member "r2" c) in
     let expected = bool_of_json_exn (member "expected" c) in
-    (check bool) "approx_equal" expected (S2.R2_rect.approx_equal r1 r2))
+    (check bool)
+      "approx_equal"
+      expected
+      (S2.R2_rect.approx_equal
+         ~max_error:(Packed_float_option.Unboxed.none ())
+         r1
+         r2))
 ;;
 
 let () =

@@ -89,7 +89,12 @@ let%expect_test "ortho_negation_identity" =
 
 let%expect_test "approx_equals_self" =
   let p = S2.S2_point.of_coords ~x:#0.5 ~y:#0.5 ~z:#0.70710678 in
-  printf "%b\n" (S2.S2_pointutil.approx_equals p p);
+  printf
+    "%b\n"
+    (S2.S2_pointutil.approx_equals
+       ~max_error_radians:(Packed_float_option.Unboxed.none ())
+       p
+       p);
   [%expect {| true |}]
 ;;
 
@@ -98,8 +103,14 @@ let%expect_test "approx_equals_distinct" =
   let b = S2.S2_point.of_coords ~x:#0.0 ~y:#1.0 ~z:#0.0 in
   printf
     "default=%b loose=%b\n"
-    (S2.S2_pointutil.approx_equals a b)
-    (S2.S2_pointutil.approx_equals ~max_error_radians:2.0 a b);
+    (S2.S2_pointutil.approx_equals
+       ~max_error_radians:(Packed_float_option.Unboxed.none ())
+       a
+       b)
+    (S2.S2_pointutil.approx_equals
+       ~max_error_radians:(Packed_float_option.Unboxed.some #2.0)
+       a
+       b);
   [%expect {| default=false loose=true |}]
 ;;
 
@@ -140,7 +151,10 @@ let%expect_test "frame_roundtrip_north_pole" =
   let back = S2.S2_pointutil.from_frame frame local in
   printf
     "roundtrip_approx=%b\n"
-    (S2.S2_pointutil.approx_equals ~max_error_radians:1e-14 q back);
+    (S2.S2_pointutil.approx_equals
+       ~max_error_radians:(Packed_float_option.Unboxed.some #1e-14)
+       q
+       back);
   [%expect {| roundtrip_approx=true |}]
 ;;
 
@@ -156,7 +170,10 @@ let%expect_test "frame_near_pole" =
      && S2.S2_pointutil.is_unit_length col2);
   printf
     "col2_equals_z=%b\n"
-    (S2.S2_pointutil.approx_equals ~max_error_radians:1e-14 col2 z);
+    (S2.S2_pointutil.approx_equals
+       ~max_error_radians:(Packed_float_option.Unboxed.some #1e-14)
+       col2
+       z);
   [%expect {|
     all_unit=true
     col2_equals_z=true |}]

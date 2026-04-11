@@ -64,10 +64,11 @@ let%expect_test "approx_equal" =
   let a = S2.S2_latlng.of_degrees ~lat:#45.0 ~lng:#90.0 in
   let b = S2.S2_latlng.of_degrees ~lat:#45.0 ~lng:#90.0 in
   let c = S2.S2_latlng.of_degrees ~lat:#46.0 ~lng:#91.0 in
+  let none = Packed_float_option.Unboxed.none () in
   printf
     "same: %b different: %b\n"
-    (S2.S2_latlng.approx_equal a b)
-    (S2.S2_latlng.approx_equal a c);
+    (S2.S2_latlng.approx_equal ~max_error:none a b)
+    (S2.S2_latlng.approx_equal ~max_error:none a c);
   [%expect {| same: true different: false |}]
 ;;
 

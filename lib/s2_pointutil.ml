@@ -3,7 +3,11 @@ open Core
 let[@inline] [@zero_alloc ignore] origin () = S2_point.origin
 let[@inline] [@zero_alloc] is_unit_length p = S2_point.is_unit_length p
 
-let[@inline] [@zero_alloc ignore] approx_equals ?(max_error_radians = 1e-15) a b =
+let[@inline] [@zero_alloc] approx_equals
+  ~(max_error_radians : Packed_float_option.Unboxed.t)
+  a
+  b
+  =
   S2_point.approx_equal ~max_error:max_error_radians a b
 ;;
 

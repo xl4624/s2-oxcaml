@@ -158,9 +158,10 @@ val intersection : t -> t -> t
 
 (** {1 Comparison} *)
 
-(** [approx_equal ?max_error t other] returns true if the x- and y-intervals of the two
-    rectangles are within [max_error] of each other. Default [max_error] is [1e-15]. *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+(** [approx_equal ~max_error t other] returns true if the x- and y-intervals of the two
+    rectangles are within [max_error] of each other. Default [max_error] is [1e-15] when
+    [max_error] is [none]. *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]
 
 val equal : t -> t -> bool

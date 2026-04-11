@@ -71,11 +71,10 @@ val rotate : t -> axis:t -> angle:S1_angle.t -> t
 val compare : t -> t -> int
 val equal : t -> t -> bool
 
-(** [approx_equal ?max_error a b] returns true if the angle between [a] and [b] is at most
-    [max_error]. *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
-(* TODO: optional float argument should probably be packed float option *)
+(** [approx_equal ~max_error a b] returns true if the angle between [a] and [b] is at most
+    [max_error]. Default tolerance is [1e-15] when [max_error] is [none]. *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]
 
 (** {1 Frames} *)
 

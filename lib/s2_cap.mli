@@ -126,9 +126,10 @@ val union : t -> t -> t [@@zero_alloc ignore]
 val equal : t -> t -> bool
 
 (** Center angles and squared chord radii within [max_error] (radians on the sphere for
-    centers, absolute on [length2] for radii). *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+    centers, absolute on [length2] for radii). Default tolerance is [1e-14] when
+    [max_error] is [none]. *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]
 
 (** {1 Encoding}
 

@@ -123,10 +123,10 @@ val union : t -> t -> t
     the two intervals. *)
 val intersection : t -> t -> t
 
-(** [approx_equal ?max_error t other] returns true if the two intervals are approximately
-    equal. *)
-val approx_equal : ?max_error:float -> t -> t -> bool
-[@@zero_alloc ignore]
+(** [approx_equal ~max_error t other] returns true if the two intervals are approximately
+    equal. Default tolerance is [1e-15] when [max_error] is [none]. *)
+val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
+[@@zero_alloc]
 
 (** [equal t other] returns true iff the two intervals contain the same set of points. *)
 val equal : t -> t -> bool

@@ -195,8 +195,8 @@ let[@inline] [@zero_alloc] mul t k : t =
   #{ lat = t.#lat * k; lng = t.#lng * k }
 ;;
 
-let[@zero_alloc ignore] approx_equal ?(max_error = 1e-15) a b =
-  let max_error = Float_u.of_float max_error in
+let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) a b =
+  let max_error = Packed_float_option.Unboxed.value max_error ~default:#1e-15 in
   let open Float_u.O in
   Float_u.abs (a.#lat - b.#lat) <= max_error && Float_u.abs (a.#lng - b.#lng) <= max_error
 ;;

@@ -124,7 +124,11 @@ let test_project () =
         check_bool
           (sprintf "proj_approx[%d]" i)
           ~expected:true
-          ~actual:(S2.S2_point.approx_equal closest expected_closest))
+          ~actual:
+            (S2.S2_point.approx_equal
+               ~max_error:(Packed_float_option.Unboxed.none ())
+               closest
+               expected_closest))
 ;;
 
 (* ---------- MaxDistance ---------- *)
@@ -274,14 +278,15 @@ let test_point_to_left_right () =
   in
   check_float "left_dist" ~expected:expected_left_dist ~actual:left_dist;
   check_float "right_dist" ~expected:expected_right_dist ~actual:right_dist;
+  let me = Packed_float_option.Unboxed.some #1e-14 in
   check_bool
     "left_approx"
     ~expected:true
-    ~actual:(S2.S2_point.approx_equal ~max_error:1e-14 actual_left expected_left);
+    ~actual:(S2.S2_point.approx_equal ~max_error:me actual_left expected_left);
   check_bool
     "right_approx"
     ~expected:true
-    ~actual:(S2.S2_point.approx_equal ~max_error:1e-14 actual_right expected_right)
+    ~actual:(S2.S2_point.approx_equal ~max_error:me actual_right expected_right)
 ;;
 
 (* ---------- Project fixture ---------- *)
@@ -297,7 +302,11 @@ let test_project_fixture () =
     check_bool
       (sprintf "project[%d]" i)
       ~expected:true
-      ~actual:(S2.S2_point.approx_equal actual expected))
+      ~actual:
+        (S2.S2_point.approx_equal
+           ~max_error:(Packed_float_option.Unboxed.none ())
+           actual
+           expected))
 ;;
 
 (* ---------- Quickcheck: edge-distance invariants ---------- *)

@@ -98,10 +98,10 @@ val expanded : t -> float# -> t
     [other]: [max_{p in t} min_{q in other} d(p, q)]. *)
 val directed_hausdorff_distance : t -> t -> float#
 
-(** [approx_equal ?max_error t other] returns true if [t] can be transformed into [other]
-    by moving each endpoint by at most [max_error]. The empty interval is considered to be
-    positioned arbitrarily on the real line, so any interval with sufficiently small
-    length matches it. *)
+(** [approx_equal ~max_error t other] returns true if [t] can be transformed into [other]
+    by moving each endpoint by at most [max_error]. Default tolerance is [1e-15] when
+    [max_error] is [none]. The empty interval is considered to be positioned arbitrarily
+    on the real line, so any interval with sufficiently small length matches it. *)
 val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
 
 (** [equal t other] returns true iff the two intervals contain the same set of points. *)

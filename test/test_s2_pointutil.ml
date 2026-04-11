@@ -100,7 +100,12 @@ let quickcheck_approx_equals_self () =
   Base_quickcheck.Test.run_exn
     (module Unit_point)
     ~config:qc_config
-    ~f:(fun { Unit_point.p } -> assert (S2.S2_pointutil.approx_equals p p))
+    ~f:(fun { Unit_point.p } ->
+      assert (
+        S2.S2_pointutil.approx_equals
+          ~max_error_radians:(Packed_float_option.Unboxed.none ())
+          p
+          p))
 ;;
 
 let quickcheck_frame_roundtrip () =
@@ -112,7 +117,11 @@ let quickcheck_frame_roundtrip () =
       let q = S2.S2_point.of_coords ~x:#0.6 ~y:#0.8 ~z:#0.0 in
       let local = S2.S2_pointutil.to_frame frame q in
       let back = S2.S2_pointutil.from_frame frame local in
-      assert (S2.S2_pointutil.approx_equals ~max_error_radians:1e-14 q back))
+      assert (
+        S2.S2_pointutil.approx_equals
+          ~max_error_radians:(Packed_float_option.Unboxed.some #1e-14)
+          q
+          back))
 ;;
 
 let quickcheck_frame_col2_equals_z () =
@@ -122,7 +131,11 @@ let quickcheck_frame_col2_equals_z () =
     ~f:(fun { Unit_point.p } ->
       let frame = S2.S2_pointutil.get_frame p in
       let #{ S2.S2_point.col0 = _; col1 = _; col2 } = frame in
-      assert (S2.S2_pointutil.approx_equals ~max_error_radians:1e-14 col2 p))
+      assert (
+        S2.S2_pointutil.approx_equals
+          ~max_error_radians:(Packed_float_option.Unboxed.some #1e-14)
+          col2
+          p))
 ;;
 
 (* -- End quickcheck ------------------------------------------------------- *)
@@ -200,11 +213,14 @@ let test_approx_equals () =
     let name = string_of_json_exn (member "name" c) in
     let a = point_of_json (member "a" c) in
     let b = point_of_json (member "b" c) in
-    let max_error_radians =
-      Float_u.to_float (float_u_of_json_exn (member "max_error_radians" c))
-    in
+    let max_error_radians = float_u_of_json_exn (member "max_error_radians" c) in
     let expected = bool_of_json_exn (member "expected" c) in
-    let actual = S2.S2_pointutil.approx_equals ~max_error_radians a b in
+    let actual =
+      S2.S2_pointutil.approx_equals
+        ~max_error_radians:(Packed_float_option.Unboxed.some max_error_radians)
+        a
+        b
+    in
     Alcotest.(check bool) ("approx_equals " ^ name) expected actual)
 ;;
 
