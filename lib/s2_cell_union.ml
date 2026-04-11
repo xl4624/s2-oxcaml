@@ -23,7 +23,6 @@ let[@inline] unsigned_compare (a : Int64.t) (b : Int64.t) : int =
 
 let[@inline] unsigned_lt a b = unsigned_compare a b < 0
 let[@inline] unsigned_le a b = unsigned_compare a b <= 0
-let[@inline] unsigned_ge a b = unsigned_compare a b >= 0
 
 (* Returns true if a lies entirely before b on the Hilbert curve. *)
 let entirely_precedes a b =
@@ -34,13 +33,14 @@ let entirely_precedes a b =
 
 (* Binary search for the first cell whose range might overlap target. *)
 let lower_bound ids ~lo ~hi (target : Int64.t) =
-  let lo = ref lo in
-  let hi = ref hi in
-  while !lo < !hi do
-    let mid = !lo + ((!hi - !lo) / 2) in
-    if entirely_precedes ids.(mid) target then lo := mid + 1 else hi := mid
-  done;
-  !lo
+  let rec loop lo hi =
+    if lo >= hi
+    then lo
+    else (
+      let mid = lo + ((hi - lo) / 2) in
+      if entirely_precedes ids.(mid) target then loop (mid + 1) hi else loop lo mid)
+  in
+  loop lo hi
 ;;
 
 (* Returns true if the given four distinct cells have a common parent. *)
@@ -62,6 +62,18 @@ let are_siblings a b c d =
 
 let empty () = { cell_ids = [||] }
 
+(* True when the current top of [out] already contains [id], so [id] can be
+   dropped entirely. *)
+let[@inline] is_contained_or_absorbed out out_len id =
+  out_len > 0 && S2_cell_id.contains (to_cid out.(out_len - 1)) (to_cid id)
+;;
+
+(* True when the top three cells of [out] plus [id] form a complete set of
+   four siblings that should collapse into their common parent. *)
+let[@inline] are_merged_siblings out out_len id =
+  out_len >= 3 && are_siblings out.(out_len - 3) out.(out_len - 2) out.(out_len - 1) id
+;;
+
 let normalize_ids ids =
   Array.sort ids ~compare:unsigned_compare;
   let n = Array.length ids in
@@ -78,15 +90,12 @@ let normalize_ids ids =
     let top () = out.(!out_len - 1) in
     for idx = 0 to n - 1 do
       let id = ref ids.(idx) in
-      if not (!out_len > 0 && S2_cell_id.contains (to_cid (top ())) (to_cid !id))
+      if not (is_contained_or_absorbed out !out_len !id)
       then (
         while !out_len > 0 && S2_cell_id.contains (to_cid !id) (to_cid (top ())) do
           pop ()
         done;
-        while
-          !out_len >= 3
-          && are_siblings out.(!out_len - 3) out.(!out_len - 2) out.(!out_len - 1) !id
-        do
+        while are_merged_siblings out !out_len !id do
           id := of_cid (S2_cell_id.parent_exn (to_cid !id));
           pop ();
           pop ();
@@ -137,7 +146,11 @@ let cell_id t i = to_cid t.cell_ids.(i)
 
 (* {1 Validation} *)
 
-let is_valid t =
+(* Shared driver for [is_valid] and [is_normalized]: every cell must be a
+   valid S2CellId, and [pair_ok ids i] is run for every adjacent pair
+   [(ids.(i-1), ids.(i))] so each caller can layer its own ordering /
+   sibling constraints on top. *)
+let validate_cells t ~pair_ok =
   let ids = t.cell_ids in
   let n = Array.length ids in
   if n > 0 && not (S2_cell_id.is_valid (to_cid ids.(0)))
@@ -148,36 +161,26 @@ let is_valid t =
     while !i < n && !ok do
       if not (S2_cell_id.is_valid (to_cid ids.(!i)))
       then ok := false
-      else (
-        let prev_max = of_cid (S2_cell_id.range_max (to_cid ids.(!i - 1))) in
-        let curr_min = of_cid (S2_cell_id.range_min (to_cid ids.(!i))) in
-        if unsigned_ge prev_max curr_min then ok := false);
+      else if not (pair_ok ids !i)
+      then ok := false;
       incr i
     done;
     !ok)
 ;;
 
+let is_valid t =
+  validate_cells t ~pair_ok:(fun ids i ->
+    let prev_max = of_cid (S2_cell_id.range_max (to_cid ids.(i - 1))) in
+    let curr_min = of_cid (S2_cell_id.range_min (to_cid ids.(i))) in
+    unsigned_lt prev_max curr_min)
+;;
+
 let is_normalized t =
-  let ids = t.cell_ids in
-  let n = Array.length ids in
-  if n > 0 && not (S2_cell_id.is_valid (to_cid ids.(0)))
-  then false
-  else (
-    let ok = ref true in
-    let i = ref 1 in
-    while !i < n && !ok do
-      if not (S2_cell_id.is_valid (to_cid ids.(!i)))
-      then ok := false
-      else (
-        let prev_max = of_cid (S2_cell_id.range_max (to_cid ids.(!i - 1))) in
-        let curr_min = of_cid (S2_cell_id.range_min (to_cid ids.(!i))) in
-        if Int64.( >= ) prev_max curr_min
-        then ok := false
-        else if !i >= 3 && are_siblings ids.(!i - 3) ids.(!i - 2) ids.(!i - 1) ids.(!i)
-        then ok := false);
-      incr i
-    done;
-    !ok)
+  validate_cells t ~pair_ok:(fun ids i ->
+    let prev_max = of_cid (S2_cell_id.range_max (to_cid ids.(i - 1))) in
+    let curr_min = of_cid (S2_cell_id.range_min (to_cid ids.(i))) in
+    Int64.( < ) prev_max curr_min
+    && not (i >= 3 && are_siblings ids.(i - 3) ids.(i - 2) ids.(i - 1) ids.(i)))
 ;;
 
 (* {1 Normalize / Denormalize} *)
