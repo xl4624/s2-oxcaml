@@ -34,7 +34,7 @@ let[@inline] si_ti_to_st si =
 ;;
 
 let[@inline] st_to_si_ti s =
-  Float.iround_nearest_exn (Float_u.to_float Float_u.O.(s * Float_u.of_int max_si_ti))
+  Float_u.iround_nearest_exn Float_u.O.(s * Float_u.of_int max_si_ti)
 ;;
 
 let face_uv_to_xyz face u v : R3_vector.t =

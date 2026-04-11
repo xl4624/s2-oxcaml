@@ -11,6 +11,7 @@ external arr_set
 [@@layout_poly]
 
 (* Precision constants, matching C++ s2predicates. *)
+(* Boxed lookup is fine here - module-init cost, not a hot path. *)
 let dbl_epsilon = Float_u.of_float Float.epsilon_float
 let dbl_error = Float_u.O.(#0.5 * dbl_epsilon)
 

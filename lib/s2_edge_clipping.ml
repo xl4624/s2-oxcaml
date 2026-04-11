@@ -1,6 +1,7 @@
 open Core
 
 (* Error bound constants, matching s2/s2edge_clipping.h. *)
+(* Boxed lookup is fine here - module-init cost, not a hot path. *)
 let dbl_epsilon = Float_u.of_float Float.epsilon_float
 let face_clip_error_radians = Float_u.O.(#3.0 * dbl_epsilon)
 let face_clip_error_uv_dist = Float_u.O.(#9.0 * dbl_epsilon)
