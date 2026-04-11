@@ -66,6 +66,58 @@ val chord_angle_between : t -> t -> S1_chord_angle.t
     [angle]. *)
 val rotate : t -> axis:t -> angle:S1_angle.t -> t
 
+(** {1 Component-wise arithmetic}
+
+    These operators treat an [S2_point] as a raw 3D vector. They do not assume or preserve
+    unit length, so they are intended for building up or transforming intermediate values
+    before a final normalization. *)
+
+(** [add a b] returns the component-wise sum [a + b]. *)
+val add : t -> t -> t
+
+(** [sub a b] returns the component-wise difference [a - b]. *)
+val sub : t -> t -> t
+
+(** [mul t k] returns the scalar product [k * t]. *)
+val mul : t -> float# -> t
+
+(** [neg t] returns the negated point [(-x, -y, -z)]. *)
+val neg : t -> t
+
+(** [mul_components a b] returns the component-wise product
+    [(a.x * b.x, a.y * b.y, a.z * b.z)]. *)
+val mul_components : t -> t -> t
+
+(** [div_components a b] returns the component-wise quotient
+    [(a.x / b.x, a.y / b.y, a.z / b.z)]. *)
+val div_components : t -> t -> t
+
+(** [max a b] returns the component-wise maximum of [a] and [b]. *)
+val max : t -> t -> t
+
+(** [min a b] returns the component-wise minimum of [a] and [b]. *)
+val min : t -> t -> t
+
+(** [sqrt t] returns the component-wise square root of [t]. *)
+val sqrt : t -> t
+
+(** [floor t] returns the component-wise floor of [t]. *)
+val floor : t -> t
+
+(** [ceil t] returns the component-wise ceiling of [t]. *)
+val ceil : t -> t
+
+(** [fround t] returns the component-wise nearest integer of [t], using banker's rounding
+    (round-half-to-even). Matches the semantics of [std::rint] used by the C++
+    [Vector3::FRound]. *)
+val fround : t -> t
+
+(** [nan ()] returns a point whose three components are all NaN. *)
+val nan : unit -> t
+
+(** [is_nan t] returns true if any component of [t] is NaN. *)
+val is_nan : t -> bool
+
 (** {1 Comparison} *)
 
 val compare : t -> t -> int

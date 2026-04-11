@@ -287,6 +287,136 @@ int main() {
         out["stable_angle"] = cases;
     }
 
+    // TEST(S2Point, SubtractionWorks) / operator+ / operator- / operator* /
+    // operator/ / unary operator-
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a,
+                            const S2Point &b, double k) {
+            cases.push_back({{"name", name},
+                             {"a", point_json(a)},
+                             {"b", point_json(b)},
+                             {"k", k},
+                             {"add", point_json(a + b)},
+                             {"sub", point_json(a - b)},
+                             {"mul", point_json(a * k)},
+                             {"neg", point_json(-a)}});
+        };
+        add_case("basic", S2Point(1, 2, 3), S2Point(4, -1, 2), 2.5);
+        add_case("zeros", S2Point(0, 0, 0), S2Point(1, 1, 1), -3.0);
+        add_case("mixed_signs", S2Point(-1.5, 2.5, -3.5),
+                 S2Point(0.5, -1.0, 2.0), 0.25);
+        add_case("unit_like", S2Point(1, 1, 1).Normalize(),
+                 S2Point(1, -1, 0).Normalize(), 4.0);
+        out["arith"] = cases;
+    }
+
+    // TEST(S2Point, ElementWiseDivisionWorks) - mul_components and
+    // div_components
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a,
+                            const S2Point &b) {
+            cases.push_back(
+                {{"name", name},
+                 {"a", point_json(a)},
+                 {"b", point_json(b)},
+                 {"mul_components", point_json(a.MulComponents(b))},
+                 {"div_components", point_json(a.DivComponents(b))}});
+        };
+        add_case("basic", S2Point(2, 4, 6), S2Point(1, 2, 3));
+        add_case("fractions", S2Point(0.5, -0.25, 1.5), S2Point(2, -4, 0.5));
+        add_case("mixed", S2Point(-3, 5, -7), S2Point(2, -2, 4));
+        out["components"] = cases;
+    }
+
+    // Component-wise Max and Min - max / min
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a,
+                            const S2Point &b) {
+            cases.push_back({{"name", name},
+                             {"a", point_json(a)},
+                             {"b", point_json(b)},
+                             {"max", point_json(Max(a, b))},
+                             {"min", point_json(Min(a, b))}});
+        };
+        add_case("basic", S2Point(1, 5, -3), S2Point(2, 3, -1));
+        add_case("equal", S2Point(1, 2, 3), S2Point(1, 2, 3));
+        add_case("negatives", S2Point(-2, -5, -1), S2Point(-3, -4, 0));
+        add_case("crossed", S2Point(1, -2, 3), S2Point(-1, 2, -3));
+        out["minmax"] = cases;
+    }
+
+    // TEST(S2Point, SqrtWorks) - sqrt
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a) {
+            cases.push_back({{"name", name},
+                             {"a", point_json(a)},
+                             {"sqrt", point_json(a.Sqrt())}});
+        };
+        add_case("basic", S2Point(4, 9, 16));
+        add_case("fractions", S2Point(0.25, 2.0, 1e-4));
+        add_case("zeros", S2Point(0, 1, 0));
+        out["sqrt"] = cases;
+    }
+
+    // TEST(S2Point, FloorWorks) - floor
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a) {
+            cases.push_back({{"name", name},
+                             {"a", point_json(a)},
+                             {"floor", point_json(a.Floor())}});
+        };
+        add_case("basic", S2Point(1.2, 3.9, -0.5));
+        add_case("integer", S2Point(2.0, -5.0, 0.0));
+        add_case("negative", S2Point(-1.1, -2.5, -3.9));
+        out["floor"] = cases;
+    }
+
+    // TEST(S2Point, CeilWorks) - ceil
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a) {
+            cases.push_back({{"name", name},
+                             {"a", point_json(a)},
+                             {"ceil", point_json(a.Ceil())}});
+        };
+        add_case("basic", S2Point(1.2, 3.9, -0.5));
+        add_case("integer", S2Point(2.0, -5.0, 0.0));
+        add_case("negative", S2Point(-1.1, -2.5, -3.9));
+        out["ceil"] = cases;
+    }
+
+    // TEST(S2Point, FRoundWorks) - fround (rint, banker's rounding)
+    {
+        json cases = json::array();
+        auto add_case = [&](const std::string &name, const S2Point &a) {
+            cases.push_back({{"name", name},
+                             {"a", point_json(a)},
+                             {"fround", point_json(a.FRound())}});
+        };
+        add_case("basic", S2Point(1.2, 3.7, -0.6));
+        add_case("halves", S2Point(0.5, 1.5, 2.5));
+        add_case("negatives", S2Point(-0.5, -1.5, -2.5));
+        add_case("integer", S2Point(2.0, -3.0, 0.0));
+        out["fround"] = cases;
+    }
+
+    // NaN construction - nan / is_nan
+    {
+        json cases = json::object();
+        S2Point n = S2Point::NaN();
+        cases["nan"] = point_json(n);
+        cases["nan_is_nan"] =
+            std::isnan(n.x()) && std::isnan(n.y()) && std::isnan(n.z());
+        cases["finite_is_nan"] = false;
+        cases["finite"] = point_json(S2Point(1, 2, 3));
+        out["nan"] = cases;
+    }
+
     std::cout << out.dump(2) << std::endl;
     return 0;
 }

@@ -99,6 +99,55 @@ let[@inline] [@zero_alloc] rotate p ~axis ~angle =
   R3_vector.(R3_vector.normalize (R3_vector.add t3 center))
 ;;
 
+let[@inline] [@zero_alloc] add a b = R3_vector.add a b
+let[@inline] [@zero_alloc] sub a b = R3_vector.sub a b
+let[@inline] [@zero_alloc] mul t k = R3_vector.mul t k
+let[@inline] [@zero_alloc] neg t = R3_vector.neg t
+let[@inline] [@zero_alloc] mul_components a b = R3_vector.mul_components a b
+let[@inline] [@zero_alloc] div_components a b = R3_vector.div_components a b
+let[@inline] [@zero_alloc] max a b = R3_vector.max a b
+let[@inline] [@zero_alloc] min a b = R3_vector.min a b
+
+let[@inline] [@zero_alloc] sqrt t =
+  R3_vector.create
+    ~x:(Float_u.sqrt (R3_vector.x t))
+    ~y:(Float_u.sqrt (R3_vector.y t))
+    ~z:(Float_u.sqrt (R3_vector.z t))
+;;
+
+let[@inline] [@zero_alloc] floor t =
+  R3_vector.create
+    ~x:(Float_u.round_down (R3_vector.x t))
+    ~y:(Float_u.round_down (R3_vector.y t))
+    ~z:(Float_u.round_down (R3_vector.z t))
+;;
+
+let[@inline] [@zero_alloc] ceil t =
+  R3_vector.create
+    ~x:(Float_u.round_up (R3_vector.x t))
+    ~y:(Float_u.round_up (R3_vector.y t))
+    ~z:(Float_u.round_up (R3_vector.z t))
+;;
+
+(* Matches C++ [Vector3::FRound], which uses [std::rint] (round half-to-even
+   under the default IEEE rounding mode). *)
+let[@inline] [@zero_alloc] fround t =
+  R3_vector.create
+    ~x:(Float_u.round_nearest_half_to_even (R3_vector.x t))
+    ~y:(Float_u.round_nearest_half_to_even (R3_vector.y t))
+    ~z:(Float_u.round_nearest_half_to_even (R3_vector.z t))
+;;
+
+let[@inline] [@zero_alloc] nan () =
+  R3_vector.create ~x:(Float_u.nan ()) ~y:(Float_u.nan ()) ~z:(Float_u.nan ())
+;;
+
+let[@inline] [@zero_alloc] is_nan t =
+  Float_u.is_nan (R3_vector.x t)
+  || Float_u.is_nan (R3_vector.y t)
+  || Float_u.is_nan (R3_vector.z t)
+;;
+
 let[@inline] [@zero_alloc] compare a b = R3_vector.compare a b
 let[@inline] [@zero_alloc] equal a b = R3_vector.equal a b
 

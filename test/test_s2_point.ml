@@ -9,15 +9,20 @@
    -  TEST(S2Point, PointCross)         - robust_cross_prod
    -  TEST(S2, Frames)                  - frames
    -  TEST(S2, Rotate)                  - rotate
+   -  TEST(S2Point, SubtractionWorks)   - add/sub/mul/neg via arith
+   -  TEST(S2Point, ElementWiseDivisionWorks) - mul_components / div_components
+   -  TEST(S2Point, SqrtWorks)          - sqrt
+   -  TEST(S2Point, FloorWorks)         - floor
+   -  TEST(S2Point, CeilWorks)          - ceil
+   -  TEST(S2Point, FRoundWorks)        - fround
+   -  Max / Min (inherited from Vector3) - max / min
+   -  S2Point::NaN                      - nan / is_nan
    -  distance, stable_angle, chord_angle_between, from_coords
 
    Deliberately omitted:
    -  TEST(S2Point, HashSpreads) - hash is not part of this OCaml port
    -  TEST(S2Point, IsAVector) - type-layout test, not applicable
    -  TEST(S2Point, CoderWorks) - serialization not ported
-   -  TEST(S2Point, SubtractionWorks) - tested via R3_vector
-   -  TEST(S2Point, ElementWiseDivisionWorks) - tested via R3_vector
-   -  TEST(S2Point, SqrtWorks/FloorWorks/CeilWorks/FRoundWorks) - R3_vector ops
    -  TEST(S2, OriginTest) collinearity checks - requires S2Cell/S2Predicates *)
 
 open Core
@@ -339,6 +344,122 @@ let test_from_coords fixture () =
       result)
 ;;
 
+let test_arith fixture () =
+  let cases = to_list (member "arith" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    let b = point_of_json (member "b" c) in
+    let k = float_u_of_json_exn (member "k" c) in
+    check_point_exact
+      (name ^ " add")
+      (point_of_json (member "add" c))
+      (S2.S2_point.add a b);
+    check_point_exact
+      (name ^ " sub")
+      (point_of_json (member "sub" c))
+      (S2.S2_point.sub a b);
+    check_point_exact
+      (name ^ " mul")
+      (point_of_json (member "mul" c))
+      (S2.S2_point.mul a k);
+    check_point_exact (name ^ " neg") (point_of_json (member "neg" c)) (S2.S2_point.neg a))
+;;
+
+let test_components fixture () =
+  let cases = to_list (member "components" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    let b = point_of_json (member "b" c) in
+    check_point_exact
+      (name ^ " mul_components")
+      (point_of_json (member "mul_components" c))
+      (S2.S2_point.mul_components a b);
+    check_point_exact
+      (name ^ " div_components")
+      (point_of_json (member "div_components" c))
+      (S2.S2_point.div_components a b))
+;;
+
+let test_minmax fixture () =
+  let cases = to_list (member "minmax" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    let b = point_of_json (member "b" c) in
+    check_point_exact
+      (name ^ " max")
+      (point_of_json (member "max" c))
+      (S2.S2_point.max a b);
+    check_point_exact
+      (name ^ " min")
+      (point_of_json (member "min" c))
+      (S2.S2_point.min a b))
+;;
+
+let test_sqrt fixture () =
+  let cases = to_list (member "sqrt" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    check_point_exact
+      (name ^ " sqrt")
+      (point_of_json (member "sqrt" c))
+      (S2.S2_point.sqrt a))
+;;
+
+let test_floor fixture () =
+  let cases = to_list (member "floor" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    check_point_exact
+      (name ^ " floor")
+      (point_of_json (member "floor" c))
+      (S2.S2_point.floor a))
+;;
+
+let test_ceil fixture () =
+  let cases = to_list (member "ceil" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    check_point_exact
+      (name ^ " ceil")
+      (point_of_json (member "ceil" c))
+      (S2.S2_point.ceil a))
+;;
+
+let test_fround fixture () =
+  let cases = to_list (member "fround" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    check_point_exact
+      (name ^ " fround")
+      (point_of_json (member "fround" c))
+      (S2.S2_point.fround a))
+;;
+
+let test_nan fixture () =
+  let cases = member "nan" fixture in
+  let nan_point = S2.S2_point.nan () in
+  check_bool
+    "nan () is nan"
+    ~expected:(bool_of_json_exn (member "nan_is_nan" cases))
+    ~actual:(S2.S2_point.is_nan nan_point);
+  let finite = point_of_json (member "finite" cases) in
+  check_bool
+    "finite point is not nan"
+    ~expected:(bool_of_json_exn (member "finite_is_nan" cases))
+    ~actual:(S2.S2_point.is_nan finite);
+  (* Verify each component of [nan ()] is NaN. *)
+  Alcotest.(check bool) "x is nan" true (Float_u.is_nan (S2.S2_point.x nan_point));
+  Alcotest.(check bool) "y is nan" true (Float_u.is_nan (S2.S2_point.y nan_point));
+  Alcotest.(check bool) "z is nan" true (Float_u.is_nan (S2.S2_point.z nan_point))
+;;
+
 let () =
   let fixture = load_fixture "s2point.json" in
   Alcotest.run
@@ -360,6 +481,14 @@ let () =
       , [ Alcotest.test_case "ChordAngleBetween" `Quick (test_chord_angle_between fixture)
         ] )
     ; "from_coords", [ Alcotest.test_case "FromCoords" `Quick (test_from_coords fixture) ]
+    ; "arith", [ Alcotest.test_case "Arith" `Quick (test_arith fixture) ]
+    ; "components", [ Alcotest.test_case "Components" `Quick (test_components fixture) ]
+    ; "minmax", [ Alcotest.test_case "MinMax" `Quick (test_minmax fixture) ]
+    ; "sqrt", [ Alcotest.test_case "Sqrt" `Quick (test_sqrt fixture) ]
+    ; "floor", [ Alcotest.test_case "Floor" `Quick (test_floor fixture) ]
+    ; "ceil", [ Alcotest.test_case "Ceil" `Quick (test_ceil fixture) ]
+    ; "fround", [ Alcotest.test_case "FRound" `Quick (test_fround fixture) ]
+    ; "nan", [ Alcotest.test_case "NaN" `Quick (test_nan fixture) ]
     ; ( "quickcheck"
       , [ Alcotest.test_case "distance_nonneg" `Quick quickcheck_distance_nonneg
         ; Alcotest.test_case "distance_symmetric" `Quick quickcheck_distance_symmetric
