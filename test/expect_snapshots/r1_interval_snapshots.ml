@@ -41,6 +41,15 @@ let%expect_test "contains_point" =
     contains 5.0: true |}]
 ;;
 
+let%expect_test "exn_path" =
+  (* [project_exn] on the canonical empty interval must raise: it delegates to
+     [Float_u.clamp_exn] which rejects min > max. *)
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore (S2.R1_interval.project_exn S2.R1_interval.empty #0.0 : float#));
+  [%expect
+    {| (raised "Assert_failure src/float.ml:1004:2") |}]
+;;
+
 let%expect_test "intersection_and_union" =
   let a = S2.R1_interval.create ~lo:#1.0 ~hi:#5.0 in
   let b = S2.R1_interval.create ~lo:#3.0 ~hi:#7.0 in

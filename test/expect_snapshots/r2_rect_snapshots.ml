@@ -25,6 +25,26 @@ let%expect_test "from_center_size" =
   [%expect {| lo_x=-1 hi_x=3 lo_y=-1 hi_y=5 |}]
 ;;
 
+let%expect_test "exn_path" =
+  (* [create_intervals_exn] with one empty and one non-empty interval is not
+     a valid rectangle. *)
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore
+      (S2.R2_rect.create_intervals_exn
+         ~x:S2.R1_interval.empty
+         ~y:(S2.R1_interval.create ~lo:#0.0 ~hi:#1.0)
+       : S2.R2_rect.t));
+  [%expect {| (raised "R2Rect: both intervals must be empty or non-empty") |}];
+  (* [project_exn] on the empty rectangle must raise. *)
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore
+      (S2.R2_rect.project_exn
+         S2.R2_rect.empty
+         (S2.R2_point.create ~x:#0.0 ~y:#0.0)
+       : S2.R2_point.t));
+  [%expect {| (raised "R2_rect.project: rectangle is empty") |}]
+;;
+
 let%expect_test "contains_point" =
   let r =
     S2.R2_rect.from_point_pair

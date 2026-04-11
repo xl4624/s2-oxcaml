@@ -1,5 +1,10 @@
 open Core
 
+(* No error-path snapshot: [S2_cell_union] exposes no [_exn] functions in
+   [lib/s2_cell_union.mli]. Per-cell operations like [parent_exn],
+   [child_exn], and [from_face_exn] live on [S2_cell_id] and are covered
+   by [s2_cell_id_snapshots.ml]. *)
+
 (* Hand-crafted set operation examples for S2_cell_union.
 
    The building blocks below are:

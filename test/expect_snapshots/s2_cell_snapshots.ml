@@ -1,5 +1,11 @@
 open Core
 
+(* No error-path snapshot: [S2_cell] exposes no [_exn] functions in
+   [lib/s2_cell.mli]. Operations such as [S2_cell.from_face] and
+   [S2_cell.child] do raise on invalid input, but those code paths are
+   covered by the corresponding [S2_cell_id.from_face_exn] and
+   [S2_cell_id.child_exn] snapshots in [s2_cell_id_snapshots.ml]. *)
+
 let%expect_test "face0_sexp" =
   Stdlib.print_endline
     (Sexp.to_string ([%sexp_of: S2.S2_cell.t] (S2.S2_cell.from_face 0)));

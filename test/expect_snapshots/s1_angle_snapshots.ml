@@ -49,6 +49,19 @@ let%expect_test "e5_e6_e7" =
   [%expect {| e5=45.000000000000007 e6=45 e7=45 |}]
 ;;
 
+let%expect_test "exn_path" =
+  (* The E5/E6/E7 encodings round degrees * 10^k to a signed 32-bit int, so
+     an infinite angle overflows all three encodings and their [_exn]
+     variants raise. *)
+  let inf = S2.S1_angle.infinity in
+  Expect_test_helpers_core.show_raise (fun () -> ignore (S2.S1_angle.e5_exn inf : int));
+  [%expect {| (raised ("S1Angle.e5_exn: angle overflows int" (degrees INF))) |}];
+  Expect_test_helpers_core.show_raise (fun () -> ignore (S2.S1_angle.e6_exn inf : int));
+  [%expect {| (raised ("S1Angle.e6_exn: angle overflows int" (degrees INF))) |}];
+  Expect_test_helpers_core.show_raise (fun () -> ignore (S2.S1_angle.e7_exn inf : int));
+  [%expect {| (raised ("S1Angle.e7_exn: angle overflows int" (degrees INF))) |}]
+;;
+
 let%expect_test "add_sub" =
   let a = S2.S1_angle.of_degrees #30.0 in
   let b = S2.S1_angle.of_degrees #60.0 in

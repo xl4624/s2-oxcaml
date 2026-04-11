@@ -71,6 +71,39 @@ let%expect_test "approx_equal" =
   [%expect {| same: true different: false |}]
 ;;
 
+let%expect_test "exn_path" =
+  (* [of_eN_exn] requires the decoded latitude to lie in [-90, 90] degrees.
+     Picking encoded latitudes well above that range forces each variant to
+     raise. *)
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore (S2.S2_latlng.of_e5_exn ~lat:10_000_000 ~lng:0 : S2.S2_latlng.t));
+  [%expect
+    {|
+    (raised (
+      "S2LatLng: latitude out of range" of_e5_exn
+      (lat 10000000)
+      (lng 0)))
+    |}];
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore (S2.S2_latlng.of_e6_exn ~lat:100_000_000 ~lng:0 : S2.S2_latlng.t));
+  [%expect
+    {|
+    (raised (
+      "S2LatLng: latitude out of range" of_e6_exn
+      (lat 100000000)
+      (lng 0)))
+    |}];
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore (S2.S2_latlng.of_e7_exn ~lat:1_000_000_000 ~lng:0 : S2.S2_latlng.t));
+  [%expect
+    {|
+    (raised (
+      "S2LatLng: latitude out of range" of_e7_exn
+      (lat 1000000000)
+      (lng 0)))
+    |}]
+;;
+
 let%expect_test "add_sub" =
   let a = S2.S2_latlng.of_radians ~lat:#0.1 ~lng:#0.2 in
   let b = S2.S2_latlng.of_radians ~lat:#0.3 ~lng:#0.4 in

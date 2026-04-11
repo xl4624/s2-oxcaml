@@ -89,6 +89,23 @@ let%expect_test "union_with_empty" =
   [%expect {| area_eq: true |}]
 ;;
 
+let%expect_test "exn_path" =
+  (* [decode_exn] requires a 32-byte payload; shorter strings must raise. *)
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore (S2.S2_cap.decode_exn "not-enough-bytes" : S2.S2_cap.t));
+  [%expect {| (raised (Failure "t.Option.value_exn: none")) |}];
+  (* [expanded_exn] with a negative distance is invalid. *)
+  Expect_test_helpers_core.show_raise (fun () ->
+    ignore
+      (S2.S2_cap.expanded_exn S2.S2_cap.full (S2.S1_angle.of_degrees (-#1.0))
+       : S2.S2_cap.t));
+  [%expect {|
+    (raised (
+      "S2_cap.expanded: distance must be non-negative"
+      (distance ((radians -0.017453292519943295)))))
+    |}]
+;;
+
 let%expect_test "encode_decode_roundtrip" =
   let cap =
     S2.S2_cap.of_center_angle

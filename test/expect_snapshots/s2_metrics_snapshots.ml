@@ -1,4 +1,8 @@
 open Core
+
+(* No error-path snapshot: [S2_metrics] exposes no [_exn] functions in
+   [lib/s2_metrics.mli]. Level lookups clamp their input internally. *)
+
 module M = S2.S2_metrics
 
 let levels = [ 0; 5; 10; 15; 20; 30 ]

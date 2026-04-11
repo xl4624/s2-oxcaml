@@ -1,5 +1,8 @@
 open Core
 
+(* No error-path snapshot: [S2_latlng_rect] exposes no [_exn] functions in
+   [lib/s2_latlng_rect.mli]. *)
+
 let%expect_test "empty_sexp" =
   Stdlib.print_endline
     (Sexp.to_string ([%sexp_of: S2.S2_latlng_rect.t] S2.S2_latlng_rect.empty));
