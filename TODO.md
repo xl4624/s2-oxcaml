@@ -93,11 +93,11 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/edge_clipping.go` | C++: `s2edge_clipping.h`, `s2edge_clipping.cc`
   - Deps: `s2_point`, `r2_point`
 
-- [ ] **s2_measures** - `S2_measures`
+- [x] **s2_measures** - `S2_measures`
   - Go: `s2/point_measures.go` | C++: `s2measures.h`, `s2measures.cc`
   - Deps: `s2_point`
 
-- [ ] **s2_predicates** - `S2_predicates`
+- [x] **s2_predicates** - `S2_predicates`
   - Go: `s2/predicates.go` | C++: `s2predicates.h`, `s2predicates.cc`
   - Deps: `s2_point`
 
