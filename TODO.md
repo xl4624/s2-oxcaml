@@ -89,7 +89,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/centroids.go` | C++: `s2centroids.h`, `s2centroids.cc`
   - Deps: `s2_point`, `r3_vector`
 
-- [ ] **s2_edge_clipping** - `S2_edge_clipping`
+- [x] **s2_edge_clipping** - `S2_edge_clipping`
   - Go: `s2/edge_clipping.go` | C++: `s2edge_clipping.h`, `s2edge_clipping.cc`
   - Deps: `s2_point`, `r2_point`
 
@@ -101,7 +101,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/predicates.go` | C++: `s2predicates.h`, `s2predicates.cc`
   - Deps: `s2_point`
 
-- [ ] **s2_wedge_relations** - `S2_wedge_relations`
+- [x] **s2_wedge_relations** - `S2_wedge_relations`
   - Go: `s2/wedge_relations.go` | C++: `s2wedge_relations.h`, `s2wedge_relations.cc`
   - Deps: `s2_point`
 
