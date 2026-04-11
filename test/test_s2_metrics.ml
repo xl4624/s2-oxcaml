@@ -207,30 +207,27 @@ let qc_config =
 
 (* At every level, min <= avg <= max for width, edge, diag, and area metrics. *)
 let quickcheck_monotone_at_level () =
-  Base_quickcheck.Test.run_exn
-    (module Level)
-    ~config:qc_config
-    ~f:(fun { Level.level } ->
-      let check family =
-        let lo = metric_by_name ("min_" ^ family) in
-        let avg = metric_by_name ("avg_" ^ family) in
-        let hi = metric_by_name ("max_" ^ family) in
-        let open Float_u.O in
-        let lo_v = M.get_value lo level in
-        let avg_v = M.get_value avg level in
-        let hi_v = M.get_value hi level in
-        if not (lo_v <= avg_v && avg_v <= hi_v)
-        then
-          raise_s
-            [%message
-              "metric ordering violated"
-                (family : string)
-                (level : int)
-                (Float_u.to_float lo_v : float)
-                (Float_u.to_float avg_v : float)
-                (Float_u.to_float hi_v : float)]
-      in
-      List.iter [ "width"; "edge"; "diag"; "area"; "angle_span" ] ~f:check)
+  Base_quickcheck.Test.run_exn (module Level) ~config:qc_config ~f:(fun { Level.level } ->
+    let check family =
+      let lo = metric_by_name ("min_" ^ family) in
+      let avg = metric_by_name ("avg_" ^ family) in
+      let hi = metric_by_name ("max_" ^ family) in
+      let open Float_u.O in
+      let lo_v = M.get_value lo level in
+      let avg_v = M.get_value avg level in
+      let hi_v = M.get_value hi level in
+      if not (lo_v <= avg_v && avg_v <= hi_v)
+      then
+        raise_s
+          [%message
+            "metric ordering violated"
+              (family : string)
+              (level : int)
+              (Float_u.to_float lo_v : float)
+              (Float_u.to_float avg_v : float)
+              (Float_u.to_float hi_v : float)]
+    in
+    List.iter [ "width"; "edge"; "diag"; "area"; "angle_span" ] ~f:check)
 ;;
 
 (* Scaling law: get_value(l+1) = get_value(l) * 2^(-dim). Matches the C++
@@ -265,66 +262,59 @@ let quickcheck_level_scaling () =
    [get_level_for_min_value] or [get_level_for_max_value] recovers l. This is
    the precise postcondition guaranteed by the C++ DCHECKs. *)
 let quickcheck_level_roundtrip () =
-  Base_quickcheck.Test.run_exn
-    (module Level)
-    ~config:qc_config
-    ~f:(fun { Level.level } ->
-      let check_roundtrip metric =
-        let v = M.get_value metric level in
-        let max_level = M.get_level_for_max_value metric v in
-        if max_level <> level
-        then
-          raise_s
-            [%message
-              "get_level_for_max_value roundtrip failed"
-                (level : int)
-                (max_level : int)
-                (Float_u.to_float v : float)];
-        let min_level = M.get_level_for_min_value metric v in
-        if min_level <> level
-        then
-          raise_s
-            [%message
-              "get_level_for_min_value roundtrip failed"
-                (level : int)
-                (min_level : int)
-                (Float_u.to_float v : float)]
-      in
-      List.iter
-        [ "min_width"
-        ; "max_width"
-        ; "min_edge"
-        ; "max_edge"
-        ; "min_diag"
-        ; "max_diag"
-        ; "min_area"
-        ; "max_area"
-        ]
-        ~f:(fun name -> check_roundtrip (metric_by_name name)))
+  Base_quickcheck.Test.run_exn (module Level) ~config:qc_config ~f:(fun { Level.level } ->
+    let check_roundtrip metric =
+      let v = M.get_value metric level in
+      let max_level = M.get_level_for_max_value metric v in
+      if max_level <> level
+      then
+        raise_s
+          [%message
+            "get_level_for_max_value roundtrip failed"
+              (level : int)
+              (max_level : int)
+              (Float_u.to_float v : float)];
+      let min_level = M.get_level_for_min_value metric v in
+      if min_level <> level
+      then
+        raise_s
+          [%message
+            "get_level_for_min_value roundtrip failed"
+              (level : int)
+              (min_level : int)
+              (Float_u.to_float v : float)]
+    in
+    List.iter
+      [ "min_width"
+      ; "max_width"
+      ; "min_edge"
+      ; "max_edge"
+      ; "min_diag"
+      ; "max_diag"
+      ; "min_area"
+      ; "max_area"
+      ]
+      ~f:(fun name -> check_roundtrip (metric_by_name name)))
 ;;
 
 (* get_closest_level on min_width.get_value(l) returns l, matching the width
    and area loop assertions in s2metrics_test.cc. *)
 let quickcheck_closest_level_roundtrip () =
-  Base_quickcheck.Test.run_exn
-    (module Level)
-    ~config:qc_config
-    ~f:(fun { Level.level } ->
-      let check metric =
-        let v = M.get_value metric level in
-        let got = M.get_closest_level metric v in
-        if got <> level
-        then
-          raise_s
-            [%message
-              "get_closest_level roundtrip failed"
-                (level : int)
-                (got : int)
-                (Float_u.to_float v : float)]
-      in
-      List.iter
-        [ "min_width"; "min_edge"; "min_diag"; "min_area" ]
-        ~f:(fun name -> check (metric_by_name name)))
+  Base_quickcheck.Test.run_exn (module Level) ~config:qc_config ~f:(fun { Level.level } ->
+    let check metric =
+      let v = M.get_value metric level in
+      let got = M.get_closest_level metric v in
+      if got <> level
+      then
+        raise_s
+          [%message
+            "get_closest_level roundtrip failed"
+              (level : int)
+              (got : int)
+              (Float_u.to_float v : float)]
+    in
+    List.iter [ "min_width"; "min_edge"; "min_diag"; "min_area" ] ~f:(fun name ->
+      check (metric_by_name name)))
 ;;
 
 let () =

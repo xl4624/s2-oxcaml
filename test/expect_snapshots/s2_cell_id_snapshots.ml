@@ -45,7 +45,11 @@ let%expect_test "face_level_pos_decomposition" =
 
 let%expect_test "to_string_and_sexp" =
   let show name c =
-    printf "%s: to_string=%s sexp=%s\n" name (C.to_string c) (Sexp.to_string [%sexp (c : C.t)])
+    printf
+      "%s: to_string=%s sexp=%s\n"
+      name
+      (C.to_string c)
+      (Sexp.to_string [%sexp (c : C.t)])
   in
   show "face0" (C.from_face_exn 0);
   show "face2" (C.from_face_exn 2);

@@ -46,8 +46,7 @@ let%expect_test "exn_path" =
      [Float_u.clamp_exn] which rejects min > max. *)
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.R1_interval.project_exn S2.R1_interval.empty #0.0 : float#));
-  [%expect
-    {| (raised "Assert_failure src/float.ml:1004:2") |}]
+  [%expect {| (raised "Assert_failure src/float.ml:1004:2") |}]
 ;;
 
 let%expect_test "intersection_and_union" =

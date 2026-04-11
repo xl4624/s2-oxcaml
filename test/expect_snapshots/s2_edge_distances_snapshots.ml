@@ -58,7 +58,8 @@ let%expect_test "interpolate_along_edge" =
   go #0.0;
   go #0.5;
   go #1.0;
-  [%expect {|
+  [%expect
+    {|
     t=0.00 -> (1, 0, 0)
     t=0.50 -> (0.70710678118654757, 0.70710678118654746, 0)
     t=1.00 -> (0, 1, 0)
@@ -91,7 +92,8 @@ let%expect_test "edge_pair_closest_points" =
     (Float_u.to_float (S2.R3_vector.x b))
     (Float_u.to_float (S2.R3_vector.y b))
     (Float_u.to_float (S2.R3_vector.z b));
-  [%expect {| a=(0.70710678118654746,0.70710678118654746,-0) b=(0.70710678118654746,0.70710678118654746,-0) |}]
+  [%expect
+    {| a=(0.70710678118654746,0.70710678118654746,-0) b=(0.70710678118654746,0.70710678118654746,-0) |}]
 ;;
 
 let%expect_test "update_min_distance_option" =

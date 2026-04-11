@@ -100,10 +100,7 @@ let quickcheck_complement_complement () =
       let c = S2.S2_cap.complement cap in
       let cc = S2.S2_cap.complement c in
       assert (
-        S2.S2_cap.approx_equal
-          ~max_error:(Packed_float_option.Unboxed.some #1e-14)
-          cap
-          cc))
+        S2.S2_cap.approx_equal ~max_error:(Packed_float_option.Unboxed.some #1e-14) cap cc))
 ;;
 
 let quickcheck_union_contains_both () =
@@ -603,10 +600,7 @@ let test_expanded f () =
   (check bool)
     "expanded0_approx_cap50"
     true
-    (S2.S2_cap.approx_equal
-       ~max_error:(Packed_float_option.Unboxed.none ())
-       exp0
-       cap50);
+    (S2.S2_cap.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) exp0 cap50);
   check_float_u
     "cap50_exp0_len2"
     ~expected:(float_u_of_json_exn (member "cap50_exp0_len2" e))

@@ -227,7 +227,11 @@ let[@inline] [@zero_alloc] intersection t other =
   else #{ x = xx; y = yy }
 ;;
 
-let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t other =
+let[@inline] [@zero_alloc] approx_equal
+  ~(max_error : Packed_float_option.Unboxed.t)
+  t
+  other
+  =
   R1_interval.approx_equal ~max_error t.#x other.#x
   && R1_interval.approx_equal ~max_error t.#y other.#y
 ;;

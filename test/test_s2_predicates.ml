@@ -285,8 +285,7 @@ let quickcheck_robust_sign_never_indeterminate () =
       else (
         let d = S2.S2_predicates.robust_sign a b c in
         match d with
-        | S2.S2_predicates.Direction.Indeterminate ->
-          assert false
+        | S2.S2_predicates.Direction.Indeterminate -> assert false
         | Clockwise | Counter_clockwise -> ()))
 ;;
 
@@ -299,9 +298,7 @@ let quickcheck_sign_agrees_with_robust_sign () =
          boolean returns true iff robust_sign is Counter_clockwise.  Skip
          near-collinear triples where the plain-float determinant sign is
          unreliable; those are exercised by the fixture-driven tests. *)
-      let det =
-        S2.R3_vector.dot (S2.R3_vector.cross a b) c
-      in
+      let det = S2.R3_vector.dot (S2.R3_vector.cross a b) c in
       if Float_u.O.(Float_u.abs det < #1e-10)
       then ()
       else (
@@ -360,10 +357,7 @@ let () =
     ; ( "quickcheck"
       , [ Alcotest.test_case "sign_antisymmetric" `Quick quickcheck_sign_antisymmetric
         ; Alcotest.test_case "sign_cyclic" `Quick quickcheck_sign_cyclic
-        ; Alcotest.test_case
-            "sign_anticyclic_swap"
-            `Quick
-            quickcheck_sign_anticyclic_swap
+        ; Alcotest.test_case "sign_anticyclic_swap" `Quick quickcheck_sign_anticyclic_swap
         ; Alcotest.test_case
             "robust_sign_never_indeterminate"
             `Quick

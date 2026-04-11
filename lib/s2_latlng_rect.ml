@@ -466,7 +466,11 @@ let[@inline] [@zero_alloc] equal t other =
   R1_interval.equal t.#lat other.#lat && S1_interval.equal t.#lng other.#lng
 ;;
 
-let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t other =
+let[@inline] [@zero_alloc] approx_equal
+  ~(max_error : Packed_float_option.Unboxed.t)
+  t
+  other
+  =
   R1_interval.approx_equal ~max_error t.#lat other.#lat
   && S1_interval.approx_equal ~max_error t.#lng other.#lng
 ;;

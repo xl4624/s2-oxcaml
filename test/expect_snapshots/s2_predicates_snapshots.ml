@@ -6,10 +6,7 @@ let%expect_test "sign_ccw_and_cw" =
   let a = pt #1.0 #0.0 #0.0 in
   let b = pt #0.0 #1.0 #0.0 in
   let c = pt #0.0 #0.0 #1.0 in
-  printf
-    "abc=%b acb=%b\n"
-    (S2.S2_predicates.sign a b c)
-    (S2.S2_predicates.sign a c b);
+  printf "abc=%b acb=%b\n" (S2.S2_predicates.sign a b c) (S2.S2_predicates.sign a c b);
   [%expect {| abc=true acb=false |}]
 ;;
 
@@ -18,7 +15,9 @@ let%expect_test "robust_sign_direction" =
   let b = pt #0.0 #1.0 #0.0 in
   let c = pt #0.0 #0.0 #1.0 in
   let show name d =
-    printf "%s: %s (int=%d)\n" name
+    printf
+      "%s: %s (int=%d)\n"
+      name
       (match d with
        | S2.S2_predicates.Direction.Clockwise -> "CW"
        | Counter_clockwise -> "CCW"
@@ -28,7 +27,8 @@ let%expect_test "robust_sign_direction" =
   show "abc" (S2.S2_predicates.robust_sign a b c);
   show "acb" (S2.S2_predicates.robust_sign a c b);
   show "aab" (S2.S2_predicates.robust_sign a a b);
-  [%expect {|
+  [%expect
+    {|
     abc: CCW (int=1)
     acb: CW (int=-1)
     aab: Indeterminate (int=0)
@@ -73,7 +73,8 @@ let%expect_test "compare_distance_and_distances" =
     "compare_distance x a small=%d large=%d\n"
     (S2.S2_predicates.compare_distance x a r_small)
     (S2.S2_predicates.compare_distance x a r_large);
-  [%expect {|
+  [%expect
+    {|
     compare_distances x a b = -1
     compare_distance x a small=1 large=-1
     |}]

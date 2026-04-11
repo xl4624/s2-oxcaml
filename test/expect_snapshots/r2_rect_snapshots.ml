@@ -38,9 +38,7 @@ let%expect_test "exn_path" =
   (* [project_exn] on the empty rectangle must raise. *)
   Expect_test_helpers_core.show_raise (fun () ->
     ignore
-      (S2.R2_rect.project_exn
-         S2.R2_rect.empty
-         (S2.R2_point.create ~x:#0.0 ~y:#0.0)
+      (S2.R2_rect.project_exn S2.R2_rect.empty (S2.R2_point.create ~x:#0.0 ~y:#0.0)
        : S2.R2_point.t));
   [%expect {| (raised "R2_rect.project: rectangle is empty") |}]
 ;;

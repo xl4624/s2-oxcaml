@@ -25,7 +25,8 @@ let%expect_test "planar_centroid_octant" =
   let pc = S2.S2_centroids.planar_centroid a b c in
   print_vec "planar" pc;
   printf "norm=%.17g\n" (Float_u.to_float (S2.R3_vector.norm pc));
-  [%expect {|
+  [%expect
+    {|
     planar: x=0.33333333333333331 y=0.33333333333333331 z=0.33333333333333331
     norm=0.57735026918962573
     |}]
@@ -39,7 +40,8 @@ let%expect_test "true_centroid_octant" =
   print_vec "true" tc;
   printf "norm=%.17g\n" (Float_u.to_float (S2.R3_vector.norm tc));
   (* By symmetry, each component equals pi/4 exactly. *)
-  [%expect {|
+  [%expect
+    {|
     true: x=0.78539816339744828 y=0.78539816339744828 z=0.78539816339744828
     norm=1.3603495231756633
     |}]
@@ -85,7 +87,8 @@ let%expect_test "true_centroid_asym" =
   let tc = S2.S2_centroids.true_centroid a b c in
   print_vec "true" tc;
   printf "norm=%.17g\n" (Float_u.to_float (S2.R3_vector.norm tc));
-  [%expect {|
+  [%expect
+    {|
     true: x=0.5134477138186363 y=0.55080356242773154 z=0.44961258817030414
     norm=0.87702029546063742
     |}]

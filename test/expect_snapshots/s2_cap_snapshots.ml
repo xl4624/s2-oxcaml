@@ -99,7 +99,8 @@ let%expect_test "exn_path" =
     ignore
       (S2.S2_cap.expanded_exn S2.S2_cap.full (S2.S1_angle.of_degrees (-#1.0))
        : S2.S2_cap.t));
-  [%expect {|
+  [%expect
+    {|
     (raised (
       "S2_cap.expanded: distance must be non-negative"
       (distance ((radians -0.017453292519943295)))))

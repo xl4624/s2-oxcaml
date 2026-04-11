@@ -281,7 +281,11 @@ let[@inline] [@zero_alloc] equal t other =
   || (is_full t && is_full other)
 ;;
 
-let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t other =
+let[@inline] [@zero_alloc] approx_equal
+  ~(max_error : Packed_float_option.Unboxed.t)
+  t
+  other
+  =
   let open Float_u.O in
   let r2 = S1_chord_angle.length2 t.#radius in
   let o2 = S1_chord_angle.length2 other.#radius in

@@ -199,7 +199,10 @@ let[@zero_alloc ignore] get_point_to_right a b r =
   get_point_on_ray a dir r
 ;;
 
-type closest_points = #{ a : S2_point.t; b : S2_point.t }
+type closest_points =
+  #{ a : S2_point.t
+   ; b : S2_point.t
+   }
 
 (* Project that takes a precomputed a_cross_b (not necessarily normalized).
    Mirrors the three-argument C++ Project overload. *)
@@ -329,9 +332,7 @@ let[@zero_alloc ignore] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
      flip a_ortho so that it agrees with a_nearest_b0 x a_nearest_b1.  This
      mirrors s2pred::Sign(a_ortho, a_nearest_b0, a_nearest_b1) < 0, where
      Sign(a, b, c) = (c x a) . b. *)
-  let s =
-    R3_vector.dot (R3_vector.cross a_nearest_b1 a_ortho0) a_nearest_b0
-  in
+  let s = R3_vector.dot (R3_vector.cross a_nearest_b1 a_ortho0) a_nearest_b0 in
   let a_ortho = if s < #0.0 then R3_vector.neg a_ortho0 else a_ortho0 in
   let tol_rad = S1_angle.radians tolerance in
   let b0_dist = S1_angle.radians (R3_vector.angle b0 a_nearest_b0) in
@@ -366,8 +367,7 @@ let[@zero_alloc ignore] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
       (* A point p lies on edge b0b1 if we can traverse b_ortho -> b0 -> p ->
          b1 -> b_ortho without turning right. *)
       let furthest_on_b =
-        S2_predicates.sign b_ortho b0 furthest
-        && S2_predicates.sign furthest b1 b_ortho
+        S2_predicates.sign b_ortho b0 furthest && S2_predicates.sign furthest b1 b_ortho
       in
       let furthest_inv_on_b =
         S2_predicates.sign b_ortho b0 furthest_inv

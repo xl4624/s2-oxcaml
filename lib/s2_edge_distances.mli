@@ -122,7 +122,10 @@ val get_point_to_right : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
 (** {1 Edge-Pair Distance} *)
 
 (** Unboxed pair of points returned by {!get_edge_pair_closest_points}. *)
-type closest_points = #{ a : S2_point.t; b : S2_point.t }
+type closest_points =
+  #{ a : S2_point.t
+   ; b : S2_point.t
+   }
 
 (** [update_edge_pair_min_distance a0 a1 b0 b1 min_dist] returns [Some dist] if the
     minimum distance between edges [a0a1] and [b0b1] is less than [min_dist], where [dist]
@@ -163,9 +166,9 @@ val is_edge_pair_distance_less
 [@@zero_alloc ignore]
 
 (** [get_edge_pair_closest_points a0 a1 b0 b1] returns the pair [(a, b)] of points that
-    achieves the minimum distance between edges [a0a1] and [b0b1], where [a] is a point
-    on [a0a1] and [b] is a point on [b0b1]. If the two edges intersect, [a] and [b] are
-    both equal to the intersection point. Handles [a0 = a1] and [b0 = b1] correctly. *)
+    achieves the minimum distance between edges [a0a1] and [b0b1], where [a] is a point on
+    [a0a1] and [b] is a point on [b0b1]. If the two edges intersect, [a] and [b] are both
+    equal to the intersection point. Handles [a0 = a1] and [b0 = b1] correctly. *)
 val get_edge_pair_closest_points
   :  S2_point.t
   -> S2_point.t
@@ -176,9 +179,9 @@ val get_edge_pair_closest_points
 
 (** [is_edge_b_near_edge_a a0 a1 b0 b1 tolerance] returns true if every point on edge
     [b0b1] is no further than [tolerance] from some point on edge [a0a1]. Equivalently,
-    returns true if the directed Hausdorff distance from [b0b1] to [a0a1] is no more
-    than [tolerance]. Requires [tolerance] to be strictly less than 90 degrees and
-    strictly greater than zero. *)
+    returns true if the directed Hausdorff distance from [b0b1] to [a0a1] is no more than
+    [tolerance]. Requires [tolerance] to be strictly less than 90 degrees and strictly
+    greater than zero. *)
 val is_edge_b_near_edge_a
   :  S2_point.t
   -> S2_point.t

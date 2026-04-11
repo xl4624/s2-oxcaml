@@ -15,8 +15,8 @@ open Core
 val angle : S2_point.t -> S2_point.t -> S2_point.t -> S1_angle.t
 
 (** [turn_angle a b c] returns the exterior angle at vertex [b] in the spherical triangle
-    [abc]. The result is positive if [abc] is counter-clockwise and negative otherwise.
-    If you imagine an ant walking from [a] to [b] to [c], this is the angle that the ant
+    [abc]. The result is positive if [abc] is counter-clockwise and negative otherwise. If
+    you imagine an ant walking from [a] to [b] to [c], this is the angle that the ant
     turns at vertex [b] (positive = left = CCW, negative = right = CW). This quantity is
     also known as the "geodesic curvature" at [b].
 
@@ -27,8 +27,8 @@ val turn_angle : S2_point.t -> S2_point.t -> S2_point.t -> S1_angle.t
 
 (** [area a b c] returns the area of the spherical triangle [abc]. Combines l'Huilier's
     theorem and Girard's formula to obtain accurate results for both large and small
-    triangles. The maximum error is about [5e-15] (about 0.25 square meters on the
-    Earth's surface).
+    triangles. The maximum error is about [5e-15] (about 0.25 square meters on the Earth's
+    surface).
 
     All points should be unit length, and no two points should be antipodal. The result is
     always non-negative. *)

@@ -20,7 +20,8 @@ let%expect_test "width_metrics" =
       (show M.min_width l)
       (show M.avg_width l)
       (show M.max_width l));
-  [%expect {|
+  [%expect
+    {|
     level= 0  min=9.42809041582063467e-01  avg=1.43452367288609950e+00  max=1.70489717919921846e+00
     level= 5  min=2.94627825494394834e-02  avg=4.48288647776906093e-02  max=5.32780368499755769e-02
     level=10  min=9.20711954669983855e-04  avg=1.40090202430283154e-03  max=1.66493865156173678e-03
@@ -38,7 +39,8 @@ let%expect_test "edge_metrics" =
       (show M.min_edge l)
       (show M.avg_edge l)
       (show M.max_edge l));
-  [%expect {|
+  [%expect
+    {|
     level= 0  min=9.42809041582063467e-01  avg=1.45921374638610613e+00  max=1.70489717919921846e+00
     level= 5  min=2.94627825494394834e-02  avg=4.56004295745658164e-02  max=5.32780368499755769e-02
     level=10  min=9.20711954669983855e-04  avg=1.42501342420518176e-03  max=1.66493865156173678e-03
@@ -56,7 +58,8 @@ let%expect_test "diag_metrics" =
       (show M.min_diag l)
       (show M.avg_diag l)
       (show M.max_diag l));
-  [%expect {|
+  [%expect
+    {|
     level= 0  min=1.25707872210941796e+00  avg=2.06042273899847173e+00  max=2.43865459443402122e+00
     level= 5  min=3.92837100659193111e-02  avg=6.43882105937022414e-02  max=7.62079560760631630e-02
     level=10  min=1.22761593955997847e-03  avg=2.01213158105319504e-03  max=2.38149862737697384e-03
@@ -74,7 +77,8 @@ let%expect_test "area_metrics" =
       (show M.min_area l)
       (show M.avg_area l)
       (show M.max_area l));
-  [%expect {|
+  [%expect
+    {|
     level= 0  min=1.25707872210941796e+00  avg=2.09439510239319526e+00  max=2.63579925696316142e+00
     level= 5  min=1.22761593955997847e-03  avg=2.04530771718085475e-03  max=2.57402271187808732e-03
     level=10  min=1.19884369097654148e-06  avg=1.99737081755942847e-06  max=2.51369405456844465e-06
@@ -94,7 +98,8 @@ let%expect_test "get_closest_level" =
       (M.get_closest_level M.avg_edge au)
       (M.get_closest_level M.avg_diag au)
       (M.get_closest_level M.avg_width au));
-  [%expect {|
+  [%expect
+    {|
     angle=1.00e+00  closest(avg_edge)= 1  closest(avg_diag)= 1  closest(avg_width)= 1
     angle=1.00e-01  closest(avg_edge)= 4  closest(avg_diag)= 4  closest(avg_width)= 4
     angle=1.00e-02  closest(avg_edge)= 7  closest(avg_diag)= 8  closest(avg_width)= 7

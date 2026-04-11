@@ -141,7 +141,10 @@ let quickcheck_relation_exhaustive () =
       (* Any call must return one of the five relations; pattern matching
          exhausts the tags so the match itself is the proof. *)
       match S2.S2_wedge_relations.get_wedge_relation ~a0 ~ab1 ~a2 ~b0 ~b2 with
-      | Equals | Properly_contains | Is_properly_contained | Properly_overlaps
+      | Equals
+      | Properly_contains
+      | Is_properly_contained
+      | Properly_overlaps
       | Is_disjoint -> ())
 ;;
 
@@ -185,7 +188,10 @@ let () =
     [ "wedges", [ test_case "all" `Quick test_wedges ]
     ; ( "quickcheck"
       , [ test_case "relation_exhaustive" `Quick quickcheck_relation_exhaustive
-        ; test_case "relation_reflexive_equals" `Quick quickcheck_relation_reflexive_equals
+        ; test_case
+            "relation_reflexive_equals"
+            `Quick
+            quickcheck_relation_reflexive_equals
         ; test_case "equals_symmetric" `Quick quickcheck_equals_symmetric
         ] )
     ]

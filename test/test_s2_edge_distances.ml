@@ -360,12 +360,9 @@ let quickcheck_distance_to_degenerate_edge () =
     ~f:(fun { S2_point_triple.a; x; _ } ->
       (* Distance from [x] to the degenerate edge [aa] is just the [xa] angle. *)
       let d_edge =
-        Float_u.to_float
-          (S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a a))
+        Float_u.to_float (S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a a))
       in
-      let d_point =
-        Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance x a))
-      in
+      let d_point = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance x a)) in
       let diff = Float.abs (d_edge -. d_point) in
       if Float.( > ) diff 1e-13
       then Alcotest.failf "get_distance x a a vs dist(x,a): %g vs %g" d_edge d_point)
@@ -380,10 +377,8 @@ let quickcheck_interpolate_endpoints () =
       let at_b = S2.S2_edge_distances.interpolate a b #1.0 in
       let d_a = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance at_a a)) in
       let d_b = Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance at_b b)) in
-      if Float.( > ) d_a 3e-15
-      then Alcotest.failf "interpolate a b 0 angle to a = %g" d_a;
-      if Float.( > ) d_b 3e-15
-      then Alcotest.failf "interpolate a b 1 angle to b = %g" d_b)
+      if Float.( > ) d_a 3e-15 then Alcotest.failf "interpolate a b 0 angle to a = %g" d_a;
+      if Float.( > ) d_b 3e-15 then Alcotest.failf "interpolate a b 1 angle to b = %g" d_b)
 ;;
 
 let quickcheck_project_is_on_edge () =
@@ -401,8 +396,7 @@ let quickcheck_project_is_on_edge () =
           Float_u.to_float
             (S2.S1_angle.radians (S2.S2_edge_distances.get_distance proj a b))
         in
-        if Float.( > ) d 1e-13
-        then Alcotest.failf "project then get_distance = %g" d))
+        if Float.( > ) d 1e-13 then Alcotest.failf "project then get_distance = %g" d))
 ;;
 
 (* ---------- Alcotest suite ---------- *)

@@ -55,7 +55,8 @@ let%expect_test "octant_triangle_area" =
     (Float_u.to_float girard)
     (Float_u.to_float signed_ccw)
     (Float_u.to_float signed_cw);
-  [%expect {| area=1.5707963267948966 girard=1.5707963267948966 signed_ccw=1.5707963267948966 signed_cw=-1.5707963267948966 |}]
+  [%expect
+    {| area=1.5707963267948966 girard=1.5707963267948966 signed_ccw=1.5707963267948966 signed_cw=-1.5707963267948966 |}]
 ;;
 
 let%expect_test "degenerate_triangle_area" =

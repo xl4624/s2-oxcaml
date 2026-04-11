@@ -433,32 +433,25 @@ let qc_config =
 ;;
 
 let quickcheck_st_uv_roundtrip () =
-  Base_quickcheck.Test.run_exn
-    (module S_point)
-    ~config:qc_config
-    ~f:(fun { S_point.s } ->
-      let su = Float_u.of_float s in
-      let u = S2.S2_coords.st_to_uv su in
-      let back = S2.S2_coords.uv_to_st u in
-      let diff = Float.abs (Float_u.to_float back -. s) in
-      if Float.( > ) diff 1e-15
-      then Alcotest.failf "st->uv->st diff %g for s=%g" diff s)
+  Base_quickcheck.Test.run_exn (module S_point) ~config:qc_config ~f:(fun { S_point.s } ->
+    let su = Float_u.of_float s in
+    let u = S2.S2_coords.st_to_uv su in
+    let back = S2.S2_coords.uv_to_st u in
+    let diff = Float.abs (Float_u.to_float back -. s) in
+    if Float.( > ) diff 1e-15 then Alcotest.failf "st->uv->st diff %g for s=%g" diff s)
 ;;
 
 let quickcheck_si_ti_st_roundtrip () =
-  Base_quickcheck.Test.run_exn
-    (module S_point)
-    ~config:qc_config
-    ~f:(fun { S_point.s } ->
-      let su = Float_u.of_float s in
-      let si = S2.S2_coords.st_to_si_ti su in
-      let back = S2.S2_coords.si_ti_to_st si in
-      (* [st_to_si_ti] rounds to the nearest integer si/ti, so the round-trip
+  Base_quickcheck.Test.run_exn (module S_point) ~config:qc_config ~f:(fun { S_point.s } ->
+    let su = Float_u.of_float s in
+    let si = S2.S2_coords.st_to_si_ti su in
+    let back = S2.S2_coords.si_ti_to_st si in
+    (* [st_to_si_ti] rounds to the nearest integer si/ti, so the round-trip
          can differ by up to 1 / (2 * max_si_ti). *)
-      let max_diff = 1.0 /. Float.of_int S2.S2_coords.max_si_ti in
-      let diff = Float.abs (Float_u.to_float back -. s) in
-      if Float.( > ) diff max_diff
-      then Alcotest.failf "si_ti roundtrip diff %g > %g for s=%g" diff max_diff s)
+    let max_diff = 1.0 /. Float.of_int S2.S2_coords.max_si_ti in
+    let diff = Float.abs (Float_u.to_float back -. s) in
+    if Float.( > ) diff max_diff
+    then Alcotest.failf "si_ti roundtrip diff %g > %g for s=%g" diff max_diff s)
 ;;
 
 let quickcheck_face_uv_xyz_roundtrip () =
@@ -478,14 +471,7 @@ let quickcheck_face_uv_xyz_roundtrip () =
       let du = Float.abs (u_back -. u) in
       let dv = Float.abs (v_back -. v) in
       if Float.( > ) du 1e-14 || Float.( > ) dv 1e-14
-      then
-        Alcotest.failf
-          "uv roundtrip face=%d u=%g->%g v=%g->%g"
-          face
-          u
-          u_back
-          v
-          v_back)
+      then Alcotest.failf "uv roundtrip face=%d u=%g->%g v=%g->%g" face u u_back v v_back)
 ;;
 
 let () =

@@ -306,10 +306,7 @@ let test_approx_equal fixture () =
     (check bool)
       "approx_equal vs C++ aequal"
       (bool_of_json_exn (member "aequal" c))
-      (S2.R3_vector.approx_equal
-         ~max_error:(Packed_float_option.Unboxed.some margin)
-         a
-         b))
+      (S2.R3_vector.approx_equal ~max_error:(Packed_float_option.Unboxed.some margin) a b))
 ;;
 
 let test_compare_equal fixture () =

@@ -440,10 +440,7 @@ let test_approx_equal fixture () =
     (check bool)
       "approx_equal"
       expected
-      (S2.R2_rect.approx_equal
-         ~max_error:(Packed_float_option.Unboxed.none ())
-         r1
-         r2))
+      (S2.R2_rect.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) r1 r2))
 ;;
 
 let () =

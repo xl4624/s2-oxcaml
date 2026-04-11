@@ -15,8 +15,7 @@ let[@inline] turn_angle a b c =
   in
   match S2_predicates.robust_sign a b c with
   | Counter_clockwise -> ang
-  | Clockwise | Indeterminate ->
-    S1_angle.of_radians (Float_u.neg (S1_angle.radians ang))
+  | Clockwise | Indeterminate -> S1_angle.of_radians (Float_u.neg (S1_angle.radians ang))
 ;;
 
 let[@inline] girard_area a b c =

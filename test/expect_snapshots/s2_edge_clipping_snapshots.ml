@@ -4,14 +4,16 @@ let pt x y z = S2.S2_point.of_coords ~x ~y ~z
 
 let%expect_test "face_clip_error_constants" =
   printf
-    "face_rad=%.17g face_uv=%.17g face_coord=%.17g rect_uv=%.17g edge_coord=%.17g edge_uv=%.17g\n"
+    "face_rad=%.17g face_uv=%.17g face_coord=%.17g rect_uv=%.17g edge_coord=%.17g \
+     edge_uv=%.17g\n"
     (Float_u.to_float S2.S2_edge_clipping.face_clip_error_radians)
     (Float_u.to_float S2.S2_edge_clipping.face_clip_error_uv_dist)
     (Float_u.to_float S2.S2_edge_clipping.face_clip_error_uv_coord)
     (Float_u.to_float S2.S2_edge_clipping.intersects_rect_error_uv_dist)
     (Float_u.to_float S2.S2_edge_clipping.edge_clip_error_uv_coord)
     (Float_u.to_float S2.S2_edge_clipping.edge_clip_error_uv_dist);
-  [%expect {| face_rad=6.6613381477509392e-16 face_uv=1.9984014443252818e-15 face_coord=1.4130832128153975e-15 rect_uv=9.4205547521026515e-16 edge_coord=4.9960036108132044e-16 edge_uv=4.9960036108132044e-16 |}]
+  [%expect
+    {| face_rad=6.6613381477509392e-16 face_uv=1.9984014443252818e-15 face_coord=1.4130832128153975e-15 rect_uv=9.4205547521026515e-16 edge_coord=4.9960036108132044e-16 edge_uv=4.9960036108132044e-16 |}]
 ;;
 
 let%expect_test "get_face_segments_single_face" =
@@ -33,8 +35,7 @@ let%expect_test "get_face_segments_crossing_faces" =
   let a = pt #1.0 #0.0 #0.0 in
   let b = pt #0.0 #1.0 #0.0 in
   let segs = S2.S2_edge_clipping.get_face_segments a b in
-  List.iter segs ~f:(fun s ->
-    printf "face=%d\n" s.face);
+  List.iter segs ~f:(fun s -> printf "face=%d\n" s.face);
   printf "n=%d\n" (List.length segs);
   [%expect {|
     face=0
@@ -81,8 +82,7 @@ let%expect_test "interpolate_double" =
     printf
       "x=%.2f -> %.17g\n"
       (Float_u.to_float x)
-      (Float_u.to_float
-         (S2.S2_edge_clipping.interpolate_double x #0.0 #1.0 #10.0 #20.0))
+      (Float_u.to_float (S2.S2_edge_clipping.interpolate_double x #0.0 #1.0 #10.0 #20.0))
   in
   show #0.0;
   show #0.25;
@@ -92,9 +92,9 @@ let%expect_test "interpolate_double" =
   (* Degenerate: a = b, should return a1. *)
   printf
     "degen=%.17g\n"
-    (Float_u.to_float
-       (S2.S2_edge_clipping.interpolate_double #0.5 #1.0 #1.0 #7.0 #42.0));
-  [%expect {|
+    (Float_u.to_float (S2.S2_edge_clipping.interpolate_double #0.5 #1.0 #1.0 #7.0 #42.0));
+  [%expect
+    {|
     x=0.00 -> 10
     x=0.25 -> 12.5
     x=0.50 -> 15

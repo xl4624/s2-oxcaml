@@ -197,12 +197,7 @@ let check_vec_close ~eps msg u v =
   let diff = S2.R3_vector.sub u v in
   let m = vec_max_abs diff in
   if m > Float_u.of_float eps
-  then
-    Alcotest.failf
-      "%s: diff=%.17g (eps=%.17g)"
-      msg
-      (Float_u.to_float m)
-      eps
+  then Alcotest.failf "%s: diff=%.17g (eps=%.17g)" msg (Float_u.to_float m) eps
 ;;
 
 let quickcheck_planar_centroid_cyclic_symmetry () =
@@ -278,7 +273,7 @@ let quickcheck_true_centroid_norm_bounded () =
          the result is bounded by 2*pi. *)
       let t = S2.S2_centroids.true_centroid a b c in
       let n = S2.R3_vector.norm t in
-      let bound = Float_u.O.(Float_u.pi () * #2.0 + #1e-12) in
+      let bound = Float_u.O.((Float_u.pi () * #2.0) + #1e-12) in
       assert (Float_u.O.(n <= bound)))
 ;;
 

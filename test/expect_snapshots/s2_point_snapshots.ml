@@ -83,9 +83,6 @@ let%expect_test "frame_roundtrip" =
   let back = S2.S2_point.from_frame frame local in
   printf
     "roundtrip_approx: %b\n"
-    (S2.S2_point.approx_equal
-       ~max_error:(Packed_float_option.Unboxed.some #1e-15)
-       z
-       back);
+    (S2.S2_point.approx_equal ~max_error:(Packed_float_option.Unboxed.some #1e-15) z back);
   [%expect {| roundtrip_approx: true |}]
 ;;

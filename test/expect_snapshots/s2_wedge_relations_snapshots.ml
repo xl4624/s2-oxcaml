@@ -38,7 +38,8 @@ let%expect_test "wedge_properly_contains" =
     "a_contains_b=%b b_contains_a=%b\n"
     (S2.S2_wedge_relations.wedge_contains ~a0 ~ab1 ~a2 ~b0 ~b2)
     (S2.S2_wedge_relations.wedge_contains ~a0:b0 ~ab1 ~a2:b2 ~b0:a0 ~b2:a2);
-  [%expect {|
+  [%expect
+    {|
     a_contains_b: Is_properly_contained
     a_contains_b=false b_contains_a=true
     |}]
@@ -52,9 +53,7 @@ let%expect_test "wedge_properly_overlaps" =
   let b2 = pt (-#1.0) (-#1.0) #0.0 in
   let r = S2.S2_wedge_relations.get_wedge_relation ~a0 ~ab1 ~a2 ~b0 ~b2 in
   show_rel "overlap" r;
-  printf
-    "intersects=%b\n"
-    (S2.S2_wedge_relations.wedge_intersects ~a0 ~ab1 ~a2 ~b0 ~b2);
+  printf "intersects=%b\n" (S2.S2_wedge_relations.wedge_intersects ~a0 ~ab1 ~a2 ~b0 ~b2);
   [%expect {|
     overlap: Properly_overlaps
     intersects=true
