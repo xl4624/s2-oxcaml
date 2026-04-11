@@ -131,7 +131,7 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/contains_vertex_query.go` | C++: `s2contains_vertex_query.h`, `s2contains_vertex_query.cc`
   - Deps: `s2_point`
 
-- [ ] **s2_projections** - `S2_projections`
+- [x] **s2_projections** - `S2_projections`
   - Go: `s2/projections.go` | C++: `s2projections.h`, `s2projections.cc`
   - Deps: `s2_latlng`, `r2_point`
 
