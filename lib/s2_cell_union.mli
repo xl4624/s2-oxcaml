@@ -93,6 +93,12 @@ val contains_union : t -> t -> bool
 (** [intersects_union t other] returns true if this union intersects any cell of [other]. *)
 val intersects_union : t -> t -> bool
 
+(** [contains_cell t c] returns true if the union contains the given cell. *)
+val contains_cell : t -> S2_cell.t -> bool
+
+(** [intersects_cell t c] returns true if the union intersects the given cell. *)
+val intersects_cell : t -> S2_cell.t -> bool
+
 (** [contains_point t p] returns true if the union contains the given point. *)
 val contains_point : t -> S2_point.t -> bool
 
@@ -126,6 +132,18 @@ val approx_area : t -> float#
 
 (** [exact_area t] returns the area as accurately as possible. *)
 val exact_area : t -> float#
+
+(** {1 Bounding} *)
+
+(** [cap_bound t] returns a bounding cap for the union. *)
+val cap_bound : t -> S2_cap.t
+
+(** [rect_bound t] returns a bounding latitude-longitude rectangle for the union. *)
+val rect_bound : t -> S2_latlng_rect.t
+
+(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Returned
+    as boxed [Int64.t] for the same reason as {!S2_cap.cell_union_bound}. *)
+val cell_union_bound : t -> Int64.t list
 
 (** {1 Comparison} *)
 

@@ -50,7 +50,6 @@ val ortho : t -> t
     high-precision arithmetic if necessary to ensure the result is non-zero even when [a]
     and [b] are nearly parallel. The result is not normalized. *)
 val robust_cross_prod : t -> t -> t
-[@@zero_alloc ignore]
 
 (** [distance a b] returns the angle between [a] and [b]. *)
 val distance : t -> t -> S1_angle.t

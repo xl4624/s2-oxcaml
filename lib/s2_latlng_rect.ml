@@ -228,6 +228,143 @@ let[@zero_alloc ignore] cap_bound t =
 
 let[@inline] [@zero_alloc] rect_bound t = t
 
+(* Bounding rectangle of a cap. Mirrors C++ S2Cap::GetRectBound. *)
+let[@zero_alloc ignore] from_cap c =
+  let open Float_u.O in
+  if S2_cap.is_empty c
+  then empty
+  else (
+    let center_ll = S2_latlng.of_point (S2_cap.center c) in
+    let cap_angle = S1_angle.radians (S2_cap.radius_angle c) in
+    let mutable all_longitudes = false in
+    let mutable lat_lo = S1_angle.radians (S2_latlng.lat center_ll) - cap_angle in
+    let mutable lat_hi = S1_angle.radians (S2_latlng.lat center_ll) + cap_angle in
+    let mutable lng_lo = Float_u.neg (Float_u.pi ()) in
+    let mutable lng_hi = Float_u.pi () in
+    if lat_lo <= Float_u.neg (Float_u.pi () / #2.0)
+    then (
+      lat_lo <- Float_u.neg (Float_u.pi () / #2.0);
+      all_longitudes <- true);
+    if lat_hi >= Float_u.pi () / #2.0
+    then (
+      lat_hi <- Float_u.pi () / #2.0;
+      all_longitudes <- true);
+    if not all_longitudes
+    then (
+      let sin_a = S1_chord_angle.sin (S2_cap.radius_chord c) in
+      let sin_c = Float_u.cos (S1_angle.radians (S2_latlng.lat center_ll)) in
+      if Float_u.O.(sin_a <= sin_c)
+      then (
+        let angle_a = Float_u.asin (sin_a / sin_c) in
+        let lng = S1_angle.radians (S2_latlng.lng center_ll) in
+        lng_lo <- Float_util.ieee_remainder_u (lng - angle_a) (#2.0 * Float_u.pi ());
+        lng_hi <- Float_util.ieee_remainder_u (lng + angle_a) (#2.0 * Float_u.pi ())));
+    #{ lat = R1_interval.create ~lo:lat_lo ~hi:lat_hi
+     ; lng = S1_interval.create ~lo:lng_lo ~hi:lng_hi
+     })
+;;
+
+let pole_min_lat =
+  let open Float_u.O in
+  Float_u.asin (Float_u.sqrt (#1.0 / #3.0)) - (#0.5 * Float_u.epsilon_float ())
+;;
+
+(* Bounding rectangle of an S2 cell. Mirrors C++ S2Cell::GetRectBound. *)
+let[@zero_alloc ignore] from_cell cell =
+  let level = S2_cell.level cell in
+  let face = S2_cell.face cell in
+  let uv = S2_cell.bound_uv cell in
+  let two_eps = Float_u.O.(#2.0 * Float_u.epsilon_float ()) in
+  let two_eps_ll = S2_latlng.of_radians ~lat:two_eps ~lng:two_eps in
+  if Stdlib.( > ) level 0
+  then
+    let open Float_u.O in
+    let u0 = R1_interval.lo (R2_rect.x uv) in
+    let u1 = R1_interval.hi (R2_rect.x uv) in
+    let v0 = R1_interval.lo (R2_rect.y uv) in
+    let v1 = R1_interval.hi (R2_rect.y uv) in
+    let u_axis = S2_coords.get_u_axis face in
+    let v_axis = S2_coords.get_v_axis face in
+    let u_sum = u0 + u1 in
+    let v_sum = v0 + v1 in
+    let i =
+      if Float_u.O.(R3_vector.z u_axis = #0.0)
+      then if Float_u.O.(u_sum < #0.0) then 1 else 0
+      else if Float_u.O.(u_sum > #0.0)
+      then 1
+      else 0
+    in
+    let j =
+      if Float_u.O.(R3_vector.z v_axis = #0.0)
+      then if Float_u.O.(v_sum < #0.0) then 1 else 0
+      else if Float_u.O.(v_sum > #0.0)
+      then 1
+      else 0
+    in
+    let pick_u idx = if Stdlib.( = ) idx 0 then u0 else u1 in
+    let pick_v idx = if Stdlib.( = ) idx 0 then v0 else v1 in
+    let lat_at i j =
+      S1_angle.radians
+        (S2_latlng.latitude (S2_coords.face_uv_to_xyz face (pick_u i) (pick_v j)))
+    in
+    let lng_at i j =
+      S1_angle.radians
+        (S2_latlng.longitude (S2_coords.face_uv_to_xyz face (pick_u i) (pick_v j)))
+    in
+    let lat =
+      R1_interval.from_point_pair
+        (lat_at i j)
+        (lat_at (Stdlib.( - ) 1 i) (Stdlib.( - ) 1 j))
+    in
+    let lng =
+      S1_interval.from_point_pair
+        (lng_at i (Stdlib.( - ) 1 j))
+        (lng_at (Stdlib.( - ) 1 i) j)
+    in
+    polar_closure (expanded #{ lat; lng } two_eps_ll)
+  else
+    let open Float_u.O in
+    let pi4 = Float_u.pi () / #4.0 in
+    let pi2 = Float_u.pi () / #2.0 in
+    let pi3_4 = #3.0 * Float_u.pi () / #4.0 in
+    let bound =
+      match face with
+      | 0 ->
+        #{ lat = R1_interval.create ~lo:(Float_u.neg pi4) ~hi:pi4
+         ; lng = S1_interval.create ~lo:(Float_u.neg pi4) ~hi:pi4
+         }
+      | 1 ->
+        #{ lat = R1_interval.create ~lo:(Float_u.neg pi4) ~hi:pi4
+         ; lng = S1_interval.create ~lo:pi4 ~hi:pi3_4
+         }
+      | 2 ->
+        #{ lat = R1_interval.create ~lo:pole_min_lat ~hi:pi2; lng = S1_interval.full }
+      | 3 ->
+        #{ lat = R1_interval.create ~lo:(Float_u.neg pi4) ~hi:pi4
+         ; lng = S1_interval.create ~lo:pi3_4 ~hi:(Float_u.neg pi3_4)
+         }
+      | 4 ->
+        #{ lat = R1_interval.create ~lo:(Float_u.neg pi4) ~hi:pi4
+         ; lng = S1_interval.create ~lo:(Float_u.neg pi3_4) ~hi:(Float_u.neg pi4)
+         }
+      | _ ->
+        #{ lat = R1_interval.create ~lo:(Float_u.neg pi2) ~hi:(Float_u.neg pole_min_lat)
+         ; lng = S1_interval.full
+         }
+    in
+    let one_eps_ll = S2_latlng.of_radians ~lat:(Float_u.epsilon_float ()) ~lng:#0.0 in
+    expanded bound one_eps_ll
+;;
+
+let[@zero_alloc ignore] contains_cell t cell = contains t (from_cell cell)
+
+(* Mirrors C++ S2LatLngRect::MayIntersect: a cheap, conservative check that
+   reduces to "does this rectangle intersect the cell's bounding rectangle?".
+   The Go port goes further with edge-crossing tests, but the C++ reference
+   library uses this conservative form. *)
+let[@zero_alloc ignore] intersects_cell t cell = intersects t (from_cell cell)
+let[@zero_alloc ignore] cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
+
 (* Distance helpers -- these mirror s2edge_distances functions. *)
 
 (* Minimum distance from point p to great-circle segment (a, b). *)

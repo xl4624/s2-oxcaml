@@ -19,15 +19,6 @@
 
 open Core
 
-(* TODO: replace with [S2_latlng_rect.t] once ported.
-   Bounding rectangle in latitude-longitude space. *)
-
-type lat_lng_rect =
-  { lat : R1_interval.t
-  ; lng : S1_interval.t
-  }
-[@@deriving sexp_of]
-
 [@@@zero_alloc all]
 
 type t : (float64 & float64 & float64) & float64
@@ -84,10 +75,6 @@ val area : t -> float# [@@zero_alloc ignore]
 val centroid : t -> S2_point.t
 [@@zero_alloc ignore]
 
-(** Latitude-longitude bounds (see [S2Cap::GetRectBound]). *)
-val rect_bound : t -> lat_lng_rect
-[@@zero_alloc ignore]
-
 (** {1 Predicates} *)
 
 val is_valid : t -> bool
@@ -96,9 +83,9 @@ val is_full : t -> bool
 
 (** {1 Set operations} *)
 
-val complement : t -> t [@@zero_alloc ignore]
-val contains_cap : t -> t -> bool [@@zero_alloc ignore]
-val intersects : t -> t -> bool [@@zero_alloc ignore]
+val complement : t -> t
+val contains_cap : t -> t -> bool
+val intersects : t -> t -> bool
 val interior_intersects : t -> t -> bool
 val interior_contains_point : t -> S2_point.t -> bool
 
@@ -116,10 +103,18 @@ val expanded : t -> S1_angle.t -> Option.t
 
 (** @raise [Invalid_argument] if [distance] is negative. *)
 val expanded_exn : t -> S1_angle.t -> t
-[@@zero_alloc ignore]
 
 (** Smallest cap enclosing both operands. *)
-val union : t -> t -> t [@@zero_alloc ignore]
+val union : t -> t -> t
+
+(** {1 Bounding} *)
+
+(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Generally
+    returns at most 4 cells, except for very large caps which may need 6 face cells. The
+    result is not sorted. Returned as boxed [Int64.t] because [S2_cell_id.t] has layout
+    [bits64]. *)
+val cell_union_bound : t -> Int64.t list
+[@@zero_alloc ignore]
 
 (** {1 Comparison} *)
 

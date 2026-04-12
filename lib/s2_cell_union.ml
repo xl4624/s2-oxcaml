@@ -275,6 +275,8 @@ let intersects_union t other =
   !found
 ;;
 
+let contains_cell t cell = contains_cell_id t (S2_cell.id cell)
+let intersects_cell t cell = intersects_cell_id t (S2_cell.id cell)
 let contains_point t p = contains_cell_id t (S2_cell_id.from_point p)
 
 (* {1 Set Operations} *)
@@ -390,6 +392,52 @@ let exact_area t =
   done;
   acc
 ;;
+
+(* {1 Bounding} *)
+
+(* C++ S2CellUnion::GetCapBound. Computes the area-weighted centroid as the cap
+   axis, then expands by adding the bounding cap of each cell. *)
+let cap_bound t =
+  let n = Array.length t.cell_ids in
+  if n = 0
+  then S2_cap.empty
+  else (
+    let mutable cx = #0.0 in
+    let mutable cy = #0.0 in
+    let mutable cz = #0.0 in
+    for i = 0 to n - 1 do
+      let id = to_cid t.cell_ids.(i) in
+      let area = S2_cell.average_area (S2_cell_id.level id) in
+      let p = S2_cell_id.to_point id in
+      cx <- Float_u.O.(cx + (R3_vector.x p * area));
+      cy <- Float_u.O.(cy + (R3_vector.y p * area));
+      cz <- Float_u.O.(cz + (R3_vector.z p * area))
+    done;
+    let centroid = R3_vector.create ~x:cx ~y:cy ~z:cz in
+    let centroid =
+      if Float_u.O.(R3_vector.norm2 centroid = #0.0)
+      then S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
+      else R3_vector.normalize centroid
+    in
+    let mutable cap = S2_cap.of_point centroid in
+    for i = 0 to n - 1 do
+      let id = to_cid t.cell_ids.(i) in
+      cap <- S2_cap.add_cap cap (S2_cell.cap_bound (S2_cell.of_cell_id id))
+    done;
+    cap)
+;;
+
+let rect_bound t =
+  let n = Array.length t.cell_ids in
+  let mutable bound = S2_latlng_rect.empty in
+  for i = 0 to n - 1 do
+    let id = to_cid t.cell_ids.(i) in
+    bound <- S2_latlng_rect.union bound (S2_latlng_rect.from_cell (S2_cell.of_cell_id id))
+  done;
+  bound
+;;
+
+let cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
 
 (* {1 Comparison} *)
 

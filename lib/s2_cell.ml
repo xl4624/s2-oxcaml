@@ -174,6 +174,8 @@ let cap_bound t =
   S2_cap.add_point cap (vertex t 3)
 ;;
 
+let cell_union_bound t = [ S2_cell_id.id t.#id ]
+
 let vertex_chord_dist t p i j =
   (* C++: S2Point(uv_[0][i], uv_[1][j], 1).Normalize()
      Both callers pass UVW-space points, so the vertex must also be in UVW space. *)

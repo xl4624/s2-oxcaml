@@ -1,11 +1,5 @@
 open Core
 
-type lat_lng_rect =
-  { lat : R1_interval.t
-  ; lng : S1_interval.t
-  }
-[@@deriving sexp_of]
-
 type t =
   #{ center : S2_point.t
    ; radius : S1_chord_angle.t
@@ -191,7 +185,7 @@ let[@inline] [@zero_alloc] expanded t distance =
        }
 ;;
 
-let expanded_exn t distance =
+let[@inline] [@zero_alloc] expanded_exn t distance =
   let opt = expanded t distance in
   if Option.is_none opt
   then (
@@ -213,13 +207,13 @@ let get_point_on_ray origin dir r =
   R3_vector.normalize p [@nontail]
 ;;
 
-let get_point_on_line a b r =
+let[@inline] [@zero_alloc] get_point_on_line a b r =
   let xp = S2_point.robust_cross_prod a b in
   let dir = R3_vector.normalize (R3_vector.cross xp a) in
   get_point_on_ray a dir r [@nontail]
 ;;
 
-let[@zero_alloc ignore] rec union t other =
+let[@inline] [@zero_alloc] rec union t other =
   if S1_chord_angle.compare t.#radius other.#radius < 0
   then union other t
   else if is_full t || is_empty other
@@ -239,40 +233,21 @@ let[@zero_alloc ignore] rec union t other =
       of_center_angle result_center result_r))
 ;;
 
-(* TODO: clean this up *)
-let[@zero_alloc ignore] rect_bound t =
-  let open Float_u.O in
-  if is_empty t
-  then { lat = R1_interval.empty; lng = S1_interval.empty }
-  else (
-    let center_ll = S2_latlng.of_point t.#center in
-    let cap_angle = S1_angle.radians (radius_angle t) in
-    let mutable all_longitudes = false in
-    let mutable lat_lo = S1_angle.radians (S2_latlng.lat center_ll) - cap_angle in
-    let mutable lat_hi = S1_angle.radians (S2_latlng.lat center_ll) + cap_angle in
-    let mutable lng_lo = Float_u.neg (Float_u.pi ()) in
-    let mutable lng_hi = Float_u.pi () in
-    if lat_lo <= Float_u.neg (Float_u.pi () / #2.0)
-    then (
-      lat_lo <- Float_u.neg (Float_u.pi () / #2.0);
-      all_longitudes <- true);
-    if lat_hi >= Float_u.pi () / #2.0
-    then (
-      lat_hi <- Float_u.pi () / #2.0;
-      all_longitudes <- true);
-    if not all_longitudes
-    then (
-      let sin_a = S1_chord_angle.sin t.#radius in
-      let sin_c = Float_u.cos (S1_angle.radians (S2_latlng.lat center_ll)) in
-      if Float_u.O.(sin_a <= sin_c)
-      then (
-        let angle_a = Float_u.asin (sin_a / sin_c) in
-        let lng = S1_angle.radians (S2_latlng.lng center_ll) in
-        lng_lo <- Float_util.ieee_remainder_u (lng - angle_a) (#2.0 * Float_u.pi ());
-        lng_hi <- Float_util.ieee_remainder_u (lng + angle_a) (#2.0 * Float_u.pi ())));
-    { lat = R1_interval.create ~lo:lat_lo ~hi:lat_hi
-    ; lng = S1_interval.create ~lo:lng_lo ~hi:lng_hi
-    })
+(* C++ S2Cap::GetCellUnionBound. The returned ids are not sorted. Most caps yield
+   at most 4 cells; very large caps may need all 6 face cells. *)
+let[@zero_alloc ignore] cell_union_bound t =
+  let radius_rad = S1_angle.radians (radius_angle t) in
+  let level = S2_metrics.get_level_for_min_value S2_metrics.min_width radius_rad - 1 in
+  if level < 0
+  then
+    [ S2_cell_id.id (S2_cell_id.from_face_exn 0)
+    ; S2_cell_id.id (S2_cell_id.from_face_exn 1)
+    ; S2_cell_id.id (S2_cell_id.from_face_exn 2)
+    ; S2_cell_id.id (S2_cell_id.from_face_exn 3)
+    ; S2_cell_id.id (S2_cell_id.from_face_exn 4)
+    ; S2_cell_id.id (S2_cell_id.from_face_exn 5)
+    ]
+  else S2_cell_id.vertex_neighbors (S2_cell_id.from_point t.#center) level
 ;;
 
 let[@inline] [@zero_alloc] equal t other =

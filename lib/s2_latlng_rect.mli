@@ -138,8 +138,30 @@ val polar_closure : t -> t
 val cap_bound : t -> S2_cap.t
 [@@zero_alloc ignore]
 
+(** [from_cap c] returns a bounding latitude-longitude rectangle for [c]. *)
+val from_cap : S2_cap.t -> t
+[@@zero_alloc ignore]
+
+(** [from_cell c] returns a bounding latitude-longitude rectangle for [c]. The bounds are
+    tight. *)
+val from_cell : S2_cell.t -> t
+[@@zero_alloc ignore]
+
 (** Returns itself. *)
 val rect_bound : t -> t
+
+(** [contains_cell t c] reports whether the rectangle contains the given cell. *)
+val contains_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
+
+(** [intersects_cell t c] reports whether the rectangle intersects the given cell. *)
+val intersects_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
+
+(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Returned
+    as boxed [Int64.t] for the same reason as {!S2_cap.cell_union_bound}. *)
+val cell_union_bound : t -> Int64.t list
+[@@zero_alloc ignore]
 
 (** {1 Distance} *)
 

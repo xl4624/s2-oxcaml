@@ -125,12 +125,12 @@ let[@inline] [@zero_alloc] plus_error t error =
   else Float_u.max #0.0 (Float_u.min max_length2 Float_u.O.(t + error))
 ;;
 
-let[@inline] [@zero_alloc ignore] max_point_error t =
+let[@inline] [@zero_alloc] max_point_error t =
   let eps = Float_u.epsilon_float () in
   Float_u.O.((#4.5 * eps * t) + (#16.0 * eps * eps))
 ;;
 
-let[@inline] [@zero_alloc ignore] max_angle_error t =
+let[@inline] [@zero_alloc] max_angle_error t =
   let open Float_u.O in
   #1.5 * Float_u.epsilon_float () * t
 ;;

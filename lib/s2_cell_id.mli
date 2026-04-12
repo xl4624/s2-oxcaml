@@ -175,6 +175,14 @@ val get_common_ancestor_level : t -> t -> int
 (** Covering helper. *)
 val maximum_tile : t -> t -> t
 
+(** [vertex_neighbors t level] returns the raw 64-bit ids of the cells at [level] that
+    share the closest cell vertex to [t]. Returns 3 cells when the closest vertex is one
+    of the 8 cube corners, otherwise 4 cells. [level] must be strictly less than
+    [level t]. The result is returned as boxed [Int64.t] because [S2_cell_id.t] has layout
+    [bits64] and cannot live in a regular list. *)
+val vertex_neighbors : t -> int -> Int64.t list
+[@@zero_alloc ignore]
+
 (** {1 Conversion} *)
 
 (** [to_point t] returns the center point of the cell on the unit sphere. *)

@@ -102,6 +102,10 @@ val child : t -> pos:int -> t
 (** [cap_bound] returns a bounding cap for this cell. *)
 val cap_bound : t -> S2_cap.t
 
+(** [cell_union_bound t] returns a covering of [t]. The result is a single-element list
+    containing [t]'s id, returned as boxed [Int64.t]. *)
+val cell_union_bound : t -> Int64.t list
+
 (** {1 Distance} *)
 
 (** [distance_to_point] returns the distance from the cell to the given point. Returns
@@ -126,8 +130,9 @@ val ij_coord_of_edge : t -> int -> int
 
 (** {1 TODO *)
 
-(* TODO: [rect_bound] returns a bounding latitude-longitude rectangle for this cell. *)
-(* val rect_bound : t -> S2_latlng_rect.t *)
+(* The latitude-longitude bounding rectangle of an [S2_cell.t] is computed by
+   {!S2_latlng_rect.from_cell}, which lives in [s2_latlng_rect] to avoid a
+   dependency cycle between [s2_cell] and [s2_latlng_rect]. *)
 
 (* TODO: [distance_to_edge] returns the distance from the cell to the given edge (a, b). *)
 (* val distance_to_edge : t -> S2_point.t -> S2_point.t -> S1_chord_angle.t *)

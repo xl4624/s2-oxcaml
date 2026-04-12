@@ -160,6 +160,35 @@ let[@inline] [@zero_alloc] from_face_ij face i j =
   Int64_u.O.((n lsl 1) lor #1L)
 ;;
 
+(* C++ [S2CellId::FromFaceIJWrap]: clamps (i, j) to one cell beyond the face,
+   reprojects via XYZ to find the adjacent face and corresponding (i', j'). *)
+let[@zero_alloc ignore] from_face_ij_wrap face i j =
+  let limit_ij = max_size in
+  let i = Int.max (-1) (Int.min limit_ij i) in
+  let j = Int.max (-1) (Int.min limit_ij j) in
+  let int_i = (2 * (i - (limit_ij / 2))) + 1 in
+  let int_j = (2 * (j - (limit_ij / 2))) + 1 in
+  let open Float_u.O in
+  let scale = #1.0 / Float_u.of_int limit_ij in
+  let lim = #1.0 + Float_u.epsilon_float () in
+  let u =
+    Float_u.max (Float_u.neg lim) (Float_u.min lim (scale * Float_u.of_int int_i))
+  in
+  let v =
+    Float_u.max (Float_u.neg lim) (Float_u.min lim (scale * Float_u.of_int int_j))
+  in
+  let p = S2_coords.face_uv_to_xyz face u v in
+  let new_face = S2_coords.get_face p in
+  let new_uv = S2_coords.valid_face_xyz_to_uv new_face p in
+  let new_i = S2_coords.st_to_ij (#0.5 * (R2_point.x new_uv + #1.0)) in
+  let new_j = S2_coords.st_to_ij (#0.5 * (R2_point.y new_uv + #1.0)) in
+  from_face_ij new_face new_i new_j
+;;
+
+let[@inline] [@zero_alloc ignore] from_face_ij_same face i j ~same_face =
+  if same_face then from_face_ij face i j else from_face_ij_wrap face i j
+;;
+
 let[@inline] [@zero_alloc] from_point (p : R3_vector.t) =
   let face = S2_coords.get_face p in
   let uv = S2_coords.valid_face_xyz_to_uv face p in
@@ -421,6 +450,42 @@ let[@inline always] [@zero_alloc ignore] to_face_ij_orientation t =
     else bits
   in
   face_val, i, j, orientation
+;;
+
+(* C++ [S2CellId::AppendVertexNeighbors]: returns the cells at [level] that share
+   the closest cell vertex to [t]. Result has 3 or 4 entries. The result is boxed
+   to [Int64.t] because [t] has layout [bits64]. *)
+let[@zero_alloc ignore] vertex_neighbors t level =
+  let face, i, j, _ = to_face_ij_orientation t in
+  let halfsize = size_ij (level + 1) in
+  let size = halfsize lsl 1 in
+  let ioffset, isame =
+    if i land halfsize <> 0 then size, i + size < max_size else -size, i - size >= 0
+  in
+  let joffset, jsame =
+    if j land halfsize <> 0 then size, j + size < max_size else -size, j - size >= 0
+  in
+  let n0 = id (parent_level t level) in
+  let n1 =
+    id (parent_level (from_face_ij_same face (i + ioffset) j ~same_face:isame) level)
+  in
+  let n2 =
+    id (parent_level (from_face_ij_same face i (j + joffset) ~same_face:jsame) level)
+  in
+  if isame || jsame
+  then (
+    let n3 =
+      id
+        (parent_level
+           (from_face_ij_same
+              face
+              (i + ioffset)
+              (j + joffset)
+              ~same_face:(isame && jsame))
+           level)
+    in
+    [ n0; n1; n2; n3 ])
+  else [ n0; n1; n2 ]
 ;;
 
 let[@inline always] [@zero_alloc ignore] get_center_si_ti t =

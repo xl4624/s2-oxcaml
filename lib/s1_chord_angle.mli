@@ -152,11 +152,9 @@ val plus_error : t -> float# -> t
 
 (** Maximum error in [length2] for a chord angle constructed from two unit-length points. *)
 val max_point_error : t -> float#
-[@@zero_alloc ignore]
 
 (** Maximum error in [length2] for a chord angle constructed from an S1Angle. *)
 val max_angle_error : t -> float#
-[@@zero_alloc ignore]
 
 (** {1 Comparison} *)
 

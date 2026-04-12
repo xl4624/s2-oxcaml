@@ -157,35 +157,37 @@ let cap_of_json j =
     (S2.S1_chord_angle.of_length2 (float_u_of_json_exn (member "length2" j)))
 ;;
 
-let check_lat_lng_rect msg (expected_r : Yojson.Safe.t) (actual : S2.S2_cap.lat_lng_rect) =
+let check_lat_lng_rect msg (expected_r : Yojson.Safe.t) (actual : S2.S2_latlng_rect.t) =
   let lat_j = member "lat" expected_r in
   let lng_j = member "lng" expected_r in
   let exp_lat = r1_interval_of_json lat_j in
   let exp_lng = s1_interval_of_json lng_j in
+  let actual_lat = S2.S2_latlng_rect.lat actual in
+  let actual_lng = S2.S2_latlng_rect.lng actual in
   check_float_u
     (msg ^ " lat lo")
     ~expected:(S2.R1_interval.lo exp_lat)
-    ~actual:(S2.R1_interval.lo actual.lat);
+    ~actual:(S2.R1_interval.lo actual_lat);
   check_float_u
     (msg ^ " lat hi")
     ~expected:(S2.R1_interval.hi exp_lat)
-    ~actual:(S2.R1_interval.hi actual.lat);
+    ~actual:(S2.R1_interval.hi actual_lat);
   check_float_u
     (msg ^ " lng lo")
     ~expected:(S2.S1_interval.lo exp_lng)
-    ~actual:(S2.S1_interval.lo actual.lng);
+    ~actual:(S2.S1_interval.lo actual_lng);
   check_float_u
     (msg ^ " lng hi")
     ~expected:(S2.S1_interval.hi exp_lng)
-    ~actual:(S2.S1_interval.hi actual.lng);
+    ~actual:(S2.S1_interval.hi actual_lng);
   check_bool
     (msg ^ " lat_empty")
     ~expected:(bool_of_json_exn (member "lat_empty" expected_r))
-    ~actual:(S2.R1_interval.is_empty actual.lat);
+    ~actual:(S2.R1_interval.is_empty actual_lat);
   check_bool
     (msg ^ " lng_full")
     ~expected:(bool_of_json_exn (member "lng_full" expected_r))
-    ~actual:(S2.S1_interval.is_full actual.lng)
+    ~actual:(S2.S1_interval.is_full actual_lng)
 ;;
 
 let test_basic f () =
@@ -567,7 +569,7 @@ let test_rect_bound f () =
         (match Alcotest.fail ("unknown rect_bound case " ^ name) with
          | (_ : Nothing.t) -> .)
     in
-    check_lat_lng_rect name rect_j (S2.S2_cap.rect_bound cap))
+    check_lat_lng_rect name rect_j (S2.S2_latlng_rect.from_cap cap))
 ;;
 
 let test_expanded f () =

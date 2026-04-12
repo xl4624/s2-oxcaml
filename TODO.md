@@ -147,11 +147,25 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `earth/earth.go` | C++: (no direct C++ equivalent)
   - Deps: `s1_angle`, `s2_point`, `s2_latlng`
 
+## Critical path - regioncoverer
+
+All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, Cell, and CellUnion.
+
+- [x] **s2_region** - `S2_region`
+  - Go: `s2/region.go` | C++: `s2region.h`
+  - Deps: `s2_point`, `s2_cap`, `s2_latlng_rect`, `s2_cell`, `s2_cell_id`, `s2_cell_union`
+  - Note: record-of-functions abstraction (`cap_bound`, `rect_bound`, `contains_cell`, `intersects_cell`, `contains_point`, `cell_union_bound`); add `to_region` to each done type
+
+- [ ] **s2_region_coverer** - `S2_region_coverer`
+  - Go: `s2/regioncoverer.go` | C++: `s2region_coverer.h`, `s2region_coverer.cc`
+  - Deps: `s2_region`, `s2_cell_union`, `s2_cell`, `s2_padded_cell`
+
+## Tier 6 - Shapes and geometry types
+
 - [ ] **s2_edge_tessellator** - `S2_edge_tessellator`
   - Go: `s2/edge_tessellator.go` | C++: `s2edge_tessellator.h`, `s2edge_tessellator.cc`
   - Deps: `s2_point`, `s2_projections`, `s2_edge_distances`
 
-## Tier 6 - Shapes and geometry types
 
 - [ ] **s2_shape** - `S2_shape`
   - Go: `s2/shape.go` | C++: `s2shape.h`
@@ -199,9 +213,9 @@ The orchestrator should launch all modules in a tier once their deps are done.
   - Go: `s2/edge_query.go` | C++: `s2closest_edge_query.h`, `s2closest_edge_query_base.h`
   - Deps: `s2_shape_index`, `s2_edge_distances`
 
-- [ ] **s2_region_coverer** - `S2_region_coverer`
+- [ ] **s2_region_coverer** - `S2_region_coverer` *(see Critical path above)*
   - Go: `s2/regioncoverer.go` | C++: `s2region_coverer.h`, `s2region_coverer.cc`
-  - Deps: `s2_cell_union`, `s2_cell`, `s2_padded_cell`, `s2_cap`, `s2_latlng_rect`
+  - Deps: `s2_region`, `s2_cell_union`, `s2_cell`, `s2_padded_cell`
 
 - [ ] **s2_convex_hull_query** - `S2_convex_hull_query`
   - Go: `s2/convex_hull_query.go` | C++: `s2convex_hull_query.h`, `s2convex_hull_query.cc`

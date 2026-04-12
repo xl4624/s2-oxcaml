@@ -64,7 +64,7 @@ let[@inline] [@zero_alloc] symbolic_cross_prod a b =
   else R3_vector.(R3_vector.neg (symbolic_cross_prod_sorted b a))
 ;;
 
-let[@zero_alloc] robust_cross_prod a b =
+let[@inline] [@zero_alloc] robust_cross_prod a b =
   let sum = R3_vector.add a b in
   let diff = R3_vector.sub b a in
   let cross = R3_vector.cross sum diff in
