@@ -10,6 +10,7 @@ ABSL_RANDOM_LIBS := -labsl_random_internal_randen \
   -labsl_random_internal_randen_hwaes_impl \
   -labsl_random_internal_platform \
   -labsl_random_internal_seed_material \
+  -labsl_random_internal_entropy_pool \
   -labsl_random_seed_sequences \
   -labsl_random_seed_gen_exception
 

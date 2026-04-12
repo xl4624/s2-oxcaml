@@ -156,7 +156,7 @@ All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, C
   - Deps: `s2_point`, `s2_cap`, `s2_latlng_rect`, `s2_cell`, `s2_cell_id`, `s2_cell_union`
   - Note: record-of-functions abstraction (`cap_bound`, `rect_bound`, `contains_cell`, `intersects_cell`, `contains_point`, `cell_union_bound`); add `to_region` to each done type
 
-- [ ] **s2_region_coverer** - `S2_region_coverer`
+- [x] **s2_region_coverer** - `S2_region_coverer`
   - Go: `s2/regioncoverer.go` | C++: `s2region_coverer.h`, `s2region_coverer.cc`
   - Deps: `s2_region`, `s2_cell_union`, `s2_cell`, `s2_padded_cell`
 
