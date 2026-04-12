@@ -27,7 +27,7 @@ val from_face : int -> t
 
 (** [from_face_pos_level face pos level] returns a cell given its face, Hilbert curve
     position within that face, and level. *)
-val from_face_pos_level : face:int -> pos:int64 -> level:int -> t
+val from_face_pos_level : face:int -> pos:int64# -> level:int -> t
 
 (** {1 Accessors} *)
 

@@ -15,10 +15,11 @@ open Core
    normalize, union, intersection, difference, contains_union, and
    intersects_union. *)
 
-let face n = S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn n)
+let face n = Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn n))
 
 let face0_child k =
-  S2.S2_cell_id.id (S2.S2_cell_id.child_exn (S2.S2_cell_id.from_face_exn 0) k)
+  Int64_u.to_int64
+    (S2.S2_cell_id.id (S2.S2_cell_id.child_exn (S2.S2_cell_id.from_face_exn 0) k))
 ;;
 
 let make ids = S2.S2_cell_union.create ids

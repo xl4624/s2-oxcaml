@@ -40,7 +40,7 @@ val from_face_exn : int -> t
 
 (** [from_face_pos_level face pos level] returns a cell ID from its face, 61-bit position,
     and level. *)
-val from_face_pos_level : int -> Int64.t -> int -> t
+val from_face_pos_level : int -> int64# -> int -> t
 
 (** [from_face_ij face i j] returns a leaf cell ID from its face and (i, j) coordinates. *)
 val from_face_ij : int -> int -> int -> t
@@ -55,16 +55,13 @@ val from_latlng : S2_latlng.t -> t
 
 (** [of_int64 i] creates a cell ID from a raw 64-bit integer. The resulting ID may be
     invalid; see {!is_valid}. *)
-val of_int64 : Int64.t -> t
-[@@zero_alloc ignore]
+val of_int64 : int64# -> t
 
 (** [id t] returns the 64-bit integer representation of the cell ID. *)
-val id : t -> Int64.t
-[@@zero_alloc ignore]
+val id : t -> int64#
 
-(** [to_int64] is {!id}: raw [Int64.t] for interop and symmetry with {!of_int64}. *)
-val to_int64 : t -> Int64.t
-[@@zero_alloc ignore]
+(** [to_int64] is {!id}: raw [int64#] for interop and symmetry with {!of_int64}. *)
+val to_int64 : t -> int64#
 
 (** [is_valid t] returns true if the ID represents a valid cell. *)
 val is_valid : t -> bool
@@ -73,8 +70,7 @@ val is_valid : t -> bool
 val face : t -> int
 
 (** [pos t] returns the 61-bit Hilbert curve position of the cell. *)
-val pos : t -> Int64.t
-[@@zero_alloc ignore]
+val pos : t -> int64#
 
 (** [level t] returns the subdivision level (0-30) of the cell. *)
 val level : t -> int
@@ -166,8 +162,7 @@ val advance : t -> int64# -> t
 val advance_wrap : t -> int64# -> t
 
 (** Hilbert index of [ t ] among all cells at the same level. *)
-val distance_from_begin : t -> Int64.t
-[@@zero_alloc ignore]
+val distance_from_begin : t -> int64#
 
 (** Level of the most specific common ancestor of two cells, or [-1]. *)
 val get_common_ancestor_level : t -> t -> int

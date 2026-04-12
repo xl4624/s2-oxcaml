@@ -21,16 +21,20 @@ module Cell_id_int = struct
   let quickcheck_generator =
     let open Base_quickcheck.Generator in
     let rec descend depth id =
-      let cell = S2.S2_cell_id.of_int64 id in
+      let cell = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
       if depth = 0 || S2.S2_cell_id.is_leaf cell
       then return id
       else
         bind (int_uniform_inclusive 0 3) ~f:(fun k ->
-          descend (depth - 1) (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell k)))
+          descend
+            (depth - 1)
+            (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell k))))
     in
     bind (int_uniform_inclusive 0 5) ~f:(fun f ->
       bind (int_uniform_inclusive 0 20) ~f:(fun depth ->
-        descend depth (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn f))))
+        descend
+          depth
+          (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn f)))))
   ;;
 
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
@@ -208,7 +212,7 @@ let test_shrink_to_fit fixture () =
    corresponding S2Cell, and padding > 0 expands it symmetrically by the padding. *)
 let quickcheck_bound_matches_s2cell () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let cid = S2.S2_cell_id.of_int64 id in
+    let cid = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
     let cell = S2.S2_cell.of_cell_id cid in
     let expected = S2.S2_cell.bound_uv cell in
     let pc = S2.S2_padded_cell.create cid ~padding:#0.0 in
@@ -232,7 +236,7 @@ let quickcheck_bound_matches_s2cell () =
 (* Quickcheck: the padded cell center equals the S2Cell center. *)
 let quickcheck_center_matches_s2cell () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let cid = S2.S2_cell_id.of_int64 id in
+    let cid = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
     let cell = S2.S2_cell.of_cell_id cid in
     let pc = S2.S2_padded_cell.create cid ~padding:#0.0 in
     let expected = S2.S2_cell.center cell in
@@ -243,7 +247,7 @@ let quickcheck_center_matches_s2cell () =
 (* Quickcheck: exit_vertex of one cell equals entry_vertex of its Hilbert successor. *)
 let quickcheck_exit_equals_next_entry () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let cid = S2.S2_cell_id.of_int64 id in
+    let cid = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
     let pc = S2.S2_padded_cell.create cid ~padding:#0.0 in
     let pc_next = S2.S2_padded_cell.create (S2.S2_cell_id.next_wrap cid) ~padding:#0.0 in
     check_point_exact
@@ -256,7 +260,7 @@ let quickcheck_exit_equals_next_entry () =
    kPosToIJ / kIJtoPos tables). *)
 let quickcheck_child_ij_roundtrip () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let cid = S2.S2_cell_id.of_int64 id in
+    let cid = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
     if not (S2.S2_cell_id.is_leaf cid)
     then (
       let parent = S2.S2_padded_cell.create cid ~padding:#0.0 in

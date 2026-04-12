@@ -48,7 +48,7 @@ int main() {
                          {"p2", 3},
                          {"expected", interval_json(pp3)}});
 
-        // R1Interval(lo, hi) - mirrors C++ TestBasic mutation end states.
+        // R1Interval(lo, hi)
         cases.push_back({{"op", "create"},
                          {"lo", 0.0},
                          {"hi", 10.0},

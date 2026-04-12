@@ -8,13 +8,16 @@ let sexp_of_t t =
   Sexp.List
     (Array.to_list
        (Array.map t.cell_ids ~f:(fun id ->
-          Sexp.Atom (S2_cell_id.to_token (S2_cell_id.of_int64 id)))))
+          Sexp.Atom (S2_cell_id.to_token (S2_cell_id.of_int64 (Int64_u.of_int64 id))))))
 ;;
 
 (* {1 Internal helpers} *)
 
-let[@inline] to_cid (id : Int64.t) : S2_cell_id.t = S2_cell_id.of_int64 id
-let[@inline] of_cid (id : S2_cell_id.t) : Int64.t = S2_cell_id.id id
+let[@inline] to_cid (id : Int64.t) : S2_cell_id.t =
+  S2_cell_id.of_int64 (Int64_u.of_int64 id)
+;;
+
+let[@inline] of_cid (id : S2_cell_id.t) : Int64.t = Int64_u.to_int64 (S2_cell_id.id id)
 
 (* Unsigned comparison for boxed Int64.t. S2CellIds are compared as uint64 in C++. *)
 let[@inline] unsigned_compare (a : Int64.t) (b : Int64.t) : int =

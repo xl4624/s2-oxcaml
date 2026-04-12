@@ -141,7 +141,7 @@ let s1_chord_angle_of_json j = S2.S1_chord_angle.of_length2 (float_u_of_json_exn
     [max_int] of signed [Int64]. *)
 let s2_cell_id_of_json j =
   let s = string_of_json_exn j in
-  S2.S2_cell_id.of_int64 (Int64.of_string ("0u" ^ s))
+  S2.S2_cell_id.of_int64 (Int64_u.of_int64 (Int64.of_string ("0u" ^ s)))
 ;;
 
 let check_float ?(eps = 1e-15) msg ~expected ~actual =

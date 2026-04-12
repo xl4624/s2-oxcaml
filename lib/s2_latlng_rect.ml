@@ -228,7 +228,7 @@ let[@zero_alloc ignore] cap_bound t =
 
 let[@inline] [@zero_alloc] rect_bound t = t
 
-(* Bounding rectangle of a cap. Mirrors C++ S2Cap::GetRectBound. *)
+(* Bounding rectangle of a cap. *)
 let[@zero_alloc ignore] from_cap c =
   let open Float_u.O in
   if S2_cap.is_empty c
@@ -269,7 +269,7 @@ let pole_min_lat =
   Float_u.asin (Float_u.sqrt (#1.0 / #3.0)) - (#0.5 * Float_u.epsilon_float ())
 ;;
 
-(* Bounding rectangle of an S2 cell. Mirrors C++ S2Cell::GetRectBound. *)
+(* Bounding rectangle of an S2 cell. *)
 let[@zero_alloc ignore] from_cell cell =
   let level = S2_cell.level cell in
   let face = S2_cell.face cell in

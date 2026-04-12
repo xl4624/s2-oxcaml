@@ -24,7 +24,7 @@ let%expect_test "face_level_pos_decomposition" =
       name
       (C.face c)
       (C.level c)
-      (C.pos c)
+      (Int64_u.to_int64 (C.pos c))
       (C.is_leaf c)
       (C.is_face c)
   in

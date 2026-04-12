@@ -9,9 +9,7 @@
     that if several polygons tile the region around a vertex then exactly one of those
     polygons contains that vertex.
 
-    This type is not thread-safe; each thread should construct its own instance.
-
-    Mirrors C++ [S2ContainsVertexQuery] in [s2contains_vertex_query.h]. *)
+    This type is not thread-safe; each thread should construct its own instance. *)
 
 open Core
 

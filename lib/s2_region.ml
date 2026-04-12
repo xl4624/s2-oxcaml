@@ -11,11 +11,6 @@ type t =
 
 let sexp_of_t _ = Sexp.Atom "<S2_region.t>"
 
-(* Helpers for caps. These mirror C++ S2Cap::Intersects(cell, vertices),
-   S2Cap::Contains(cell), and S2Cap::MayIntersect(cell). They live here
-   rather than in [S2_cap] to avoid a dependency cycle between [s2_cap]
-   and [s2_cell]. *)
-
 (* Returns true if the cap intersects any point of the cell EXCLUDING the
    already-checked vertices. *)
 let cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3 =

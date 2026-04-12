@@ -72,9 +72,9 @@ let num_faces = 6
 let max_level = 30
 let pos_bits = (2 * max_level) + 1
 let max_size = 1 lsl max_level
-let[@inline] [@zero_alloc ignore] of_int64 (x : Int64.t) : t = Int64_u.of_int64 x
-let[@inline] [@zero_alloc ignore] id (t : t) : Int64.t = Int64_u.to_int64 t
-let to_int64 = id
+let[@inline] [@zero_alloc] of_int64 (x : int64#) : t = x
+let[@inline] [@zero_alloc] id (t : t) : int64# = t
+let[@inline] [@zero_alloc] to_int64 t = id t
 let none : t = #0L
 let sentinel : t = -#1L
 let[@inline] [@zero_alloc] lsb t = Int64_u.O.(t land Int64_u.neg t)
@@ -97,11 +97,7 @@ let pos_mask =
 
 (* Low [pos_bits] bits: C++ [id & (~0 >> kFaceBits)]. *)
 let pos_id_mask = Int64_u.O.((#1L lsl pos_bits) - #1L)
-
-(* TODO: should be zero_alloc *)
-let[@inline] [@zero_alloc ignore] pos t : Int64.t =
-  Int64_u.to_int64 Int64_u.O.(t land pos_id_mask)
-;;
+let[@inline] [@zero_alloc] pos t : int64# = Int64_u.O.(t land pos_id_mask)
 
 (* O(1) trailing-zero count. Uses [Int64_u.ctz] which is unspecified for 0. *)
 let[@inline] [@zero_alloc] count_trailing_zeros t =
@@ -206,7 +202,7 @@ let[@inline] [@zero_alloc] parent_exn t =
       raise_s
         (Sexp.List
            [ Sexp.Atom "S2CellId.parent_exn: already a face cell"
-           ; Sexp.List [ Sexp.Atom "id"; sexp_of_int64 (id t) ]
+           ; Sexp.List [ Sexp.Atom "id"; sexp_of_int64 (Int64_u.to_int64 t) ]
            ])
     with
     | (_ : Nothing.t) -> .)
@@ -222,9 +218,9 @@ let[@inline] [@zero_alloc] parent_level t level =
 ;;
 
 (* C++ [(face << kPosBits) + (pos | 1)] then [parent(level)]. *)
-let[@inline] [@zero_alloc] from_face_pos_level face pos level =
+let[@inline] [@zero_alloc] from_face_pos_level face (pos : int64#) level =
   let open Int64_u.O in
-  let cell = (Int64_u.of_int face lsl pos_bits) + (Int64_u.of_int64 pos lor #1L) in
+  let cell = (Int64_u.of_int face lsl pos_bits) + (pos lor #1L) in
   parent_level cell level
 ;;
 
@@ -264,7 +260,7 @@ let[@inline] [@zero_alloc] child_exn t pos =
       raise_s
         (Sexp.List
            [ Sexp.Atom "S2CellId.child_exn: invalid leaf cell or child index"
-           ; Sexp.List [ Sexp.Atom "id"; sexp_of_int64 (id t) ]
+           ; Sexp.List [ Sexp.Atom "id"; sexp_of_int64 (Int64_u.to_int64 t) ]
            ; Sexp.List [ Sexp.Atom "pos"; sexp_of_int pos ]
            ])
     with
@@ -373,10 +369,9 @@ let[@inline] [@zero_alloc] advance_wrap t (steps : int64#) =
     Int64_u.O.(t + (steps lsl shift)))
 ;;
 
-(* TODO: zero_alloc *)
-let[@zero_alloc ignore] distance_from_begin t =
+let[@inline] [@zero_alloc] distance_from_begin t : int64# =
   let shift = (2 * (max_level - level t)) + 1 in
-  Int64_u.to_int64 Int64_u.O.(t lsr shift)
+  Int64_u.O.(t lsr shift)
 ;;
 
 let[@inline] [@zero_alloc] max_u x y =
@@ -465,24 +460,14 @@ let[@zero_alloc ignore] vertex_neighbors t level =
   let joffset, jsame =
     if j land halfsize <> 0 then size, j + size < max_size else -size, j - size >= 0
   in
-  let n0 = id (parent_level t level) in
-  let n1 =
-    id (parent_level (from_face_ij_same face (i + ioffset) j ~same_face:isame) level)
-  in
-  let n2 =
-    id (parent_level (from_face_ij_same face i (j + joffset) ~same_face:jsame) level)
-  in
+  let box t = Int64_u.to_int64 (id (parent_level t level)) in
+  let n0 = box t in
+  let n1 = box (from_face_ij_same face (i + ioffset) j ~same_face:isame) in
+  let n2 = box (from_face_ij_same face i (j + joffset) ~same_face:jsame) in
   if isame || jsame
   then (
     let n3 =
-      id
-        (parent_level
-           (from_face_ij_same
-              face
-              (i + ioffset)
-              (j + joffset)
-              ~same_face:(isame && jsame))
-           level)
+      box (from_face_ij_same face (i + ioffset) (j + joffset) ~same_face:(isame && jsame))
     in
     [ n0; n1; n2; n3 ])
   else [ n0; n1; n2 ]
@@ -567,7 +552,7 @@ let[@zero_alloc ignore] from_token s =
 
 let[@zero_alloc ignore] to_string t =
   if not (is_valid t)
-  then sprintf "Invalid: %016Lx" (id t)
+  then sprintf "Invalid: %016Lx" (Int64_u.to_int64 t)
   else (
     let out = Buffer.create 34 in
     Buffer.add_string out (sprintf "%d/" (face t));

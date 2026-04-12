@@ -239,14 +239,9 @@ let[@zero_alloc ignore] cell_union_bound t =
   let radius_rad = S1_angle.radians (radius_angle t) in
   let level = S2_metrics.get_level_for_min_value S2_metrics.min_width radius_rad - 1 in
   if level < 0
-  then
-    [ S2_cell_id.id (S2_cell_id.from_face_exn 0)
-    ; S2_cell_id.id (S2_cell_id.from_face_exn 1)
-    ; S2_cell_id.id (S2_cell_id.from_face_exn 2)
-    ; S2_cell_id.id (S2_cell_id.from_face_exn 3)
-    ; S2_cell_id.id (S2_cell_id.from_face_exn 4)
-    ; S2_cell_id.id (S2_cell_id.from_face_exn 5)
-    ]
+  then (
+    let box f = Int64_u.to_int64 (S2_cell_id.id (S2_cell_id.from_face_exn f)) in
+    [ box 0; box 1; box 2; box 3; box 4; box 5 ])
   else S2_cell_id.vertex_neighbors (S2_cell_id.from_point t.#center) level
 ;;
 
