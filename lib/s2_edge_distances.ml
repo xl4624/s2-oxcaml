@@ -5,7 +5,7 @@ open Core
 (* If the minimum distance from X to AB is attained at an interior point of AB
    (not an endpoint), and that distance is less than min_dist (or always_update
    is true), return Some(dist). Otherwise return None. *)
-let[@zero_alloc ignore] update_min_interior_distance_impl
+let[@inline] [@zero_alloc] update_min_interior_distance_impl
   ~always_update
   x
   a
@@ -44,7 +44,7 @@ let[@zero_alloc ignore] update_min_interior_distance_impl
 
 (* Compute the distance from X to edge AB. If the distance is less than
    min_dist (or always_update is true), return Some(dist). *)
-let[@zero_alloc ignore] update_min_distance_impl ~always_update x a b min_dist =
+let[@inline] [@zero_alloc] update_min_distance_impl ~always_update x a b min_dist =
   let open Float_u.O in
   let xa2 = R3_vector.norm2 (R3_vector.sub x a) in
   let xb2 = R3_vector.norm2 (R3_vector.sub x b) in
@@ -59,22 +59,22 @@ let[@zero_alloc ignore] update_min_distance_impl ~always_update x a b min_dist =
     else S1_chord_angle.Option.some (S1_chord_angle.of_length2 dist2)
 ;;
 
-let[@zero_alloc ignore] get_distance x a b =
+let[@inline] [@zero_alloc] get_distance x a b =
   let result = update_min_distance_impl ~always_update:true x a b S1_chord_angle.zero in
   match%optional_u.S1_chord_angle.Option result with
   | Some d -> S1_chord_angle.to_angle d
   | None -> S1_angle.zero
 ;;
 
-let[@zero_alloc ignore] update_min_distance x a b min_dist =
+let[@inline] [@zero_alloc] update_min_distance x a b min_dist =
   update_min_distance_impl ~always_update:false x a b min_dist
 ;;
 
-let[@zero_alloc ignore] is_distance_less x a b limit =
+let[@inline] [@zero_alloc] is_distance_less x a b limit =
   S1_chord_angle.Option.is_some (update_min_distance x a b limit)
 ;;
 
-let[@zero_alloc ignore] update_max_distance x a b max_dist =
+let[@inline] [@zero_alloc] update_max_distance x a b max_dist =
   let xa = S1_chord_angle.of_length2 (R3_vector.norm2 (R3_vector.sub x a)) in
   let xb = S1_chord_angle.of_length2 (R3_vector.norm2 (R3_vector.sub x b)) in
   let dist = if S1_chord_angle.compare xa xb >= 0 then xa else xb in
@@ -102,19 +102,19 @@ let[@zero_alloc ignore] update_max_distance x a b max_dist =
   else S1_chord_angle.Option.none
 ;;
 
-let[@zero_alloc ignore] update_min_interior_distance x a b min_dist =
+let[@inline] [@zero_alloc] update_min_interior_distance x a b min_dist =
   let open Float_u.O in
   let xa2 = R3_vector.norm2 (R3_vector.sub x a) in
   let xb2 = R3_vector.norm2 (R3_vector.sub x b) in
   update_min_interior_distance_impl ~always_update:false x a b xa2 xb2 min_dist
 ;;
 
-let[@zero_alloc ignore] is_interior_distance_less x a b limit =
+let[@inline] [@zero_alloc] is_interior_distance_less x a b limit =
   S1_chord_angle.Option.is_some (update_min_interior_distance x a b limit)
 ;;
 
 (* Maximum error in the result of update_min_interior_distance. *)
-let[@zero_alloc ignore] get_update_min_interior_distance_max_error dist =
+let[@inline] [@zero_alloc] get_update_min_interior_distance_max_error dist =
   if S1_chord_angle.compare dist S1_chord_angle.right >= 0
   then #0.0
   else
@@ -127,13 +127,13 @@ let[@zero_alloc ignore] get_update_min_interior_distance_max_error dist =
     * Float_u.epsilon_float ()
 ;;
 
-let[@zero_alloc ignore] get_update_min_distance_max_error dist =
+let[@inline] [@zero_alloc] get_update_min_distance_max_error dist =
   Float_u.max
     (get_update_min_interior_distance_max_error dist)
     (S1_chord_angle.max_point_error dist)
 ;;
 
-let[@zero_alloc ignore] project x a b =
+let[@inline] [@zero_alloc] project x a b =
   (* Short-circuit if x equals a or b. *)
   if S2_point.equal x a || S2_point.equal x b
   then x
@@ -155,27 +155,27 @@ let[@zero_alloc ignore] project x a b =
     else b)
 ;;
 
-let[@zero_alloc ignore] get_distance_fraction x a b =
+let[@inline] [@zero_alloc] get_distance_fraction x a b =
   let open Float_u.O in
   let da = S1_angle.radians (R3_vector.angle x a) in
   let db = S1_angle.radians (R3_vector.angle x b) in
   da / (da + db)
 ;;
 
-let[@zero_alloc ignore] get_point_on_ray origin dir r =
+let[@inline] [@zero_alloc] get_point_on_ray origin dir r =
   let cos_r = Float_u.cos (S1_angle.radians r) in
   let sin_r = Float_u.sin (S1_angle.radians r) in
   R3_vector.normalize
     (R3_vector.add (R3_vector.mul origin cos_r) (R3_vector.mul dir sin_r))
 ;;
 
-let[@zero_alloc ignore] get_point_on_line a b r =
+let[@inline] [@zero_alloc] get_point_on_line a b r =
   let rcp = S2_point.robust_cross_prod a b in
   let dir = R3_vector.normalize (R3_vector.cross rcp a) in
   get_point_on_ray a dir r
 ;;
 
-let[@zero_alloc ignore] interpolate a b t =
+let[@inline] [@zero_alloc] interpolate a b t =
   let open Float_u.O in
   if t = #0.0
   then a
@@ -187,12 +187,12 @@ let[@zero_alloc ignore] interpolate a b t =
     get_point_on_line a b r)
 ;;
 
-let[@zero_alloc ignore] get_point_to_left a b r =
+let[@inline] [@zero_alloc] get_point_to_left a b r =
   let dir = R3_vector.normalize (S2_point.robust_cross_prod a b) in
   get_point_on_ray a dir r
 ;;
 
-let[@zero_alloc ignore] get_point_to_right a b r =
+let[@inline] [@zero_alloc] get_point_to_right a b r =
   let dir = R3_vector.normalize (S2_point.robust_cross_prod b a) in
   get_point_on_ray a dir r
 ;;
@@ -204,7 +204,7 @@ type closest_points =
 
 (* Project that takes a precomputed a_cross_b (not necessarily normalized).
    Mirrors the three-argument C++ Project overload. *)
-let[@zero_alloc ignore] project_with_cross x a b a_cross_b =
+let[@inline] [@zero_alloc] project_with_cross x a b a_cross_b =
   if S2_point.equal x a || S2_point.equal x b
   then x
   else (
@@ -223,20 +223,20 @@ let[@zero_alloc ignore] project_with_cross x a b a_cross_b =
 (* Thread a running minimum chord distance through a single vertex->edge
    update.  Returns the smaller of [cur] and the minimum distance from [x]
    to edge [ab]. *)
-let[@zero_alloc ignore] min_step cur x a b =
+let[@inline] [@zero_alloc] min_step cur x a b =
   match%optional_u.S1_chord_angle.Option update_min_distance x a b cur with
   | Some d -> d
   | None -> cur
 ;;
 
-let[@zero_alloc ignore] max_step cur x a b =
+let[@inline] [@zero_alloc] max_step cur x a b =
   match%optional_u.S1_chord_angle.Option update_max_distance x a b cur with
   | Some d -> d
   | None -> cur
 ;;
 
 (* Fold the four vertex-to-edge updates into a running minimum. *)
-let[@zero_alloc ignore] update_edge_pair_min_distance a0 a1 b0 b1 min_dist =
+let[@inline] [@zero_alloc] update_edge_pair_min_distance a0 a1 b0 b1 min_dist =
   if S1_chord_angle.is_zero min_dist
   then S1_chord_angle.Option.none
   else if S2_edge_crossings.crossing_sign a0 a1 b0 b1 >= 0
@@ -252,7 +252,7 @@ let[@zero_alloc ignore] update_edge_pair_min_distance a0 a1 b0 b1 min_dist =
     else S1_chord_angle.Option.none)
 ;;
 
-let[@zero_alloc ignore] update_edge_pair_max_distance a0 a1 b0 b1 max_dist =
+let[@inline] [@zero_alloc] update_edge_pair_max_distance a0 a1 b0 b1 max_dist =
   if S1_chord_angle.compare max_dist S1_chord_angle.straight >= 0
   then S1_chord_angle.Option.none
   else if S2_edge_crossings.crossing_sign a0 a1 (R3_vector.neg b0) (R3_vector.neg b1) >= 0
@@ -268,7 +268,7 @@ let[@zero_alloc ignore] update_edge_pair_max_distance a0 a1 b0 b1 max_dist =
     else S1_chord_angle.Option.none)
 ;;
 
-let[@zero_alloc ignore] is_edge_pair_distance_less a0 a1 b0 b1 distance =
+let[@inline] [@zero_alloc] is_edge_pair_distance_less a0 a1 b0 b1 distance =
   if S2_edge_crossings.crossing_sign a0 a1 b0 b1 >= 0
   then not (S1_chord_angle.is_zero distance)
   else
@@ -280,7 +280,7 @@ let[@zero_alloc ignore] is_edge_pair_distance_less a0 a1 b0 b1 distance =
 
 (* Compute the length2 of the minimum chord distance from x to edge ab.
    Always updates, hence always returns a valid chord length. *)
-let[@zero_alloc ignore] vertex_edge_length2 x a b =
+let[@inline] [@zero_alloc] vertex_edge_length2 x a b =
   match%optional_u.S1_chord_angle.Option
     update_min_distance_impl ~always_update:true x a b S1_chord_angle.infinity
   with
@@ -288,7 +288,7 @@ let[@zero_alloc ignore] vertex_edge_length2 x a b =
   | None -> S1_chord_angle.length2 S1_chord_angle.infinity
 ;;
 
-let[@zero_alloc ignore] get_edge_pair_closest_points a0 a1 b0 b1 =
+let[@inline] [@zero_alloc] get_edge_pair_closest_points a0 a1 b0 b1 =
   if S2_edge_crossings.crossing_sign a0 a1 b0 b1 > 0
   then (
     let x = S2_edge_crossings.get_intersection a0 a1 b0 b1 in
@@ -317,7 +317,7 @@ let[@zero_alloc ignore] get_edge_pair_closest_points a0 a1 b0 b1 =
 
 (* TODO(ericv): Optimize to use S1_chord_angle rather than S1_angle, as the
    upstream C++ TODO suggests. *)
-let[@zero_alloc ignore] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
+let[@inline] [@zero_alloc] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
   let open Float_u.O in
   (* Compute an orthogonal to the plane containing A.  We use the raw
      robust_cross_prod when projecting (the Project helper normalizes it

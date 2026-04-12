@@ -14,13 +14,11 @@ open Core
     may have some numerical error if the distance is large (approximately pi/2 or
     greater). The case [a = b] is handled correctly. *)
 val get_distance : S2_point.t -> S2_point.t -> S2_point.t -> S1_angle.t
-[@@zero_alloc ignore]
 
 (** [is_distance_less x a b limit] returns true if the distance from [x] to edge [ab] is
     less than [limit]. For less-than-or-equal, pass [S1_chord_angle.successor limit]. This
     is faster than [get_distance]. *)
 val is_distance_less : S2_point.t -> S2_point.t -> S2_point.t -> S1_chord_angle.t -> bool
-[@@zero_alloc ignore]
 
 (** [update_min_distance x a b min_dist] returns [Some dist] if the distance from [x] to
     edge [ab] is less than [min_dist], where [dist] is the new minimum. Returns [None]
@@ -31,7 +29,6 @@ val update_min_distance
   -> S2_point.t
   -> S1_chord_angle.t
   -> S1_chord_angle.Option.t
-[@@zero_alloc ignore]
 
 (** [update_max_distance x a b max_dist] returns [Some dist] if the maximum distance from
     [x] to edge [ab] is greater than [max_dist], where [dist] is the new maximum. Returns
@@ -42,7 +39,6 @@ val update_max_distance
   -> S2_point.t
   -> S1_chord_angle.t
   -> S1_chord_angle.Option.t
-[@@zero_alloc ignore]
 
 (** {1 Interior Distance} *)
 
@@ -55,7 +51,6 @@ val is_interior_distance_less
   -> S2_point.t
   -> S1_chord_angle.t
   -> bool
-[@@zero_alloc ignore]
 
 (** [update_min_interior_distance x a b min_dist] returns [Some dist] if the minimum
     distance from [x] to [ab] is attained at an interior point and that distance is less
@@ -66,7 +61,6 @@ val update_min_interior_distance
   -> S2_point.t
   -> S1_chord_angle.t
   -> S1_chord_angle.Option.t
-[@@zero_alloc ignore]
 
 (** {1 Error Bounds} *)
 
@@ -74,14 +68,12 @@ val update_min_interior_distance
     [update_min_distance] and associated functions, assuming all input points are
     normalized. The error can be applied via [S1_chord_angle.plus_error]. *)
 val get_update_min_distance_max_error : S1_chord_angle.t -> float#
-[@@zero_alloc ignore]
 
 (** {1 Projection} *)
 
 (** [project x a b] returns the point along edge [ab] that is closest to [x]. All
     arguments must be unit length. *)
 val project : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** {1 Interpolation} *)
 
@@ -89,35 +81,29 @@ val project : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t
     edge [ab], this is the fraction [t] such that [x = interpolate a b t]. Requires
     [a <> b]. *)
 val get_distance_fraction : S2_point.t -> S2_point.t -> S2_point.t -> float#
-[@@zero_alloc ignore]
 
 (** [interpolate a b t] returns the point along edge [ab] whose distance from [a] is
     fraction [t] of the distance [ab]. Does not require [t] to be in [[0, 1]]. Distances
     are measured on the sphere surface. *)
 val interpolate : S2_point.t -> S2_point.t -> float# -> S2_point.t
-[@@zero_alloc ignore]
 
 (** [get_point_on_line a b r] returns the point at distance [r] from [a] along the line
     [ab]. The line has a well-defined direction even when [a] and [b] are antipodal or
     nearly so. *)
 val get_point_on_line : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** [get_point_on_ray origin dir r] returns the point at distance [r] along the ray with
     the given [origin] and [dir]. [dir] must be perpendicular to [origin]. Both should be
     normalized. This is faster than [get_point_on_line]. *)
 val get_point_on_ray : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** [get_point_to_left a b r] returns the point to the left of edge [ab] at distance [r]
     from [a], orthogonal to the edge. *)
 val get_point_to_left : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** [get_point_to_right a b r] returns the point to the right of edge [ab] at distance [r]
     from [a], orthogonal to the edge. *)
 val get_point_to_right : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** {1 Edge-Pair Distance} *)
 
@@ -138,7 +124,6 @@ val update_edge_pair_min_distance
   -> S2_point.t
   -> S1_chord_angle.t
   -> S1_chord_angle.Option.t
-[@@zero_alloc ignore]
 
 (** [update_edge_pair_max_distance a0 a1 b0 b1 max_dist] returns [Some dist] if the
     maximum distance between edges [a0a1] and [b0b1] is greater than [max_dist]. Returns
@@ -151,7 +136,6 @@ val update_edge_pair_max_distance
   -> S2_point.t
   -> S1_chord_angle.t
   -> S1_chord_angle.Option.t
-[@@zero_alloc ignore]
 
 (** [is_edge_pair_distance_less a0 a1 b0 b1 limit] returns true if the minimum distance
     between edges [a0a1] and [b0b1] is less than [limit]. This is faster than computing
@@ -163,7 +147,6 @@ val is_edge_pair_distance_less
   -> S2_point.t
   -> S1_chord_angle.t
   -> bool
-[@@zero_alloc ignore]
 
 (** [get_edge_pair_closest_points a0 a1 b0 b1] returns the pair [(a, b)] of points that
     achieves the minimum distance between edges [a0a1] and [b0b1], where [a] is a point on
@@ -175,7 +158,6 @@ val get_edge_pair_closest_points
   -> S2_point.t
   -> S2_point.t
   -> closest_points
-[@@zero_alloc ignore]
 
 (** [is_edge_b_near_edge_a a0 a1 b0 b1 tolerance] returns true if every point on edge
     [b0b1] is no further than [tolerance] from some point on edge [a0a1]. Equivalently,
@@ -189,4 +171,3 @@ val is_edge_b_near_edge_a
   -> S2_point.t
   -> S1_angle.t
   -> bool
-[@@zero_alloc ignore]

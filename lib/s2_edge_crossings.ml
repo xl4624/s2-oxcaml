@@ -1,14 +1,6 @@
 open Core
 
-(* Layout-polymorphic array primitives for float# arrays. *)
-external arr_get : ('a : any mod separable). 'a array -> int -> 'a = "%array_safe_get"
-[@@layout_poly]
-
-external arr_set
-  : ('a : any mod separable).
-  'a array -> int -> 'a -> unit
-  = "%array_safe_set"
-[@@layout_poly]
+[@@@zero_alloc all]
 
 (* Precision constants, matching C++ s2predicates. *)
 let dbl_error = Float_u.O.(#0.5 * Float_u.epsilon_float ())
@@ -21,13 +13,13 @@ let det_error_multiplier = Float_u.O.(#3.2321 * Float_u.epsilon_float ())
 
 (* --- Robust sign predicate ------------------------------------------------ *)
 
-let[@inline] float_sign v =
+let[@inline] [@zero_alloc] float_sign v =
   let open Float_u.O in
   if v > #0.0 then 1 else if v < #0.0 then -1 else 0
 ;;
 
 (* Fast triage: returns +1, -1, or 0 if uncertain. *)
-let triage_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
+let[@inline] [@zero_alloc] triage_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let open Float_u.O in
   let det =
     R3_vector.dot
@@ -42,7 +34,7 @@ let triage_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
 ;;
 
 (* More careful determinant sign using longest-edge pivot. *)
-let stable_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
+let[@inline] [@zero_alloc] stable_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let open Float_u.O in
   let ab = R3_vector.sub (S2_point.to_r3 b) (S2_point.to_r3 a) in
   let bc = R3_vector.sub (S2_point.to_r3 c) (S2_point.to_r3 b) in
@@ -79,7 +71,7 @@ type float_pair =
    }
 
 (* Error-free two-product: a*b = hi + lo exactly. Uses FMA. *)
-let[@inline] two_product a b =
+let[@inline] [@zero_alloc] two_product a b =
   let open Float_u.O in
   let p = a * b in
   let e =
@@ -93,7 +85,7 @@ let[@inline] two_product a b =
 ;;
 
 (* Error-free two-sum: a+b = hi + lo exactly. *)
-let[@inline] two_sum a b =
+let[@inline] [@zero_alloc] two_sum a b =
   let open Float_u.O in
   let s = a + b in
   let a' = s - b in
@@ -109,32 +101,32 @@ let[@inline] two_sum a b =
 
 (* Grow-expansion: add a single value e to a non-overlapping expansion
    stored in buf[0..len-1]. Returns new length. Shewchuk's GROW-EXPANSION. *)
-let grow_expansion (buf : float# array) (len : int) (b : float#) : int =
+let grow_expansion (buf : float# array @ local) (len : int) (b : float#) : int =
   let mutable q = b in
   let mutable out = 0 in
   for i = 0 to len - 1 do
-    let #{ hi; lo } = two_sum q (arr_get buf i) in
+    let #{ hi; lo } = two_sum q buf.(i) in
     if Float_u.O.(lo <> #0.0)
     then (
-      arr_set buf out lo;
+      buf.(out) <- lo;
       out <- out + 1);
     q <- hi
   done;
   if Float_u.O.(q <> #0.0)
   then (
-    arr_set buf out q;
+    buf.(out) <- q;
     out <- out + 1);
   out
 ;;
 
 (* Return the sign of a set of terms by building a proper expansion.
    buf is a workspace of at least n+24 entries. terms[0..n-1] are the input. *)
-let sign_of_terms (buf : float# array) (n : int) : int =
+let sign_of_terms (buf : float# array @ local) (n : int) : int =
   let mutable len = 0 in
   for i = 0 to n - 1 do
-    len <- grow_expansion buf len (arr_get buf i)
+    len <- grow_expansion buf len buf.(i)
   done;
-  if len = 0 then 0 else float_sign (arr_get buf (len - 1))
+  if len = 0 then 0 else float_sign buf.(len - 1)
 ;;
 
 let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
@@ -174,8 +166,9 @@ let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let #{ hi = t21; lo = u21 } = two_product az r2 in
   let #{ hi = t22; lo = u22 } = two_product az e2 in
   let #{ hi = t23; lo = u23 } = two_product az (Float_u.neg f2) in
-  (* All 24 terms summed give the exact determinant. *)
-  let buf : float# array =
+  (* All 24 terms summed give the exact determinant.
+     Stack-allocate the workspace to stay zero-alloc. *)
+  let local_ buf : float# array =
     [| t00
      ; u00
      ; t01
@@ -226,49 +219,73 @@ let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
      ; #0.0
     |]
   in
-  sign_of_terms buf 24
+  sign_of_terms buf 24 [@nontail]
 ;;
 
 (* Symbolic perturbation for exactly collinear points. Follows the
    Edelsbrunner-Muecke simulation of simplicity.
    Requires a < b < c in lexicographic order. *)
+(* Edelsbrunner-Muecke SOS perturbation cascade. Each term is tried in order;
+   the first nonzero sign wins. Written as nested ifs to stay zero-alloc. *)
 let symbolically_perturbed_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
-  (* Edelsbrunner-Muecke SOS perturbation cascade. Each term is tried in order;
-     the first nonzero sign wins. The sequence comes from the C++ implementation. *)
-  let sign_of v =
+  let[@inline] [@zero_alloc] sign_of v =
     if Float_u.O.( > ) v #0.0 then 1 else if Float_u.O.( < ) v #0.0 then -1 else 0
   in
-  let terms =
-    let open Float_u.O in
-    let ax = S2_point.x a in
-    let ay = S2_point.y a in
-    let az = S2_point.z a in
-    let bx = S2_point.x b in
-    let by = S2_point.y b in
-    let bz = S2_point.z b in
-    let cx = S2_point.x c in
-    let cy = S2_point.y c in
-    let cz = S2_point.z c in
-    [| sign_of ((bx * cy) - (by * cx))
-     ; sign_of ((bz * cx) - (bx * cz))
-     ; sign_of ((by * cz) - (bz * cy))
-     ; sign_of ((cx * ay) - (cy * ax))
-     ; sign_of cx
-     ; sign_of (Float_u.neg cy)
-     ; sign_of ((cz * ax) - (cx * az))
-     ; sign_of cz
-     ; sign_of ((ax * by) - (ay * bx))
-     ; sign_of (Float_u.neg bx)
-     ; sign_of by
-     ; sign_of ax
-    |]
-  in
-  let n = Array.length terms in
-  let mutable i = 0 in
-  while i < n && terms.(i) = 0 do
-    i <- i + 1
-  done;
-  if i < n then terms.(i) else 1
+  let ax = S2_point.x a in
+  let ay = S2_point.y a in
+  let az = S2_point.z a in
+  let bx = S2_point.x b in
+  let by = S2_point.y b in
+  let bz = S2_point.z b in
+  let cx = S2_point.x c in
+  let cy = S2_point.y c in
+  let cz = S2_point.z c in
+  let s = sign_of Float_u.O.((bx * cy) - (by * cx)) in
+  if Int.( <> ) s 0
+  then s
+  else (
+    let s = sign_of Float_u.O.((bz * cx) - (bx * cz)) in
+    if Int.( <> ) s 0
+    then s
+    else (
+      let s = sign_of Float_u.O.((by * cz) - (bz * cy)) in
+      if Int.( <> ) s 0
+      then s
+      else (
+        let s = sign_of Float_u.O.((cx * ay) - (cy * ax)) in
+        if Int.( <> ) s 0
+        then s
+        else (
+          let s = sign_of cx in
+          if Int.( <> ) s 0
+          then s
+          else (
+            let s = sign_of (Float_u.neg cy) in
+            if Int.( <> ) s 0
+            then s
+            else (
+              let s = sign_of Float_u.O.((cz * ax) - (cx * az)) in
+              if Int.( <> ) s 0
+              then s
+              else (
+                let s = sign_of cz in
+                if Int.( <> ) s 0
+                then s
+                else (
+                  let s = sign_of Float_u.O.((ax * by) - (ay * bx)) in
+                  if Int.( <> ) s 0
+                  then s
+                  else (
+                    let s = sign_of (Float_u.neg bx) in
+                    if Int.( <> ) s 0
+                    then s
+                    else (
+                      let s = sign_of by in
+                      if Int.( <> ) s 0
+                      then s
+                      else (
+                        let s = sign_of ax in
+                        if Int.( <> ) s 0 then s else 1)))))))))))
 ;;
 
 (* Sort three S2Points lexicographically and return sorted + permutation sign.
@@ -280,7 +297,9 @@ type sorted3 =
    ; perm : int
    }
 
-let[@inline] sort3 (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) : sorted3 =
+let[@inline] [@zero_alloc] sort3 (a : S2_point.t) (b : S2_point.t) (c : S2_point.t)
+  : sorted3
+  =
   (* Step 1: sort a, b *)
   let s =
     if S2_point.compare a b > 0
@@ -309,7 +328,11 @@ let exact_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) ~perturb =
   else 0
 ;;
 
-let expensive_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
+let[@inline] [@zero_alloc] expensive_sign
+  (a : S2_point.t)
+  (b : S2_point.t)
+  (c : S2_point.t)
+  =
   if S2_point.equal a b || S2_point.equal b c || S2_point.equal c a
   then 0
   else (
@@ -317,7 +340,7 @@ let expensive_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
     if not (Int.equal det_sign 0) then det_sign else exact_sign a b c ~perturb:true)
 ;;
 
-let sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
+let[@inline] [@zero_alloc] sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let s = triage_sign a b c in
   if not (Int.equal s 0) then s else expensive_sign a b c
 ;;
@@ -338,7 +361,12 @@ let ordered_ccw (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) (o : S2_point
 (* Crossing sign implementation following the C++/Go EdgeCrosser logic.
    For edges AB and CD to cross at an interior point, all four oriented
    triangles ACB, BDA, CBD, DAC must have the same non-zero orientation. *)
-let crossing_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) (d : S2_point.t) =
+let[@inline] [@zero_alloc] crossing_sign
+  (a : S2_point.t)
+  (b : S2_point.t)
+  (c : S2_point.t)
+  (d : S2_point.t)
+  =
   if S2_point.equal a c || S2_point.equal a d || S2_point.equal b c || S2_point.equal b d
   then 0
   else if S2_point.equal a b || S2_point.equal c d
@@ -379,7 +407,7 @@ let vertex_crossing (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) (d : S2_p
   else false
 ;;
 
-let edge_or_vertex_crossing
+let[@inline] [@zero_alloc] edge_or_vertex_crossing
   (a : S2_point.t)
   (b : S2_point.t)
   (c : S2_point.t)
@@ -554,7 +582,7 @@ let get_intersection_exact
   else R3_vector.normalize x
 ;;
 
-let get_intersection
+let[@inline] [@zero_alloc] get_intersection
   (a0 : S2_point.t)
   (a1 : S2_point.t)
   (b0 : S2_point.t)

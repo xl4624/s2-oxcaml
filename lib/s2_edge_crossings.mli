@@ -4,6 +4,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** {1 Robust sign predicate} *)
 
 (** [sign a b c] returns +1 if the points A, B, C are in counter-clockwise order, -1 if
@@ -72,8 +74,10 @@ val get_intersection : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t -> S
     returned by [get_intersection] to the true intersection point. Equal to
     [8 * dbl_error] radians. *)
 val intersection_error : S1_angle.t
+[@@zero_alloc ignore]
 
 (** [intersection_merge_radius] can be used as a snap radius to ensure that edges
     displaced by up to [intersection_error] are merged back together. Equal to
     [2 * intersection_error]. *)
 val intersection_merge_radius : S1_angle.t
+[@@zero_alloc ignore]
