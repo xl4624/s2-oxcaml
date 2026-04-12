@@ -6,8 +6,7 @@
     normalized, but certain operations will return different results if they are not
     (e.g., [contains_union]).
 
-    Internally, cell ids are stored as boxed [Int64.t] values. Individual accessors return
-    unboxed [S2_cell_id.t]. *)
+    Internally, cell ids are stored as unboxed [S2_cell_id.t array] (int64# array). *)
 
 open Core
 
@@ -15,13 +14,13 @@ type t [@@deriving sexp_of]
 
 (** {1 Constructors} *)
 
-(** [create ids] constructs a cell union from the given raw int64 cell ids, then
-    normalizes it (sorts, removes duplicates, merges siblings). *)
-val create : Int64.t array -> t
+(** [create ids] constructs a cell union from the given cell ids, then normalizes it
+    (sorts, removes duplicates, merges siblings). *)
+val create : S2_cell_id.t array -> t
 
-(** [from_verbatim ids] constructs a cell union from sorted, non-overlapping raw int64
-    cell ids without normalizing. The caller must ensure the ids satisfy [is_valid]. *)
-val from_verbatim : Int64.t array -> t
+(** [from_verbatim ids] constructs a cell union from sorted, non-overlapping cell ids
+    without normalizing. The caller must ensure the ids satisfy [is_valid]. *)
+val from_verbatim : S2_cell_id.t array -> t
 
 (** [from_min_max min_id max_id] constructs a normalized cell union covering the leaf
     cells between [min_id] and [max_id] inclusive. Both must be leaf cells, and
@@ -41,8 +40,8 @@ val empty : unit -> t
 
 (** {1 Accessors} *)
 
-(** [cell_ids_raw t] returns a copy of the underlying sorted array of raw int64 cell ids. *)
-val cell_ids_raw : t -> Int64.t array
+(** [cell_ids_raw t] returns a copy of the underlying sorted array of cell ids. *)
+val cell_ids_raw : t -> S2_cell_id.t array
 
 (** [num_cells t] returns the number of cells in the union. *)
 val num_cells : t -> int
@@ -70,8 +69,8 @@ val normalize : t -> t
 (** [denormalize t ~min_level ~level_mod] replaces any cell whose level is less than
     [min_level] or where [(level - min_level)] is not a multiple of [level_mod] with its
     children, until both conditions are satisfied or the maximum level is reached. Returns
-    a raw int64 array of cell ids. *)
-val denormalize : t -> min_level:int -> level_mod:int -> Int64.t array
+    an array of cell ids. *)
+val denormalize : t -> min_level:int -> level_mod:int -> S2_cell_id.t array
 
 (** {1 Containment and Intersection} *)
 
@@ -142,7 +141,8 @@ val cap_bound : t -> S2_cap.t
 val rect_bound : t -> S2_latlng_rect.t
 
 (** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Returned
-    as boxed [Int64.t] for the same reason as {!S2_cap.cell_union_bound}. *)
+    as boxed [Int64.t] because [S2_cell_id.t] has layout [bits64] and cannot live in
+    lists. *)
 val cell_union_bound : t -> Int64.t list
 
 (** {1 Comparison} *)

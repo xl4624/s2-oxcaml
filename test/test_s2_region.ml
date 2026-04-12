@@ -151,11 +151,11 @@ let test_cell_unions () =
     (to_list (get "cell_union"))
     ~f:(fun case ->
       let name = string_of_json_exn (member "name" case) in
-      let ids =
-        to_list (member "cell_ids" case)
-        |> List.map ~f:(fun j -> int64_of_cid (cell_id_of_token_json j))
-        |> Array.of_list
-      in
+      let tokens = to_list (member "cell_ids" case) |> Array.of_list in
+      let ids = Array.create ~len:(Array.length tokens) S2.S2_cell_id.none in
+      for i = 0 to Array.length tokens - 1 do
+        ids.(i) <- cell_id_of_token_json tokens.(i)
+      done;
       let union = S2.S2_cell_union.create ids in
       let region = S2.S2_region.of_cell_union union in
       check_region ("cell_union:" ^ name) region (member "region" case))

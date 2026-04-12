@@ -8,20 +8,15 @@ open Core
 (* Hand-crafted set operation examples for S2_cell_union.
 
    The building blocks below are:
-   - [face n]         : the nth face cell as a raw Int64 id
-   - [face0_child k]  : the kth level-1 child of face 0 as a raw Int64 id
+   - [face n]         : the nth face cell as an S2_cell_id.t
+   - [face0_child k]  : the kth level-1 child of face 0 as an S2_cell_id.t
 
    These give us concrete normalized and non-normalized inputs to exercise
    normalize, union, intersection, difference, contains_union, and
    intersects_union. *)
 
-let int64_of_cid c = Int64_u.to_int64 (S2.S2_cell_id.id c)
-let face n = int64_of_cid (S2.S2_cell_id.from_face_exn n)
-
-let face0_child k =
-  int64_of_cid (S2.S2_cell_id.child_exn (S2.S2_cell_id.from_face_exn 0) k)
-;;
-
+let face n = S2.S2_cell_id.from_face_exn n
+let face0_child k = S2.S2_cell_id.child_exn (S2.S2_cell_id.from_face_exn 0) k
 let make ids = S2.S2_cell_union.create ids
 let verbatim ids = S2.S2_cell_union.from_verbatim ids
 

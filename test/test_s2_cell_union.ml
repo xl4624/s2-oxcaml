@@ -37,20 +37,41 @@ let raw_id_of_json j =
   Int64.of_string ("0u" ^ s)
 ;;
 
-let cell_ids_of_json j = Array.of_list (List.map (to_list j) ~f:raw_id_of_json)
+(* Parse a JSON array of hex-string cell ids into an S2_cell_id.t array. *)
+let cell_ids_of_json j =
+  let items = to_list j in
+  let n = List.length items in
+  let arr = Array.create ~len:n S2.S2_cell_id.none in
+  List.iteri items ~f:(fun i tok -> arr.(i) <- cid_of_int64 (raw_id_of_json tok));
+  arr
+;;
+
 let make_union j = S2.S2_cell_union.create (cell_ids_of_json j)
 let make_union_verbatim j = S2.S2_cell_union.from_verbatim (cell_ids_of_json j)
 
-let check_cell_ids msg ~expected ~actual =
+let check_cell_ids
+  msg
+  ~(expected : S2.S2_cell_id.t array)
+  ~(actual : S2.S2_cell_id.t array)
+  =
   let n_exp = Array.length expected in
   let n_act = Array.length actual in
   if n_exp <> n_act
   then Alcotest.fail (sprintf "%s: length mismatch: expected %d, got %d" msg n_exp n_act)
   else
-    Array.iteri expected ~f:(fun i exp ->
+    for i = 0 to n_exp - 1 do
+      let exp = expected.(i) in
       let act = actual.(i) in
-      if not (Int64.equal exp act)
-      then Alcotest.fail (sprintf "%s[%d]: expected %Ld, got %Ld" msg i exp act))
+      if not (S2.S2_cell_id.equal exp act)
+      then
+        Alcotest.fail
+          (sprintf
+             "%s[%d]: expected %s, got %s"
+             msg
+             i
+             (S2.S2_cell_id.to_token exp)
+             (S2.S2_cell_id.to_token act))
+    done
 ;;
 
 (* {1 Tests} *)
@@ -196,24 +217,24 @@ let test_from_min_max () =
       expected_normalized
       (S2.S2_cell_union.is_normalized cu);
     (* Check range endpoints *)
-    let expected_first_min = raw_id_of_json (member "first_range_min" case) in
-    let expected_last_max = raw_id_of_json (member "last_range_max" case) in
+    let expected_first_min =
+      cid_of_int64 (raw_id_of_json (member "first_range_min" case))
+    in
+    let expected_last_max =
+      cid_of_int64 (raw_id_of_json (member "last_range_max" case))
+    in
     let ids = S2.S2_cell_union.cell_ids_raw cu in
     let n = Array.length ids in
     check
       bool
       (label ^ " first_range_min")
       true
-      (Int64.equal
-         expected_first_min
-         (int64_of_cid (S2.S2_cell_id.range_min (cid_of_int64 ids.(0)))));
+      (S2.S2_cell_id.equal expected_first_min (S2.S2_cell_id.range_min ids.(0)));
     check
       bool
       (label ^ " last_range_max")
       true
-      (Int64.equal
-         expected_last_max
-         (int64_of_cid (S2.S2_cell_id.range_max (cid_of_int64 ids.(n - 1))))))
+      (S2.S2_cell_id.equal expected_last_max (S2.S2_cell_id.range_max ids.(n - 1))))
 ;;
 
 let test_from_begin_end () =
@@ -259,7 +280,6 @@ let test_area () =
     let expected_avg = float_u_of_json_exn (member "average_based_area" case) in
     let expected_approx = float_u_of_json_exn (member "approx_area" case) in
     let expected_exact = float_u_of_json_exn (member "exact_area" case) in
-    (* Area computations can differ by up to ~2e-15 due to rounding in spherical_area. *)
     check_float_u
       ~eps:1e-14
       (label ^ " average_based")
@@ -281,7 +301,7 @@ let test_empty_ops () =
   let data = member "empty_ops" (Lazy.force fixture) in
   let face1_id = cell_id_of_json (member "face1_id" data) in
   let empty_cu = S2.S2_cell_union.empty () in
-  let face1_cu = S2.S2_cell_union.create [| int64_of_cid face1_id |] in
+  let face1_cu = S2.S2_cell_union.create [| face1_id |] in
   check
     bool
     "empty contains face1 id"
@@ -359,7 +379,7 @@ let test_equal () =
 
 (* Generates a list of 0-4 random cell ids at level <= 10. Each id starts at a
    random face and descends a random depth, picking a random child at each
-   step. The resulting raw ids are fed through [create], which normalizes. *)
+   step. The resulting ids are fed through [create], which normalizes. *)
 module Cell_union_sample = struct
   type t = { ids : Int64.t array } [@@deriving sexp_of]
 
@@ -406,7 +426,14 @@ let qc_config =
   { T.default_config with test_count = 200; shrink_count = 50 }
 ;;
 
-let cu_of_sample (s : Cell_union_sample.t) = S2.S2_cell_union.create s.ids
+let cu_of_sample (s : Cell_union_sample.t) =
+  let n = Array.length s.ids in
+  let cids = Array.create ~len:n S2.S2_cell_id.none in
+  for i = 0 to n - 1 do
+    cids.(i) <- cid_of_int64 s.ids.(i)
+  done;
+  S2.S2_cell_union.create cids
+;;
 
 let quickcheck_normalize_idempotent () =
   Base_quickcheck.Test.run_exn (module Cell_union_sample) ~config:qc_config ~f:(fun s ->
