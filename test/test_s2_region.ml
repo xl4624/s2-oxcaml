@@ -113,10 +113,7 @@ let check_region label region region_j =
       check_bool
         (sprintf "%s cell_union_bound[%d]" label i)
         ~expected:true
-        ~actual:
-          (S2.S2_cell_id.equal
-             expected_id
-             (S2.S2_cell_id.of_int64 (Int64_u.of_int64 actual_id))))
+        ~actual:(S2.S2_cell_id.equal expected_id (cid_of_int64 actual_id)))
 ;;
 
 let test_caps () =
@@ -156,8 +153,7 @@ let test_cell_unions () =
       let name = string_of_json_exn (member "name" case) in
       let ids =
         to_list (member "cell_ids" case)
-        |> List.map ~f:(fun j ->
-          Int64_u.to_int64 (S2.S2_cell_id.id (cell_id_of_token_json j)))
+        |> List.map ~f:(fun j -> int64_of_cid (cell_id_of_token_json j))
         |> Array.of_list
       in
       let union = S2.S2_cell_union.create ids in

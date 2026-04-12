@@ -144,6 +144,22 @@ let s2_cell_id_of_json j =
   S2.S2_cell_id.of_int64 (Int64_u.of_int64 (Int64.of_string ("0u" ^ s)))
 ;;
 
+(** Convert boxed [Int64.t] to [S2_cell_id.t] (at quickcheck/collection boundaries). *)
+let cid_of_int64 (i : Int64.t) = S2.S2_cell_id.of_int64 (Int64_u.of_int64 i)
+
+(** Convert [S2_cell_id.t] to boxed [Int64.t] (at quickcheck/collection boundaries). *)
+let int64_of_cid c = Int64_u.to_int64 (S2.S2_cell_id.id c)
+
+let check_cell_id msg expected actual =
+  if not (S2.S2_cell_id.equal expected actual)
+  then
+    Alcotest.failf
+      "%s: expected %s, got %s"
+      msg
+      (S2.S2_cell_id.to_token expected)
+      (S2.S2_cell_id.to_token actual)
+;;
+
 let check_float ?(eps = 1e-15) msg ~expected ~actual =
   match Float.is_nan expected, Float.is_nan actual with
   | true, true -> ()

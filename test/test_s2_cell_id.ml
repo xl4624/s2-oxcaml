@@ -35,20 +35,16 @@ module Cell_id_int = struct
   let quickcheck_generator =
     let open Base_quickcheck.Generator in
     let rec descend depth id =
-      let cell = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+      let cell = cid_of_int64 id in
       if depth = 0 || S2.S2_cell_id.is_leaf cell
       then return id
       else
         bind (int_uniform_inclusive 0 3) ~f:(fun k ->
-          descend
-            (depth - 1)
-            (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell k))))
+          descend (depth - 1) (int64_of_cid (S2.S2_cell_id.child_exn cell k)))
     in
     bind (int_uniform_inclusive 0 5) ~f:(fun f ->
       bind (int_uniform_inclusive 0 24) ~f:(fun depth ->
-        descend
-          depth
-          (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn f)))))
+        descend depth (int64_of_cid (S2.S2_cell_id.from_face_exn f))))
   ;;
 
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
@@ -61,7 +57,7 @@ let qc_config =
 
 let test_default_constructor () =
   let id = S2.S2_cell_id.of_int64 #0L in
-  assert (Int64.equal (Int64_u.to_int64 (S2.S2_cell_id.id id)) 0L);
+  assert (S2.S2_cell_id.equal id S2.S2_cell_id.none);
   assert (not (S2.S2_cell_id.is_valid id))
 ;;
 
@@ -72,19 +68,17 @@ module Leaf_cell_id_int = struct
   let quickcheck_generator =
     let open Base_quickcheck.Generator in
     let rec descend depth id =
-      let cell = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+      let cell = cid_of_int64 id in
       if S2.S2_cell_id.is_leaf cell
       then return id
       else if depth = 0
-      then return (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell 0)))
+      then return (int64_of_cid (S2.S2_cell_id.child_exn cell 0))
       else
         bind (int_uniform_inclusive 0 3) ~f:(fun k ->
-          descend
-            (depth - 1)
-            (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell k))))
+          descend (depth - 1) (int64_of_cid (S2.S2_cell_id.child_exn cell k)))
     in
     bind (int_uniform_inclusive 0 5) ~f:(fun f ->
-      descend 30 (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn f))))
+      descend 30 (int64_of_cid (S2.S2_cell_id.from_face_exn f)))
   ;;
 
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
@@ -95,7 +89,7 @@ let quickcheck_inverses () =
     (module Leaf_cell_id_int)
     ~config:{ qc_config with test_count = 1000 }
     ~f:(fun id ->
-      let cell = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+      let cell = cid_of_int64 id in
       assert (S2.S2_cell_id.is_leaf cell);
       assert (S2.S2_cell_id.level cell = S2.S2_cell_id.max_level);
       let center = S2.S2_latlng.of_point (S2.S2_cell_id.to_point cell) in
@@ -105,13 +99,13 @@ let quickcheck_inverses () =
 
 let quickcheck_token_roundtrip () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let t = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+    let t = cid_of_int64 id in
     assert (S2.S2_cell_id.equal (S2.S2_cell_id.from_token (S2.S2_cell_id.to_token t)) t))
 ;;
 
 let quickcheck_contains_immediate_children () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let t = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+    let t = cid_of_int64 id in
     if S2.S2_cell_id.is_leaf t
     then ()
     else
@@ -122,7 +116,7 @@ let quickcheck_contains_immediate_children () =
 
 let quickcheck_parent_of_child () =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
-    let t = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+    let t = cid_of_int64 id in
     if S2.S2_cell_id.is_leaf t
     then ()
     else
@@ -136,24 +130,17 @@ let quickcheck_parent_of_child () =
    needs a margin above ~1e-9 on some cells. *)
 let angle_eps = #5e-9
 
-let check_cell_id msg expected actual =
-  let expected = Int64_u.to_int64 (S2.S2_cell_id.id expected) in
-  let actual = Int64_u.to_int64 (S2.S2_cell_id.id actual) in
-  if not (Int64.equal expected actual)
-  then Alcotest.failf "%s: expected %Lx, got %Lx" msg expected actual
-;;
-
 let uint64_ge (a : S2.S2_cell_id.t) (b : S2.S2_cell_id.t) =
-  Stdlib.Int64.unsigned_compare
-    (Int64_u.to_int64 (S2.S2_cell_id.id a))
-    (Int64_u.to_int64 (S2.S2_cell_id.id b))
+  Stdlib_upstream_compatible.Int64_u.unsigned_compare
+    (S2.S2_cell_id.id a)
+    (S2.S2_cell_id.id b)
   >= 0
 ;;
 
 let uint64_le (a : S2.S2_cell_id.t) (b : S2.S2_cell_id.t) =
-  Stdlib.Int64.unsigned_compare
-    (Int64_u.to_int64 (S2.S2_cell_id.id a))
-    (Int64_u.to_int64 (S2.S2_cell_id.id b))
+  Stdlib_upstream_compatible.Int64_u.unsigned_compare
+    (S2.S2_cell_id.id a)
+    (S2.S2_cell_id.id b)
   <= 0
 ;;
 
@@ -255,9 +242,9 @@ let test_advance fixture () =
 let test_parent_child fixture () =
   let pc = member "parent_child" fixture in
   let face = int_of_json_exn (member "construct_face" pc) in
-  let pos = Int64.of_string (string_of_json_exn (member "construct_pos" pc)) in
+  let pos = int64_u_of_json_exn (member "construct_pos" pc) in
   let level = int_of_json_exn (member "construct_level" pc) in
-  let id = S2.S2_cell_id.from_face_pos_level face (Int64_u.of_int64 pos) level in
+  let id = S2.S2_cell_id.from_face_pos_level face pos level in
   check_cell_id "parent_child id" (s2_cell_id_of_json (member "id" pc)) id;
   (check int)
     "parent_child face"
@@ -271,39 +258,43 @@ let test_parent_child fixture () =
     "parent_child level"
     (int_of_json_exn (member "level" pc))
     (S2.S2_cell_id.level id);
-  let expected_pos = Int64.of_string (string_of_json_exn (member "pos" pc)) in
-  (check bool)
+  let expected_pos = int64_u_of_json_exn (member "pos" pc) in
+  check_bool
     "parent_child pos"
-    true
-    (Int64.equal expected_pos (Int64_u.to_int64 (S2.S2_cell_id.pos id)));
+    ~expected:true
+    ~actual:(Int64_u.equal expected_pos (S2.S2_cell_id.pos id));
   let l2 = S2.S2_cell_id.level id + 2 in
   let child_begin_l2 = S2.S2_cell_id.child_begin_at_level id l2 in
-  (check bool)
+  check_bool
     "parent_child child_begin_l2_pos"
-    true
-    (Int64.equal
-       (Int64.of_string (string_of_json_exn (member "child_begin_l2_pos" pc)))
-       (Int64_u.to_int64 (S2.S2_cell_id.pos child_begin_l2)));
+    ~expected:true
+    ~actual:
+      (Int64_u.equal
+         (int64_u_of_json_exn (member "child_begin_l2_pos" pc))
+         (S2.S2_cell_id.pos child_begin_l2));
   let child_begin_immediate = S2.S2_cell_id.child_begin id in
-  (check bool)
+  check_bool
     "parent_child child_begin_pos"
-    true
-    (Int64.equal
-       (Int64.of_string (string_of_json_exn (member "child_begin_pos" pc)))
-       (Int64_u.to_int64 (S2.S2_cell_id.pos child_begin_immediate)));
-  (check bool)
+    ~expected:true
+    ~actual:
+      (Int64_u.equal
+         (int64_u_of_json_exn (member "child_begin_pos" pc))
+         (S2.S2_cell_id.pos child_begin_immediate));
+  check_bool
     "parent_child parent_pos"
-    true
-    (Int64.equal
-       (Int64.of_string (string_of_json_exn (member "parent_pos" pc)))
-       (Int64_u.to_int64 (S2.S2_cell_id.pos (S2.S2_cell_id.parent_exn id))));
+    ~expected:true
+    ~actual:
+      (Int64_u.equal
+         (int64_u_of_json_exn (member "parent_pos" pc))
+         (S2.S2_cell_id.pos (S2.S2_cell_id.parent_exn id)));
   let pll = S2.S2_cell_id.level id - 2 in
-  (check bool)
+  check_bool
     "parent_child parent_level_minus_2_pos"
-    true
-    (Int64.equal
-       (Int64.of_string (string_of_json_exn (member "parent_level_minus_2_pos" pc)))
-       (Int64_u.to_int64 (S2.S2_cell_id.pos (S2.S2_cell_id.parent_level id pll))));
+    ~expected:true
+    ~actual:
+      (Int64_u.equal
+         (int64_u_of_json_exn (member "parent_level_minus_2_pos" pc))
+         (S2.S2_cell_id.pos (S2.S2_cell_id.parent_level id pll)));
   check_cell_id
     "parent_child range_min"
     (s2_cell_id_of_json (member "range_min" pc))
@@ -316,13 +307,13 @@ let test_parent_child fixture () =
     "parent_child child_end_max"
     (s2_cell_id_of_json (member "child_end_max" pc))
     (S2.S2_cell_id.child_end_at_level id S2.S2_cell_id.max_level);
-  let id64 = Int64_u.to_int64 (S2.S2_cell_id.id id) in
-  let lo = Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.range_min id)) in
-  let hi = Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.range_max id)) in
+  let id64 = S2.S2_cell_id.id id in
+  let lo = S2.S2_cell_id.id (S2.S2_cell_id.range_min id) in
+  let hi = S2.S2_cell_id.id (S2.S2_cell_id.range_max id) in
   (check bool)
     "parent_child hilbert_midpoint"
     (bool_of_json_exn (member "hilbert_midpoint" pc))
-    (Int64.equal (Stdlib.Int64.add id64 id64) (Stdlib.Int64.add lo hi));
+    Int64_u.O.(id64 + id64 = lo + hi);
   let next_child_begin_max =
     S2.S2_cell_id.advance
       (S2.S2_cell_id.child_begin_at_level (S2.S2_cell_id.next id) S2.S2_cell_id.max_level)
@@ -543,10 +534,7 @@ let test_distance_from_begin fixture () =
     check_bool
       (msg ^ " distance")
       ~expected:true
-      ~actual:
-        (Int64.equal
-           (Int64_u.to_int64 dist)
-           (Int64_u.to_int64 (S2.S2_cell_id.distance_from_begin id)));
+      ~actual:(Int64_u.equal dist (S2.S2_cell_id.distance_from_begin id));
     match member "roundtrip" c with
     | `Bool true ->
       let lvl = S2.S2_cell_id.level id in

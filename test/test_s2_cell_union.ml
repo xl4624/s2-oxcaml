@@ -30,11 +30,7 @@ open Test_helpers
 open Alcotest
 
 let fixture = lazy (load_fixture "s2cellunion.json")
-
-let cell_id_of_json j =
-  let s = string_of_json_exn j in
-  S2.S2_cell_id.of_int64 (Int64_u.of_int64 (Int64.of_string ("0u" ^ s)))
-;;
+let cell_id_of_json j = s2_cell_id_of_json j
 
 let raw_id_of_json j =
   let s = string_of_json_exn j in
@@ -210,20 +206,14 @@ let test_from_min_max () =
       true
       (Int64.equal
          expected_first_min
-         (Int64_u.to_int64
-            (S2.S2_cell_id.id
-               (S2.S2_cell_id.range_min
-                  (S2.S2_cell_id.of_int64 (Int64_u.of_int64 ids.(0)))))));
+         (int64_of_cid (S2.S2_cell_id.range_min (cid_of_int64 ids.(0)))));
     check
       bool
       (label ^ " last_range_max")
       true
       (Int64.equal
          expected_last_max
-         (Int64_u.to_int64
-            (S2.S2_cell_id.id
-               (S2.S2_cell_id.range_max
-                  (S2.S2_cell_id.of_int64 (Int64_u.of_int64 ids.(n - 1))))))))
+         (int64_of_cid (S2.S2_cell_id.range_max (cid_of_int64 ids.(n - 1))))))
 ;;
 
 let test_from_begin_end () =
@@ -291,9 +281,7 @@ let test_empty_ops () =
   let data = member "empty_ops" (Lazy.force fixture) in
   let face1_id = cell_id_of_json (member "face1_id" data) in
   let empty_cu = S2.S2_cell_union.empty () in
-  let face1_cu =
-    S2.S2_cell_union.create [| Int64_u.to_int64 (S2.S2_cell_id.id face1_id) |]
-  in
+  let face1_cu = S2.S2_cell_union.create [| int64_of_cid face1_id |] in
   check
     bool
     "empty contains face1 id"
@@ -378,21 +366,17 @@ module Cell_union_sample = struct
   let quickcheck_generator =
     let open Base_quickcheck.Generator in
     let rec descend depth id =
-      let cell = S2.S2_cell_id.of_int64 (Int64_u.of_int64 id) in
+      let cell = cid_of_int64 id in
       if depth = 0
       then return id
       else
         bind (int_uniform_inclusive 0 3) ~f:(fun k ->
-          descend
-            (depth - 1)
-            (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.child_exn cell k))))
+          descend (depth - 1) (int64_of_cid (S2.S2_cell_id.child_exn cell k)))
     in
     let id_gen =
       bind (int_uniform_inclusive 0 5) ~f:(fun f ->
         bind (int_uniform_inclusive 0 10) ~f:(fun depth ->
-          descend
-            depth
-            (Int64_u.to_int64 (S2.S2_cell_id.id (S2.S2_cell_id.from_face_exn f)))))
+          descend depth (int64_of_cid (S2.S2_cell_id.from_face_exn f))))
     in
     bind (int_uniform_inclusive 0 4) ~f:(fun n ->
       map (list_with_length ~length:n id_gen) ~f:(fun ids -> { ids = Array.of_list ids }))

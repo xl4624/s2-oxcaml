@@ -20,11 +20,11 @@ let%expect_test "token_roundtrip" =
 let%expect_test "face_level_pos_decomposition" =
   let show name c =
     printf
-      "%s: face=%d level=%d pos=%Ld is_leaf=%b is_face=%b\n"
+      "%s: face=%d level=%d pos=%s is_leaf=%b is_face=%b\n"
       name
       (C.face c)
       (C.level c)
-      (Int64_u.to_int64 (C.pos c))
+      (Int64_u.to_string (C.pos c))
       (C.is_leaf c)
       (C.is_face c)
   in

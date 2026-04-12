@@ -58,7 +58,7 @@ type t = int64#
 
 let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t : Sexp.t
   =
-  Int64.sexp_of_t (Int64_u.to_int64 t) [@exclave_if_stack a]
+  Sexp.Atom (Int64_u.to_string t) [@exclave_if_stack a]
 ;;
 
 let[@inline] [@zero_alloc ignore] hash t = Int64.hash (Int64_u.to_int64 t)
@@ -202,7 +202,7 @@ let[@inline] [@zero_alloc] parent_exn t =
       raise_s
         (Sexp.List
            [ Sexp.Atom "S2CellId.parent_exn: already a face cell"
-           ; Sexp.List [ Sexp.Atom "id"; sexp_of_int64 (Int64_u.to_int64 t) ]
+           ; Sexp.List [ Sexp.Atom "id"; Sexp.Atom (Int64_u.to_string t) ]
            ])
     with
     | (_ : Nothing.t) -> .)
@@ -260,7 +260,7 @@ let[@inline] [@zero_alloc] child_exn t pos =
       raise_s
         (Sexp.List
            [ Sexp.Atom "S2CellId.child_exn: invalid leaf cell or child index"
-           ; Sexp.List [ Sexp.Atom "id"; sexp_of_int64 (Int64_u.to_int64 t) ]
+           ; Sexp.List [ Sexp.Atom "id"; Sexp.Atom (Int64_u.to_string t) ]
            ; Sexp.List [ Sexp.Atom "pos"; sexp_of_int pos ]
            ])
     with
