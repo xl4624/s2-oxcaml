@@ -2,22 +2,22 @@
 opam-version: "2.0"
 synopsis: "S2 Geometry library for OxCaml"
 description: "A native OxCaml port of Google's S2 Geometry library."
+maintainer: ["Xiaomin Liu <xl4624@nyu.edu>"]
 authors: ["Xiaomin Liu <xl4624@nyu.edu>"]
-license: "LICENSE"
+license: "MIT"
 tags: ["geometry" "s2" "geospatial"]
 homepage: "https://github.com/xl4624/s2-oxcaml"
-doc: "https://url/to/documentation"
 bug-reports: "https://github.com/xl4624/s2-oxcaml/issues"
 depends: [
   "dune" {>= "3.22"}
-  "ocaml"
+  "ocaml" {>= "5.0"}
   "async"
   "core"
-  "alcotest"
-  "yojson"
-  "base_quickcheck"
   "unboxed"
   "ppx_uopt"
+  "alcotest" {with-test}
+  "yojson" {with-test}
+  "base_quickcheck" {with-test}
   "odoc" {with-doc}
 ]
 build: [
