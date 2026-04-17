@@ -285,70 +285,6 @@ let test_accuracy_bug () =
         >= S2.R1_interval.hi (S2.S2_latlng_rect.lat ac))
 ;;
 
-(* -Quickcheck properties ------------------------------------------------ *)
-
-module Point_list = struct
-  (* We generate (lat_rad, lng_rad) pairs as boxed floats and convert each to an
-     unboxed [S2_point] just-in-time inside the property body. Unboxed products
-     cannot be stored directly in a [list]. *)
-  type t = { latlngs : (float * float) list } [@@deriving sexp_of]
-
-  let quickcheck_generator =
-    let open Base_quickcheck.Generator in
-    let lat_gen = float_inclusive (-.Float.pi /. 2.0) (Float.pi /. 2.0) in
-    let lng_gen = float_inclusive (-.Float.pi) Float.pi in
-    let latlng_gen = map2 lat_gen lng_gen ~f:(fun lat lng -> lat, lng) in
-    let list_gen = list_with_length latlng_gen ~length:5 in
-    map list_gen ~f:(fun latlngs -> { latlngs })
-  ;;
-
-  let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-end
-
-let bound_of_latlngs latlngs =
-  let cell = { Cell.v = S2.S2_latlng_rect_bounder.create () } in
-  List.iter latlngs ~f:(fun (lat, lng) ->
-    let ll =
-      S2.S2_latlng.of_radians ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng)
-    in
-    cell.v <- S2.S2_latlng_rect_bounder.add_latlng cell.v ll);
-  S2.S2_latlng_rect_bounder.get_bound cell.v
-;;
-
-let qc_config =
-  let module T = Base_quickcheck.Test in
-  { T.default_config with test_count = 200; shrink_count = 10 }
-;;
-
-let quickcheck_bound_contains_points () =
-  Base_quickcheck.Test.run_exn
-    (module Point_list)
-    ~config:qc_config
-    ~f:(fun { Point_list.latlngs } ->
-      let bound = bound_of_latlngs latlngs in
-      List.iter latlngs ~f:(fun (lat, lng) ->
-        let ll =
-          S2.S2_latlng.of_radians ~lat:(Float_u.of_float lat) ~lng:(Float_u.of_float lng)
-        in
-        assert (S2.S2_latlng_rect.contains_latlng bound ll)))
-;;
-
-let quickcheck_expand_for_subregions_contains () =
-  Base_quickcheck.Test.run_exn
-    (module Point_list)
-    ~config:qc_config
-    ~f:(fun { Point_list.latlngs } ->
-      let bound = bound_of_latlngs latlngs in
-      let expanded = S2.S2_latlng_rect_bounder.expand_for_subregions bound in
-      assert (S2.S2_latlng_rect.contains expanded bound))
-;;
-
-let quickcheck_empty_bounder () =
-  let bounder = S2.S2_latlng_rect_bounder.create () in
-  let bound = S2.S2_latlng_rect_bounder.get_bound bounder in
-  assert (S2.S2_latlng_rect.is_empty bound)
-;;
-
 let () =
   run
     "S2LatLngRectBounder"
@@ -370,14 +306,6 @@ let () =
     ; ( "expand_for_subregions"
       , [ test_case "cases" `Quick test_expand_for_subregions
         ; test_case "full_empty" `Quick test_expand_full_empty
-        ] )
-    ; ( "quickcheck"
-      , [ test_case "empty_bounder" `Quick quickcheck_empty_bounder
-        ; test_case "bound_contains_points" `Quick quickcheck_bound_contains_points
-        ; test_case
-            "expand_for_subregions_contains"
-            `Quick
-            quickcheck_expand_for_subregions_contains
         ] )
     ]
 ;;

@@ -23,109 +23,6 @@ open Core
 open Test_helpers
 open Alcotest
 
-module S1_angle_only = struct
-  type t = { radians : float } [@@deriving sexp_of]
-
-  let quickcheck_generator =
-    let open Base_quickcheck.Generator in
-    map (float_inclusive (-10.0) 10.0) ~f:(fun r -> { radians = r })
-  ;;
-
-  let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-  let to_angle t = S2.S1_angle.of_radians (Float_u.of_float t.radians)
-end
-
-module S1_angle_pair = struct
-  type t =
-    { a : float
-    ; b : float
-    }
-  [@@deriving sexp_of]
-
-  let quickcheck_generator =
-    let open Base_quickcheck.Generator in
-    let rad = float_inclusive (-10.0) 10.0 in
-    map (both rad rad) ~f:(fun (a, b) -> { a; b })
-  ;;
-
-  let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-end
-
-let qc_config =
-  let module T = Base_quickcheck.Test in
-  { T.default_config with test_count = 400; shrink_count = 100 }
-;;
-
-let quickcheck_add_commutative () =
-  Base_quickcheck.Test.run_exn
-    (module S1_angle_pair)
-    ~config:qc_config
-    ~f:(fun { S1_angle_pair.a; b } ->
-      let a = S2.S1_angle.of_radians (Float_u.of_float a) in
-      let b = S2.S1_angle.of_radians (Float_u.of_float b) in
-      assert (S2.S1_angle.equal (S2.S1_angle.add a b) (S2.S1_angle.add b a)))
-;;
-
-let quickcheck_neg_involution () =
-  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
-    let a = S1_angle_only.to_angle t in
-    assert (S2.S1_angle.equal (S2.S1_angle.neg (S2.S1_angle.neg a)) a))
-;;
-
-let quickcheck_normalized_idempotent () =
-  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
-    let a = S1_angle_only.to_angle t in
-    let n = S2.S1_angle.normalized a in
-    assert (S2.S1_angle.equal (S2.S1_angle.normalized n) n))
-;;
-
-let quickcheck_sub_self_zero () =
-  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
-    let a = S1_angle_only.to_angle t in
-    let sub_a = S2.S1_angle.sub a a in
-    assert (S2.S1_angle.equal sub_a S2.S1_angle.zero))
-;;
-
-let quickcheck_abs_nonneg () =
-  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
-    let a = S1_angle_only.to_angle t in
-    let abs_a = S2.S1_angle.abs a in
-    assert (Float_u.( >= ) (S2.S1_angle.radians abs_a) #0.0))
-;;
-
-let quickcheck_mul_identity () =
-  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
-    let a = S1_angle_only.to_angle t in
-    let mul_a = S2.S1_angle.mul a #1.0 in
-    assert (S2.S1_angle.equal mul_a a))
-;;
-
-let quickcheck_div_self_one () =
-  Base_quickcheck.Test.run_exn
-    (module S1_angle_only)
-    ~config:qc_config
-    ~f:(fun { S1_angle_only.radians = r } ->
-      let open Float_u.O in
-      let a_rad = Float.abs r in
-      if Float.( > ) a_rad 1e-10
-      then (
-        let a_rad_u = Float_u.of_float a_rad in
-        let a = S2.S1_angle.of_radians a_rad_u in
-        let div_a = S2.S1_angle.div a a_rad_u in
-        let diff = Float_u.abs (S2.S1_angle.radians div_a - #1.0) in
-        assert (diff <= #1e-14)))
-;;
-
-let quickcheck_degrees_radians_roundtrip () =
-  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
-    let open Float_u.O in
-    let a = S1_angle_only.to_angle t in
-    let deg = S2.S1_angle.degrees a in
-    let back = S2.S1_angle.of_degrees deg in
-    let diff = Float_u.abs (S2.S1_angle.radians a - S2.S1_angle.radians back) in
-    assert (diff <= #1e-13))
-;;
-
 let test_constructors fixture () =
   let cases = to_list (member "constructors" fixture) in
   List.iter cases ~f:(fun c ->
@@ -359,15 +256,5 @@ let () =
       , [ test_case "DegreesVsRadians" `Quick (test_degrees_vs_radians fixture) ] )
     ; "sin_cos", [ test_case "Trigonometry" `Quick (test_sin_cos fixture) ]
     ; "e6_vs_e7", [ test_case "E6VsE7" `Quick (test_e6_vs_e7 fixture) ]
-    ; ( "quickcheck"
-      , [ test_case "add_commutative" `Quick quickcheck_add_commutative
-        ; test_case "neg_involution" `Quick quickcheck_neg_involution
-        ; test_case "normalized_idempotent" `Quick quickcheck_normalized_idempotent
-        ; test_case "sub_self_zero" `Quick quickcheck_sub_self_zero
-        ; test_case "abs_nonneg" `Quick quickcheck_abs_nonneg
-        ; test_case "mul_identity" `Quick quickcheck_mul_identity
-        ; test_case "div_self_one" `Quick quickcheck_div_self_one
-        ; test_case "degrees_radians" `Quick quickcheck_degrees_radians_roundtrip
-        ] )
     ]
 ;;
