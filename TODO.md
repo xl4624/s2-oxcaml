@@ -162,7 +162,7 @@ All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, C
 
 ## Tier 6 - Shapes and geometry types
 
-- [ ] **s2_edge_tessellator** - `S2_edge_tessellator`
+- [x] **s2_edge_tessellator** - `S2_edge_tessellator`
   - Go: `s2/edge_tessellator.go` | C++: `s2edge_tessellator.h`, `s2edge_tessellator.cc`
   - Deps: `s2_point`, `s2_projections`, `s2_edge_distances`
 
