@@ -1,0 +1,11 @@
+(executables
+ (names bench_region_coverer profile_cap)
+ (libraries
+  core
+  core_bench
+  core_unix.command_unix
+  s2
+  stdlib_upstream_compatible
+  unboxed)
+ (preprocess
+  (pps ppx_jane)))

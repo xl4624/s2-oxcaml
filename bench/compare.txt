@@ -1,0 +1,69 @@
+# s2 region-coverer comparison (C++ / Go / OxCaml)
+# generated: 2026-04-17T01:38:20
+# quota per sub-bench: 0.5s
+
+
+Cap (random cap area, ~0.1*avg_cell_area .. 4pi)
+n   C++ ns/op  Go ns/op  OxCaml ns/op  Go/C++  OxCaml/C++  OxCaml/Go
+--  ---------  --------  ------------  ------  ----------  ---------
+2       7,088    15,518        20,274   2.19x       2.86x      1.31x
+3       7,310    16,866        20,694   2.31x       2.83x      1.23x
+4       7,132    16,000        19,889   2.24x       2.79x      1.24x
+5       7,452    17,159        20,483   2.30x       2.75x      1.19x
+6       6,651    17,304        19,822   2.60x       2.98x      1.15x
+7       6,660    17,351        20,925   2.61x       3.14x      1.21x
+8       6,633    17,774        19,550   2.68x       2.95x      1.10x
+9       6,671    17,056        20,448   2.56x       3.07x      1.20x
+10      6,570    16,960        20,259   2.58x       3.08x      1.19x
+11      6,541    18,141        20,591   2.77x       3.15x      1.14x
+12      6,613    17,084        20,242   2.58x       3.06x      1.18x
+13      6,619    16,073        20,210   2.43x       3.05x      1.26x
+14      6,584    16,465        20,524   2.50x       3.12x      1.25x
+15      6,519    16,111        21,453   2.47x       3.29x      1.33x
+16      6,617    16,700        20,341   2.52x       3.07x      1.22x
+  Go/C++    median: 2.52x geomean: 2.48x
+  OxCaml/C++ median: 3.06x geomean: 3.01x
+  OxCaml/Go  median: 1.21x geomean: 1.21x
+
+Cell (single cell region, level in [max-n, max])
+n   C++ ns/op  Go ns/op  OxCaml ns/op  Go/C++  OxCaml/C++  OxCaml/Go
+--  ---------  --------  ------------  ------  ----------  ---------
+2          73       399           359   5.48x       4.94x      0.90x
+3          72       419           339   5.80x       4.69x      0.81x
+4          71       383           322   5.42x       4.56x      0.84x
+5          74       384           325   5.21x       4.42x      0.85x
+6          72       372           316   5.21x       4.42x      0.85x
+7          70       379           319   5.37x       4.52x      0.84x
+8          70       327           313   4.67x       4.46x      0.95x
+9          70       330           316   4.70x       4.50x      0.96x
+10         70       362           311   5.19x       4.46x      0.86x
+11         71       379           318   5.33x       4.48x      0.84x
+12         75       370           311   4.93x       4.15x      0.84x
+13         78       415           318   5.32x       4.08x      0.77x
+14         81       391           326   4.85x       4.04x      0.83x
+15         80       386           361   4.81x       4.50x      0.94x
+16         81       382           327   4.73x       4.04x      0.85x
+  Go/C++    median: 5.21x geomean: 5.12x
+  OxCaml/C++ median: 4.46x geomean: 4.41x
+  OxCaml/Go  median: 0.85x geomean: 0.86x
+
+CellUnion (2^n cells at level 22 + Normalize)
+n   C++ ns/op  Go ns/op  OxCaml ns/op  Go/C++  OxCaml/C++  OxCaml/Go
+--  ---------  --------  ------------  ------  ----------  ---------
+2      10,269    32,402        40,363   3.16x       3.93x      1.25x
+3      21,986    60,107        92,269   2.73x       4.20x      1.54x
+4      14,300    38,712        56,475   2.71x       3.95x      1.46x
+5      10,968    26,433        37,464   2.41x       3.42x      1.42x
+6      12,520    23,932        36,804   1.91x       2.94x      1.54x
+7      17,437    29,456        42,791   1.69x       2.45x      1.45x
+8      31,180    52,122        74,152   1.67x       2.38x      1.42x
+9      53,270    97,037       132,293   1.82x       2.48x      1.36x
+10    104,050   193,911       251,659   1.86x       2.42x      1.30x
+  Go/C++    median: 1.91x geomean: 2.16x
+  OxCaml/C++ median: 2.94x geomean: 3.05x
+  OxCaml/Go  median: 1.42x geomean: 1.41x
+
+overall geomeans:
+  Go/C++     = 3.18x over 39 sub-benchmarks
+  OxCaml/C++ = 3.50x over 39 sub-benchmarks
+  OxCaml/Go  = 1.10x over 39 sub-benchmarks

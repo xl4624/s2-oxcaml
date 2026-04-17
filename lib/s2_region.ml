@@ -12,7 +12,11 @@ type t =
 let sexp_of_t _ = Sexp.Atom "<S2_region.t>"
 
 (* Returns true if the cap intersects any point of the cell EXCLUDING the
-   already-checked vertices. *)
+   already-checked vertices.
+
+   Uses a local recursive helper for the edge loop so we can return as soon as the
+   answer is decided - OCaml [for] has no [break]/[continue], and in a coverage hot
+   path the mutable-flag pattern wastes iterations after a rejection or acceptance. *)
 let cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3 =
   let radius = S2_cap.radius_chord cap in
   if Stdlib.( >= ) (S1_chord_angle.compare radius S1_chord_angle.right) 0
@@ -25,71 +29,78 @@ let cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3 =
     let open Float_u.O in
     let center = S2_cap.center cap in
     let sin2_angle = S1_chord_angle.sin2 radius in
-    let mutable found = false in
-    let mutable rejected = false in
-    for k = 0 to 3 do
-      if (not found) && not rejected
-      then (
+    let rec loop k =
+      if Stdlib.( >= ) k 4
+      then false
+      else (
         let edge = S2_cell.edge_raw cell k in
         let dot = R3_vector.dot center edge in
-        if not (dot > #0.0)
-        then
-          if dot * dot > sin2_angle * R3_vector.norm2 edge
-          then rejected <- true
-          else (
-            let dir = R3_vector.cross edge center in
-            let v_k =
-              match k with
-              | 0 -> v0
-              | 1 -> v1
-              | 2 -> v2
-              | _ -> v3
-            in
-            let v_kp1 =
-              match Stdlib.( land ) (Stdlib.( + ) k 1) 3 with
-              | 0 -> v0
-              | 1 -> v1
-              | 2 -> v2
-              | _ -> v3
-            in
-            if R3_vector.dot dir v_k < #0.0 && R3_vector.dot dir v_kp1 > #0.0
-            then found <- true))
-    done;
-    found
+        if dot > #0.0
+        then loop (Stdlib.( + ) k 1)
+        else if dot * dot > sin2_angle * R3_vector.norm2 edge
+        then false
+        else (
+          let dir = R3_vector.cross edge center in
+          let v_k =
+            match k with
+            | 0 -> v0
+            | 1 -> v1
+            | 2 -> v2
+            | _ -> v3
+          in
+          let v_kp1 =
+            match Stdlib.( land ) (Stdlib.( + ) k 1) 3 with
+            | 0 -> v0
+            | 1 -> v1
+            | 2 -> v2
+            | _ -> v3
+          in
+          if R3_vector.dot dir v_k < #0.0 && R3_vector.dot dir v_kp1 > #0.0
+          then true
+          else loop (Stdlib.( + ) k 1)))
+    in
+    loop 0
 ;;
 
+(* Short-circuit signals for the cap-cell vertex-check loops. Module-level so they are
+   statically allocated (no per-call identity construction, unlike [let exception]) and
+   [raise_notrace] avoids stack-trace capture. *)
+exception Cap_missed_vertex
+exception Cap_contains_vertex
+
+(* Lazy vertex evaluation matches Go/C++: compute vertex k, check, exit early if the
+   answer is decided. In the coverer hot path [cap_contains_cell] usually fails on the
+   first vertex (the cap is smaller than the cell at early tree levels), so eager
+   computation of all 4 vertices wastes ~3 [R3_vector.normalize] calls per check. *)
 let cap_contains_cell cap cell =
-  let v0 = S2_cell.vertex cell 0 in
-  let v1 = S2_cell.vertex cell 1 in
-  let v2 = S2_cell.vertex cell 2 in
-  let v3 = S2_cell.vertex cell 3 in
-  if not (S2_cap.contains_point cap v0)
-  then false
-  else if not (S2_cap.contains_point cap v1)
-  then false
-  else if not (S2_cap.contains_point cap v2)
-  then false
-  else if not (S2_cap.contains_point cap v3)
-  then false
-  else (
+  try
+    let v0 = S2_cell.vertex cell 0 in
+    if not (S2_cap.contains_point cap v0) then raise_notrace Cap_missed_vertex;
+    let v1 = S2_cell.vertex cell 1 in
+    if not (S2_cap.contains_point cap v1) then raise_notrace Cap_missed_vertex;
+    let v2 = S2_cell.vertex cell 2 in
+    if not (S2_cap.contains_point cap v2) then raise_notrace Cap_missed_vertex;
+    let v3 = S2_cell.vertex cell 3 in
+    if not (S2_cap.contains_point cap v3) then raise_notrace Cap_missed_vertex;
     let comp = S2_cap.complement cap in
-    not (cap_intersects_cell_interior comp cell ~v0 ~v1 ~v2 ~v3))
+    not (cap_intersects_cell_interior comp cell ~v0 ~v1 ~v2 ~v3)
+  with
+  | Cap_missed_vertex -> false
 ;;
 
 let cap_intersects_cell cap cell =
-  let v0 = S2_cell.vertex cell 0 in
-  let v1 = S2_cell.vertex cell 1 in
-  let v2 = S2_cell.vertex cell 2 in
-  let v3 = S2_cell.vertex cell 3 in
-  if S2_cap.contains_point cap v0
-  then true
-  else if S2_cap.contains_point cap v1
-  then true
-  else if S2_cap.contains_point cap v2
-  then true
-  else if S2_cap.contains_point cap v3
-  then true
-  else cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3
+  try
+    let v0 = S2_cell.vertex cell 0 in
+    if S2_cap.contains_point cap v0 then raise_notrace Cap_contains_vertex;
+    let v1 = S2_cell.vertex cell 1 in
+    if S2_cap.contains_point cap v1 then raise_notrace Cap_contains_vertex;
+    let v2 = S2_cell.vertex cell 2 in
+    if S2_cap.contains_point cap v2 then raise_notrace Cap_contains_vertex;
+    let v3 = S2_cell.vertex cell 3 in
+    if S2_cap.contains_point cap v3 then raise_notrace Cap_contains_vertex;
+    cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3
+  with
+  | Cap_contains_vertex -> true
 ;;
 
 let of_cap c =

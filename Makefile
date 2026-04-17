@@ -1,4 +1,4 @@
-.PHONY: all build test fixtures clean fmt
+.PHONY: all build test fixtures clean fmt bench
 
 # Optional: run one test executable (Alcotest binary), not all suites.
 #   make test                          # all tests
@@ -41,3 +41,13 @@ clean:
 fmt:
 	dune build --root $(DUNE_ROOT) @fmt --auto-promote || true
 	clang-format -i test/gen/*.cc
+
+# Run region-coverer benchmarks (core_bench). Tune runtime via QUOTA.
+#   make bench                    # default 1s/scenario
+#   make bench QUOTA=5s           # longer, tighter estimates
+#   make bench BENCH_ARGS="+alloc +cycles"
+QUOTA ?= 1s
+BENCH_ARGS ?=
+bench:
+	dune build --root $(DUNE_ROOT) bench/bench_region_coverer.exe
+	./_build/default/bench/bench_region_coverer.exe -ascii -quota $(QUOTA) $(BENCH_ARGS)
