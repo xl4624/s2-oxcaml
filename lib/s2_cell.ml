@@ -321,7 +321,7 @@ let uv_coord_of_edge t k =
 ;;
 
 let ij_coord_of_edge t k =
-  Float_u.iround_nearest_exn
+  Float_util.iround_half_to_even_u
     Float_u.O.(
       Float_u.of_int S2_coords.limit_ij * S2_coords.uv_to_st (uv_coord_of_edge t k))
 ;;

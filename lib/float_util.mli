@@ -20,3 +20,14 @@ val min_u : float# -> float# -> float#
 [@@zero_alloc]
 
 val max_u : float# -> float# -> float# [@@zero_alloc]
+
+(** Round a [float#] to the nearest [int] using the FPU's current rounding mode (the
+    default is round-half-to-even). Compiles to [cvtsd2si] on x86-64 (C fallback on ARM).
+
+    Semantics differ from [Float_u.iround_nearest_exn], which rounds half away from zero:
+    e.g., [iround_half_to_even_u 0.5 = 0] but [Float_u.iround_nearest_exn 0.5 = 1].
+
+    The result is unspecified for NaN, infinity, or values outside [int] range; the caller
+    must guarantee a finite, in-range input. *)
+val iround_half_to_even_u : float# -> int
+[@@zero_alloc]

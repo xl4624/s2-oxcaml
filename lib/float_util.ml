@@ -13,3 +13,7 @@ let[@inline] [@zero_alloc] ieee_remainder_u a b =
 
 let[@inline] [@zero_alloc] min_u a b = Ocaml_intrinsics_kernel.Float.Unboxed.min a b
 let[@inline] [@zero_alloc] max_u a b = Ocaml_intrinsics_kernel.Float.Unboxed.max a b
+
+let[@inline] [@zero_alloc] iround_half_to_even_u x =
+  Int64_u.to_int_trunc (Ocaml_intrinsics_kernel.Float.Unboxed.iround_current x)
+;;
