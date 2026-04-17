@@ -17,9 +17,6 @@
    - Areas                                              - exact_area, approx_area,
       average_area against C++ golden data
 
-   -  TEST(S2Cell, ConsistentWithS2CellIdFromPoint)     - quickcheck: vertex ->
-      of_point -> contains_point roundtrip
-
    Deliberately omitted:
    - GetRectBound / GetCapBound / CellUnionBound / EncodeDecode
    - distance to edge / distance to cell / max distance to edge / max distance to cell *)

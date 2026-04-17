@@ -8,11 +8,7 @@
    -  antipodal two-point polyline
    -  quarter, half, and full great-circle subdivisions
    -  a short-edge case
-   -  a tilted great circle with 32 vertices
-   -  quickcheck properties:
-      -  length is invariant under polyline reversal
-      -  centroid is invariant under polyline reversal
-      -  length equals the sum of per-edge distances *)
+   -  a tilted great circle with 32 vertices *)
 
 open Core
 open Test_helpers

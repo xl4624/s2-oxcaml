@@ -3,13 +3,7 @@
    -  TEST(S2, AreaMethods)               - full parity via fixture cases
    -  TEST(S2, GetAreaRegression_B229644268) - full parity
    -  Quarter-sphere near-180 triangles  - full parity (two groups)
-   -  Meridian zero-area case            - full parity
-
-   Extra coverage:
-   -  quickcheck: angle symmetry (angle a b c = angle c b a)
-   -  quickcheck: turn_angle antisymmetry (turn_angle a b c = -turn_angle c b a)
-   -  quickcheck: signed_area sign consistency with robust_sign
-   -  quickcheck: area non-negative, signed_area magnitude equals area *)
+   -  Meridian zero-area case            - full parity *)
 
 open Core
 open Test_helpers

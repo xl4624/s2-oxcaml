@@ -121,6 +121,13 @@ let r2_rect_of_json j =
   S2.R2_rect.create_intervals_exn ~x ~y
 ;;
 
+(** JSON object with [lat] (R1 interval) and [lng] (S1 interval) fields. *)
+let latlng_rect_of_json j =
+  let lat = r1_interval_of_json (member "lat" j) in
+  let lng = s1_interval_of_json (member "lng" j) in
+  S2.S2_latlng_rect.create ~lat ~lng
+;;
+
 (** Three-element JSON array of floats (x, y, z) for R3 / cell fixtures. *)
 let r3_vector_of_json j =
   match to_list j with

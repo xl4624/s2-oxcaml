@@ -4,12 +4,7 @@
    -  TEST(S2PaddedCell, GetEntryExitVertices)   - entry_exit_vertices (padding
       independence, next_wrap coincidence, child entry/exit coincidence)
    -  TEST(S2PaddedCell, ShrinkToFit)            - shrink_to_fit (deterministic
-      hand-picked cases mirroring the randomized upstream test)
-
-   Extra coverage (quickcheck):
-   -  padded cell bound parity vs S2Cell bound_uv expanded by padding
-   -  child_ij_of_pos is the inverse of kIJtoPos via round-trip child construction
-   -  exit vertex of a cell equals entry vertex of next_wrap at the same level *)
+      hand-picked cases mirroring the randomized upstream test) *)
 
 open Core
 open Test_helpers

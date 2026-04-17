@@ -12,12 +12,7 @@
    -  TestInitialBearingFromLatLngs                          - initial_bearing
    -  TestInitialBearingFromLatLngsUndefinedResultDoesNotCrash
                                                               - initial_bearing_degenerate
-   -  Constants (Radius, LowestAltitude, HighestAltitude)    - constants
-
-   Extra coverage:
-   -  quickcheck: angle_from_length . length_from_angle round trip,
-     area_from_steradians . steradians_from_area round trip,
-     length_from_points = length_from_latlngs via LatLng bridge. *)
+   -  Constants (Radius, LowestAltitude, HighestAltitude)    - constants *)
 
 open Core
 open Test_helpers

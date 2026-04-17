@@ -12,9 +12,7 @@
    -  is_unit_length on a dozen representative points
    -  approx_equals with explicit max_error_radians values
    -  ortho negation identity: ortho(-a) = -ortho(a)
-   -  ref_dir (aliased to ortho in upstream C++)
-   -  quickcheck: is_unit_length, ortho perpendicularity/unit-length,
-      ortho negation identity, frame round-trip, frame col2 = z *)
+   -  ref_dir (aliased to ortho in upstream C++) *)
 
 open Core
 open Test_helpers

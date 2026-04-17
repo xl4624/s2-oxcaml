@@ -7,10 +7,7 @@
    Extra coverage:
    -  planar_centroid_cases (unit_axes, same_point)
    -  edge_true_centroid_cases (same_point, antipodal, short_edge, ninety_degrees)
-   -  triangle_true_centroid degenerate cases (same_point, collinear)
-   -  quickcheck properties: planar/true centroid cyclic symmetry, planar
-      linearity, degenerate true centroid has zero norm, true centroid norm is
-      bounded by triangle area (at most 2*pi for unit-length inputs) *)
+   -  triangle_true_centroid degenerate cases (same_point, collinear) *)
 
 open Core
 open Test_helpers

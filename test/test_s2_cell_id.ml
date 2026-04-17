@@ -17,8 +17,6 @@
    -  TEST(S2CellIdGolden, LatLngFace) - latlng_face (S2LatLng::FromDegrees + face/leaf)
 
    -  TEST(S2CellId, DefaultConstructor)                - default_constructor
-   -  TEST(S2CellId, Inverses)                         - quickcheck: leaf cell -> latlng ->
-      cell id roundtrip
 
    Deliberately omitted (no OCaml equivalent yet, or I/O-only in C++):
    -  S2CellIdHash, EncodeDecode*, LegacyCoder*,

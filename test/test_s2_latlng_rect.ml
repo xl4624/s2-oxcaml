@@ -43,16 +43,7 @@ open Alcotest
 let fixture = lazy (load_fixture "s2latlng_rect.json")
 let get key = member key (Lazy.force fixture)
 
-(* -Quickcheck generators ------------------------------------------------ *)
-
-(* Generate latitudes in [-pi/2, pi/2] and longitudes in [-pi, pi], then form a
-   rectangle from two such points. The result is always a valid rect with
-   finite bounds. *)
-let rect_of_json j =
-  let lat = r1_interval_of_json (member "lat" j) in
-  let lng = s1_interval_of_json (member "lng" j) in
-  S2.S2_latlng_rect.create ~lat ~lng
-;;
+(* -JSON helpers --------------------------------------------------------- *)
 
 let check_rect ?(eps = 1e-15) msg ~expected ~actual =
   check_float_u
@@ -102,8 +93,8 @@ let test_empty_and_full () =
   let d = get "empty_and_full" in
   let empty = S2.S2_latlng_rect.empty in
   let full = S2.S2_latlng_rect.full in
-  let expected_empty = rect_of_json (member "empty" d) in
-  let expected_full = rect_of_json (member "full" d) in
+  let expected_empty = latlng_rect_of_json (member "empty" d) in
+  let expected_full = latlng_rect_of_json (member "full" d) in
   check_rect_exact "empty" ~expected:expected_empty ~actual:empty;
   check_rect_exact "full" ~expected:expected_full ~actual:full;
   check_bool
@@ -134,7 +125,7 @@ let test_empty_and_full () =
 
 let test_accessors () =
   let d = get "accessors" in
-  let d1 = rect_of_json (member "d1" d) in
+  let d1 = latlng_rect_of_json (member "d1" d) in
   check_float
     "lat_lo deg"
     ~eps:1e-13
@@ -168,7 +159,7 @@ let test_accessors () =
 let test_from_center_size () =
   let cases = to_list (get "from_center_size") in
   List.iteri cases ~f:(fun i case ->
-    let result = rect_of_json (member "result" case) in
+    let result = latlng_rect_of_json (member "result" case) in
     match member "is_full" case with
     | `Bool expected_full ->
       check_bool
@@ -176,7 +167,7 @@ let test_from_center_size () =
         ~expected:expected_full
         ~actual:(S2.S2_latlng_rect.is_full result)
     | _ ->
-      let expected = rect_of_json (member "expected" case) in
+      let expected = latlng_rect_of_json (member "expected" case) in
       check_bool
         (sprintf "case %d approx_equals" i)
         ~expected:(bool_of_json_exn (member "approx_equals" case))
@@ -191,7 +182,7 @@ let test_from_point () =
   let d = get "from_point" in
   let p = latlng_of_json_exn (member "p" d) in
   let result = S2.S2_latlng_rect.of_point p in
-  let expected = rect_of_json (member "result" d) in
+  let expected = latlng_rect_of_json (member "result" d) in
   check_rect_exact "from_point" ~expected ~actual:result;
   check_bool
     "is_point"
@@ -202,8 +193,8 @@ let test_from_point () =
 let test_from_point_pair () =
   let cases = to_list (get "from_point_pair") in
   List.iteri cases ~f:(fun i case ->
-    let result = rect_of_json (member "result" case) in
-    let expected = rect_of_json (member "expected" case) in
+    let result = latlng_rect_of_json (member "result" case) in
+    let expected = latlng_rect_of_json (member "expected" case) in
     check_bool
       (sprintf "case %d equal" i)
       ~expected:(bool_of_json_exn (member "equal" case))
@@ -212,7 +203,7 @@ let test_from_point_pair () =
 
 let test_get_center_size () =
   let d = get "get_center_size" in
-  let r1 = rect_of_json (member "r1" d) in
+  let r1 = latlng_rect_of_json (member "r1" d) in
   let c = S2.S2_latlng_rect.center r1 in
   let expected_c = latlng_of_json_exn (member "center" d) in
   check_float_u
@@ -249,7 +240,7 @@ let test_get_center_size () =
 
 let test_get_vertex () =
   let d = get "get_vertex" in
-  let r1 = rect_of_json (member "r1" d) in
+  let r1 = latlng_rect_of_json (member "r1" d) in
   for k = 0 to 3 do
     let expected = latlng_of_json_exn (member (sprintf "v%d" k) d) in
     let actual = S2.S2_latlng_rect.vertex r1 k in
@@ -266,7 +257,7 @@ let test_get_vertex () =
 
 let test_contains () =
   let d = get "contains" in
-  let r1 = rect_of_json (member "r1" d) in
+  let r1 = latlng_rect_of_json (member "r1" d) in
   check_bool
     "contains_30_m45"
     ~expected:(bool_of_json_exn (member "contains_30_m45" d))
@@ -318,8 +309,8 @@ let test_interval_ops () =
   let cases = to_list (get "interval_ops") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let x = rect_of_json (member "x" case) in
-    let y = rect_of_json (member "y" case) in
+    let x = latlng_rect_of_json (member "x" case) in
+    let y = latlng_rect_of_json (member "y" case) in
     check_bool
       (label ^ " contains")
       ~expected:(bool_of_json_exn (member "contains" case))
@@ -336,12 +327,12 @@ let test_interval_ops () =
       (label ^ " interior_intersects")
       ~expected:(bool_of_json_exn (member "interior_intersects" case))
       ~actual:(S2.S2_latlng_rect.interior_intersects x y);
-    let expected_union = rect_of_json (member "union" case) in
+    let expected_union = latlng_rect_of_json (member "union" case) in
     check_rect_exact
       (label ^ " union")
       ~expected:expected_union
       ~actual:(S2.S2_latlng_rect.union x y);
-    let expected_isect = rect_of_json (member "intersection" case) in
+    let expected_isect = latlng_rect_of_json (member "intersection" case) in
     check_rect_exact
       (label ^ " intersection")
       ~expected:expected_isect
@@ -378,7 +369,7 @@ let test_add_point () =
       p
       (S2.S2_latlng.of_point (S2.S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0))
   in
-  let expected = rect_of_json (member "expected" d) in
+  let expected = latlng_rect_of_json (member "expected" d) in
   check_bool
     "final equals expected"
     ~expected:(bool_of_json_exn (member "final_equals_expected" d))
@@ -389,7 +380,7 @@ let test_expanded () =
   let cases = to_list (get "expanded") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let result = rect_of_json (member "result" case) in
+    let result = latlng_rect_of_json (member "result" case) in
     let is_empty = bool_of_json_exn (member "is_empty" case) in
     let is_full = bool_of_json_exn (member "is_full" case) in
     if is_empty
@@ -406,7 +397,7 @@ let test_expanded () =
         ~actual:(S2.S2_latlng_rect.is_full result)
     else (
       (* Just verify the fixture rect matches *)
-      let input = rect_of_json (member "input" case) in
+      let input = latlng_rect_of_json (member "input" case) in
       ignore (input : S2.S2_latlng_rect.t);
       ignore (result : S2.S2_latlng_rect.t)))
 ;;
@@ -415,8 +406,8 @@ let test_polar_closure () =
   let cases = to_list (get "polar_closure") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let input = rect_of_json (member "input" case) in
-    let expected = rect_of_json (member "result" case) in
+    let input = latlng_rect_of_json (member "input" case) in
+    let expected = latlng_rect_of_json (member "result" case) in
     let actual = S2.S2_latlng_rect.polar_closure input in
     check_rect_exact (label ^ " polar_closure") ~expected ~actual)
 ;;
@@ -468,8 +459,8 @@ let test_approx_equals () =
   let cases = to_list (get "approx_equals") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let a = rect_of_json (member "a" case) in
-    let b = rect_of_json (member "b" case) in
+    let a = latlng_rect_of_json (member "a" case) in
+    let b = latlng_rect_of_json (member "b" case) in
     let expected = bool_of_json_exn (member "expected" case) in
     check_bool
       label
@@ -493,7 +484,7 @@ let test_cap_bound () =
   let cases = to_list (get "cap_bound") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let r = rect_of_json (member "rect" case) in
+    let r = latlng_rect_of_json (member "rect" case) in
     let cap = S2.S2_latlng_rect.cap_bound r in
     let expected_center = r3_vector_of_json (member "cap_center" case) in
     let expected_height = float_of_json_exn (member "cap_height" case) in
@@ -512,7 +503,7 @@ let test_distance_to_latlng () =
   let cases = to_list (get "distance_to_latlng") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let r = rect_of_json (member "rect" case) in
+    let r = latlng_rect_of_json (member "rect" case) in
     let p = latlng_of_json_exn (member "point" case) in
     let expected = float_of_json_exn (member "distance_rad" case) in
     let actual =
@@ -553,8 +544,8 @@ let test_distance_rect_vs_rect () =
   let cases = to_list (get "distance_rect_vs_rect") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let a = rect_of_json (member "a" case) in
-    let b = rect_of_json (member "b" case) in
+    let a = latlng_rect_of_json (member "a" case) in
+    let b = latlng_rect_of_json (member "b" case) in
     let expected = float_u_of_json_exn (member "distance_rad" case) in
     let actual = S2.S1_angle.radians (S2.S2_latlng_rect.distance a b) in
     check_float_u (label ^ " dist") ~eps:1e-10 ~expected ~actual)
@@ -590,8 +581,8 @@ let test_hausdorff_point_to_rect () =
   let cases = to_list (get "hausdorff_point_to_rect") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let a = rect_of_json (member "a" case) in
-    let b = rect_of_json (member "b" case) in
+    let a = latlng_rect_of_json (member "a" case) in
+    let b = latlng_rect_of_json (member "b" case) in
     let expected_h = float_of_json_exn (member "hausdorff_rad" case) in
     let expected_d = float_of_json_exn (member "distance_rad" case) in
     let actual_h =

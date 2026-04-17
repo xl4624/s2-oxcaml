@@ -12,8 +12,7 @@
    -  MaxErrorForTests values
 
    Deliberately omitted:
-   -  TEST(RectBounder, MaxLatitudeRandom) randomized, covered partially by
-      quickcheck property below
+   -  TEST(RectBounder, MaxLatitudeRandom) randomized
    -  TEST(RectBounder, NearlyIdenticalOrAntipodalPoints) full 10,000-iteration
       random sweep; spot-checked exactly via fixture
    -  Benchmarks (BM_AddPoints, BM_AddLatLngAsPoints, BM_AddLatLngAsLatLng) *)
@@ -37,7 +36,7 @@ let point_of_json j =
      | (_ : Nothing.t) -> .)
 ;;
 
-let rect_of_json j =
+let latlng_rect_of_json j =
   let lat = r1_interval_of_json (member "lat" j) in
   let lng = s1_interval_of_json (member "lng" j) in
   S2.S2_latlng_rect.create ~lat ~lng
@@ -92,7 +91,7 @@ let test_max_latitude_vertex_cases () =
     let label = string_of_json_exn (member "label" case) in
     let a = point_of_json (member "a" case) in
     let b = point_of_json (member "b" case) in
-    let expected = rect_of_json (member "bound" case) in
+    let expected = latlng_rect_of_json (member "bound" case) in
     let actual = get_edge_bound a b in
     check_rect_exact ("vertex_cube " ^ label) ~expected ~actual)
 ;;
@@ -103,14 +102,14 @@ let test_max_latitude_interior_cases () =
     let label = string_of_json_exn (member "label" case) in
     let a = point_of_json (member "a" case) in
     let b = point_of_json (member "b" case) in
-    let expected = rect_of_json (member "bound" case) in
+    let expected = latlng_rect_of_json (member "bound" case) in
     let actual = get_edge_bound a b in
     check_rect_exact ("interior " ^ label) ~expected ~actual)
 ;;
 
 let test_polar_edges () =
   let d = get "polar_edges" in
-  let north_expected = rect_of_json (member "north_bound" d) in
+  let north_expected = latlng_rect_of_json (member "north_bound" d) in
   let north =
     get_edge_bound
       (S2.R3_vector.create ~x:#0.3 ~y:#0.4 ~z:#1.0 |> S2.R3_vector.normalize)
@@ -123,7 +122,7 @@ let test_polar_edges () =
     "north lat_hi = pi/2"
     ~expected:expected_hi
     ~actual:(S2.R1_interval.hi (S2.S2_latlng_rect.lat north));
-  let south_expected = rect_of_json (member "south_bound" d) in
+  let south_expected = latlng_rect_of_json (member "south_bound" d) in
   let south =
     get_edge_bound
       (S2.R3_vector.create ~x:#0.3 ~y:#0.4 ~z:(-#1.0) |> S2.R3_vector.normalize)
@@ -149,11 +148,11 @@ let test_chain_accumulation () =
   List.iter2_exn pts_json steps ~f:(fun pt_j step ->
     let pt = point_of_json pt_j in
     cell.v <- S2.S2_latlng_rect_bounder.add_point cell.v pt;
-    let expected = rect_of_json (member "bound" step) in
+    let expected = latlng_rect_of_json (member "bound" step) in
     let after = int_of_json_exn (member "after" step) in
     let actual = S2.S2_latlng_rect_bounder.get_bound cell.v in
     check_rect_exact (sprintf "step after=%d" after) ~expected ~actual);
-  let expected_final = rect_of_json (member "final" d) in
+  let expected_final = latlng_rect_of_json (member "final" d) in
   let actual_final = S2.S2_latlng_rect_bounder.get_bound cell.v in
   check_rect_exact "final" ~expected:expected_final ~actual:actual_final
 ;;
@@ -161,7 +160,7 @@ let test_chain_accumulation () =
 let test_single_point () =
   let d = get "single_point" in
   let bounder = S2.S2_latlng_rect_bounder.create () in
-  let before_expected = rect_of_json (member "bound_before" d) in
+  let before_expected = latlng_rect_of_json (member "bound_before" d) in
   let before_actual = S2.S2_latlng_rect_bounder.get_bound bounder in
   (* "empty" bound expanded and polar-closed is still empty. *)
   check_bool
@@ -170,7 +169,7 @@ let test_single_point () =
     ~actual:(S2.S2_latlng_rect.is_empty before_actual);
   let p = point_of_json (member "point" d) in
   let bounder = S2.S2_latlng_rect_bounder.add_point bounder p in
-  let after_expected = rect_of_json (member "bound_after" d) in
+  let after_expected = latlng_rect_of_json (member "bound_after" d) in
   let after_actual = S2.S2_latlng_rect_bounder.get_bound bounder in
   check_rect_exact "after_single_point" ~expected:after_expected ~actual:after_actual
 ;;
@@ -189,8 +188,8 @@ let test_add_latlng_vs_point () =
   let via_latlng_bounder = S2.S2_latlng_rect_bounder.create () in
   let via_latlng_bounder = S2.S2_latlng_rect_bounder.add_latlng via_latlng_bounder a in
   let via_latlng_bounder = S2.S2_latlng_rect_bounder.add_latlng via_latlng_bounder b in
-  let expected_via_point = rect_of_json (member "via_point" d) in
-  let expected_via_latlng = rect_of_json (member "via_latlng" d) in
+  let expected_via_point = latlng_rect_of_json (member "via_point" d) in
+  let expected_via_latlng = latlng_rect_of_json (member "via_latlng" d) in
   check_rect_exact
     "via_point"
     ~expected:expected_via_point
@@ -204,10 +203,10 @@ let test_add_latlng_vs_point () =
 let test_identical_or_antipodal () =
   let d = get "identical_or_antipodal" in
   let a = point_of_json (member "a" d) in
-  let expected = rect_of_json (member "bound" d) in
+  let expected = latlng_rect_of_json (member "bound" d) in
   let actual = get_edge_bound a a in
   check_rect_exact "identical" ~expected ~actual;
-  let expected_antipodal = rect_of_json (member "antipodal_bound" d) in
+  let expected_antipodal = latlng_rect_of_json (member "antipodal_bound" d) in
   let actual_antipodal =
     get_edge_bound
       a
@@ -227,8 +226,8 @@ let test_expand_for_subregions () =
   let cases = to_list (get "expand_for_subregions") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let input = rect_of_json (member "in" case) in
-    let expected = rect_of_json (member "out" case) in
+    let input = latlng_rect_of_json (member "in" case) in
+    let expected = latlng_rect_of_json (member "out" case) in
     let actual = S2.S2_latlng_rect_bounder.expand_for_subregions input in
     check_rect_exact ("expand " ^ label) ~expected ~actual;
     check_bool
@@ -262,12 +261,12 @@ let test_accuracy_bug () =
   let ac = get_edge_bound a c in
   let bc = get_edge_bound b c in
   let ac_expanded = S2.S2_latlng_rect_bounder.expand_for_subregions ac in
-  check_rect_exact "ab" ~expected:(rect_of_json (member "ab" d)) ~actual:ab;
-  check_rect_exact "ac" ~expected:(rect_of_json (member "ac" d)) ~actual:ac;
-  check_rect_exact "bc" ~expected:(rect_of_json (member "bc" d)) ~actual:bc;
+  check_rect_exact "ab" ~expected:(latlng_rect_of_json (member "ab" d)) ~actual:ab;
+  check_rect_exact "ac" ~expected:(latlng_rect_of_json (member "ac" d)) ~actual:ac;
+  check_rect_exact "bc" ~expected:(latlng_rect_of_json (member "bc" d)) ~actual:bc;
   check_rect_exact
     "ac_expanded"
-    ~expected:(rect_of_json (member "ac_expanded" d))
+    ~expected:(latlng_rect_of_json (member "ac_expanded" d))
     ~actual:ac_expanded;
   check_bool
     "ac_expanded.lat_hi >= ab.lat_hi"

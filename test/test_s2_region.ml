@@ -57,16 +57,10 @@ let cap_of_json j =
   S2.S2_cap.of_center_chord_angle center (S2.S1_chord_angle.of_length2 length2)
 ;;
 
-let rect_of_json j =
-  let lat = r1_interval_of_json (member "lat" j) in
-  let lng = s1_interval_of_json (member "lng" j) in
-  S2.S2_latlng_rect.create ~lat ~lng
-;;
-
 let check_region label region region_j =
   let r = region in
   let expected_cap = cap_of_json (member "cap_bound" region_j) in
-  let expected_rect = rect_of_json (member "rect_bound" region_j) in
+  let expected_rect = latlng_rect_of_json (member "rect_bound" region_j) in
   let actual_cap = r.#S2.S2_region.cap_bound () in
   let actual_rect = r.#S2.S2_region.rect_bound () in
   check_cap (label ^ " cap_bound") ~expected:expected_cap ~actual:actual_cap;
@@ -131,7 +125,7 @@ let test_rects () =
     (to_list (get "rect"))
     ~f:(fun case ->
       let name = string_of_json_exn (member "name" case) in
-      let rect = rect_of_json (member "rect" case) in
+      let rect = latlng_rect_of_json (member "rect" case) in
       let region = S2.S2_region.of_rect rect in
       check_region ("rect:" ^ name) region (member "region" case))
 ;;
