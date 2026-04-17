@@ -273,7 +273,7 @@ let[@inline] [@zero_alloc] directed_hausdorff_distance t y =
         then positive_distance t.#lo y.#lo
         else #0.0
       in
-      Float_u.max hi_hi lo_lo))
+      Float_util.max_u hi_hi lo_lo))
 ;;
 
 let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t y =

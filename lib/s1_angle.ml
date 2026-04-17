@@ -49,7 +49,7 @@ module Int_option = struct
   let value_exn x =
     if is_none x
     then (
-      match raise_s (Sexp.Atom "S1_angle.Int_option.value_exn: none") with
+      match raise_s [%message "S1_angle.Int_option.value_exn: none"] with
       | (_ : Nothing.t) -> .)
     else x
   ;;

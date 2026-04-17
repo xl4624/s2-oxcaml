@@ -116,13 +116,7 @@ let[@inline] [@zero_alloc] is_face t = Int64_u.equal Int64_u.O.(t land pos_mask)
 let[@inline] [@zero_alloc] from_face_exn face =
   if face < 0 || face >= num_faces
   then (
-    match
-      raise_s
-        (Sexp.List
-           [ Sexp.Atom "S2CellId.from_face_exn: face out of range"
-           ; Sexp.List [ Sexp.Atom "face"; sexp_of_int face ]
-           ])
-    with
+    match raise_s [%message "S2CellId.from_face_exn: face out of range" (face : int)] with
     | (_ : Nothing.t) -> .)
   else (
     let n = pos_bits - 1 in
@@ -168,10 +162,14 @@ let[@zero_alloc ignore] from_face_ij_wrap face i j =
   let scale = #1.0 / Float_u.of_int limit_ij in
   let lim = #1.0 + Float_u.epsilon_float () in
   let u =
-    Float_u.max (Float_u.neg lim) (Float_u.min lim (scale * Float_u.of_int int_i))
+    Float_util.max_u
+      (Float_u.neg lim)
+      (Float_util.min_u lim (scale * Float_u.of_int int_i))
   in
   let v =
-    Float_u.max (Float_u.neg lim) (Float_u.min lim (scale * Float_u.of_int int_j))
+    Float_util.max_u
+      (Float_u.neg lim)
+      (Float_util.min_u lim (scale * Float_u.of_int int_j))
   in
   let p = S2_coords.face_uv_to_xyz face u v in
   let new_face = S2_coords.get_face p in
@@ -200,10 +198,7 @@ let[@inline] [@zero_alloc] parent_exn t =
   then (
     match
       raise_s
-        (Sexp.List
-           [ Sexp.Atom "S2CellId.parent_exn: already a face cell"
-           ; Sexp.List [ Sexp.Atom "id"; Sexp.Atom (Int64_u.to_string t) ]
-           ])
+        [%message "S2CellId.parent_exn: already a face cell" ~id:(Int64_u.to_string t)]
     with
     | (_ : Nothing.t) -> .)
   else (
@@ -258,11 +253,10 @@ let[@inline] [@zero_alloc] child_exn t pos =
   then (
     match
       raise_s
-        (Sexp.List
-           [ Sexp.Atom "S2CellId.child_exn: invalid leaf cell or child index"
-           ; Sexp.List [ Sexp.Atom "id"; Sexp.Atom (Int64_u.to_string t) ]
-           ; Sexp.List [ Sexp.Atom "pos"; sexp_of_int pos ]
-           ])
+        [%message
+          "S2CellId.child_exn: invalid leaf cell or child index"
+            ~id:(Int64_u.to_string t)
+            (pos : int)]
     with
     | (_ : Nothing.t) -> .)
   else (

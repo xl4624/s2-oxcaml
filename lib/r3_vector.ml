@@ -65,11 +65,17 @@ let[@inline] [@zero_alloc] div_components a b =
 ;;
 
 let[@inline] [@zero_alloc] max a b =
-  #{ x = Float_u.max a.#x b.#x; y = Float_u.max a.#y b.#y; z = Float_u.max a.#z b.#z }
+  #{ x = Float_util.max_u a.#x b.#x
+   ; y = Float_util.max_u a.#y b.#y
+   ; z = Float_util.max_u a.#z b.#z
+   }
 ;;
 
 let[@inline] [@zero_alloc] min a b =
-  #{ x = Float_u.min a.#x b.#x; y = Float_u.min a.#y b.#y; z = Float_u.min a.#z b.#z }
+  #{ x = Float_util.min_u a.#x b.#x
+   ; y = Float_util.min_u a.#y b.#y
+   ; z = Float_util.min_u a.#z b.#z
+   }
 ;;
 
 let[@inline] [@zero_alloc] norm2 t = dot t t

@@ -53,7 +53,7 @@ let[@inline] [@zero_alloc] update_min_distance_impl ~always_update x a b min_dis
   with
   | Some dist -> S1_chord_angle.Option.some dist
   | None ->
-    let dist2 = Float_u.min xa2 xb2 in
+    let dist2 = Float_util.min_u xa2 xb2 in
     if (not always_update) && dist2 >= S1_chord_angle.length2 min_dist
     then S1_chord_angle.Option.none
     else S1_chord_angle.Option.some (S1_chord_angle.of_length2 dist2)
@@ -119,7 +119,7 @@ let[@inline] [@zero_alloc] get_update_min_interior_distance_max_error dist =
   then #0.0
   else
     let open Float_u.O in
-    let b = Float_u.min #1.0 (#0.5 * S1_chord_angle.length2 dist) in
+    let b = Float_util.min_u #1.0 (#0.5 * S1_chord_angle.length2 dist) in
     let a = Float_u.sqrt (b * (#2.0 - b)) in
     (((#2.5 + (#2.0 * Float_u.sqrt #3.0) + (#8.5 * a)) * a)
      + ((#2.0 + (#2.0 * Float_u.sqrt #3.0 / #3.0) + (#6.5 * (#1.0 - b))) * b)

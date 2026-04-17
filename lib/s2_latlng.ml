@@ -177,7 +177,7 @@ let[@inline] [@zero_alloc] distance a b =
   let dlat = Float_u.sin (#0.5 * (lat2 - lat1)) in
   let dlng = Float_u.sin (#0.5 * (lng2 - lng1)) in
   let x = (dlat * dlat) + (dlng * dlng * Float_u.cos lat1 * Float_u.cos lat2) in
-  S1_angle.of_radians (#2.0 * Float_u.asin (Float_u.sqrt (Float_u.min #1.0 x)))
+  S1_angle.of_radians (#2.0 * Float_u.asin (Float_u.sqrt (Float_util.min_u #1.0 x)))
 ;;
 
 let[@inline] [@zero_alloc] add a b : t =

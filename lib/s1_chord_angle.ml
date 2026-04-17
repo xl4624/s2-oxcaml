@@ -106,7 +106,7 @@ let[@inline] [@zero_alloc] sub a b =
   else (
     let x = a * (#1.0 - (#0.25 * b)) in
     let y = b * (#1.0 - (#0.25 * a)) in
-    let c = Float_u.max #0.0 (Float_u.sqrt x - Float_u.sqrt y) in
+    let c = Float_util.max_u #0.0 (Float_u.sqrt x - Float_u.sqrt y) in
     c * c)
 ;;
 
@@ -122,7 +122,7 @@ let[@inline] [@zero_alloc] tan t = Float_u.O.(sin t / cos t)
 let[@inline] [@zero_alloc] plus_error t error =
   if is_special t
   then t
-  else Float_u.max #0.0 (Float_u.min max_length2 Float_u.O.(t + error))
+  else Float_util.max_u #0.0 (Float_util.min_u max_length2 Float_u.O.(t + error))
 ;;
 
 let[@inline] [@zero_alloc] max_point_error t =

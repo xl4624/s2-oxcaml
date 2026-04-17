@@ -112,8 +112,8 @@ let[@inline] clamp_uv (p : R2_point.t) : R2_point.t =
   let open Float_u.O in
   let x = R2_point.x p in
   let y = R2_point.y p in
-  let x' = Float_u.max (-#1.0) (Float_u.min #1.0 x) in
-  let y' = Float_u.max (-#1.0) (Float_u.min #1.0 y) in
+  let x' = Float_util.max_u (-#1.0) (Float_util.min_u #1.0 x) in
+  let y' = Float_util.max_u (-#1.0) (Float_util.min_u #1.0 y) in
   R2_point.create ~x:x' ~y:y'
 ;;
 
@@ -127,7 +127,7 @@ let move_origin_to_valid_face face (a : S2_point.t) (ab : R3_vector.t) (a_uv : R
   let max_safe_uv_coord = #1.0 - face_clip_error_uv_coord in
   let ax = Float_u.abs (R2_point.x a_uv) in
   let ay = Float_u.abs (R2_point.y a_uv) in
-  if Float_u.max ax ay <= max_safe_uv_coord
+  if Float_util.max_u ax ay <= max_safe_uv_coord
   then #(face, a_uv)
   else (
     let n = S2_coords.face_xyz_to_uvw face ab in
@@ -199,7 +199,7 @@ let clip_destination
     if bz > #0.0
     then (
       let uv = R2_point.create ~x:(bx / bz) ~y:(by / bz) in
-      if Float_u.max (Float_u.abs (R2_point.x uv)) (Float_u.abs (R2_point.y uv))
+      if Float_util.max_u (Float_u.abs (R2_point.x uv)) (Float_u.abs (R2_point.y uv))
          <= max_safe_uv_coord
       then R2_point.Option.some uv
       else R2_point.Option.none)

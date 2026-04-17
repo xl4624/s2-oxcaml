@@ -121,7 +121,8 @@ let approx_area t =
     flat_area
     * #2.0
     / (#1.0
-       + Float_u.sqrt (#1.0 - Float_u.min #1.0 (flat_area / Float_u.of_float Float.pi)))
+       + Float_u.sqrt
+           (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.of_float Float.pi)))
 ;;
 
 let contains_point t p =

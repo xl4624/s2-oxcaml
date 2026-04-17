@@ -278,7 +278,9 @@ and curvature (loop : S2_point.t array) =
       let k_max_curvature = (#2.0 * Float_u.pi ()) - (#4.0 * Float_u.epsilon_float ()) in
       let total = sum + compensation in
       let dir_f = Float_u.of_int dir in
-      Float_u.max (-k_max_curvature) (Float_u.min k_max_curvature (dir_f * total))))
+      Float_util.max_u
+        (-k_max_curvature)
+        (Float_util.min_u k_max_curvature (dir_f * total))))
 ;;
 
 let is_normalized loop =

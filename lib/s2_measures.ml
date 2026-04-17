@@ -28,7 +28,7 @@ let[@inline] girard_area a b c =
     - S1_angle.radians (R3_vector.angle ab bc)
     + S1_angle.radians (R3_vector.angle bc ac)
   in
-  Float_u.max #0.0 area
+  Float_util.max_u #0.0 area
 ;;
 
 let area a b c =
@@ -50,12 +50,12 @@ let area a b c =
       * Float_u.tan (#0.5 * (s - sb))
       * Float_u.tan (#0.5 * (s - sc))
     in
-    #4.0 * Float_u.atan (Float_u.sqrt (Float_u.max #0.0 t))
+    #4.0 * Float_u.atan (Float_u.sqrt (Float_util.max_u #0.0 t))
   in
   if s >= #3e-4
   then (
     let s2 = s * s in
-    let dmin = s - Float_u.max sa (Float_u.max sb sc) in
+    let dmin = s - Float_util.max_u sa (Float_util.max_u sb sc) in
     if dmin < #1e-2 * s * s2 * s2
     then (
       (* Inflate the area by the approximate Girard error to keep the test

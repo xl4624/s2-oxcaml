@@ -395,7 +395,7 @@ let[@zero_alloc ignore] point_to_segment_distance p a b =
       (* Closest point is one of the endpoints. *)
       let da = S1_angle.radians (R3_vector.angle a p) in
       let db = S1_angle.radians (R3_vector.angle b p) in
-      S1_angle.of_radians (Float_u.min da db)))
+      S1_angle.of_radians (Float_util.min_u da db)))
 ;;
 
 let[@zero_alloc ignore] distance_to_latlng t ll =
@@ -407,7 +407,9 @@ let[@zero_alloc ignore] distance_to_latlng t ll =
     let d =
       Float_u.max
         #0.0
-        (Float_u.max (lat_rad - R1_interval.hi t.#lat) (R1_interval.lo t.#lat - lat_rad))
+        (Float_util.max_u
+           (lat_rad - R1_interval.hi t.#lat)
+           (R1_interval.lo t.#lat - lat_rad))
     in
     S1_angle.of_radians d)
   else (
@@ -567,7 +569,7 @@ let[@zero_alloc ignore] directed_hausdorff_distance_helper lng_diff a b =
         let a_clipped =
           R1_interval.create
             ~lo:(R1_interval.lo a)
-            ~hi:(Float_u.min p_lat (R1_interval.hi a))
+            ~hi:(Float_util.min_u p_lat (R1_interval.hi a))
         in
         let d = interior_max_distance a_clipped b_lo in
         if S1_angle.radians d > S1_angle.radians max_distance then max_distance <- d);
@@ -575,7 +577,7 @@ let[@zero_alloc ignore] directed_hausdorff_distance_helper lng_diff a b =
       then (
         let a_clipped =
           R1_interval.create
-            ~lo:(Float_u.max p_lat (R1_interval.lo a))
+            ~lo:(Float_util.max_u p_lat (R1_interval.lo a))
             ~hi:(R1_interval.hi a)
         in
         let d = interior_max_distance a_clipped b_hi in

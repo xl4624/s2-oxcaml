@@ -36,12 +36,6 @@ let point_of_json j =
      | (_ : Nothing.t) -> .)
 ;;
 
-let latlng_rect_of_json j =
-  let lat = r1_interval_of_json (member "lat" j) in
-  let lng = s1_interval_of_json (member "lng" j) in
-  S2.S2_latlng_rect.create ~lat ~lng
-;;
-
 let check_rect_exact msg ~expected ~actual =
   check_float_u_exact
     (msg ^ " lat.lo")

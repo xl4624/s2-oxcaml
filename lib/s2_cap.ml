@@ -59,7 +59,7 @@ let radius_angle t = S1_chord_angle.to_angle t.#radius
 
 let[@inline] [@zero_alloc] area t =
   let open Float_u.O in
-  #2.0 * Float_u.pi () * Float_u.max #0.0 (height t)
+  #2.0 * Float_u.pi () * Float_util.max_u #0.0 (height t)
 ;;
 
 let[@inline] [@zero_alloc] is_empty t = S1_chord_angle.is_negative t.#radius
@@ -190,7 +190,7 @@ let[@inline] [@zero_alloc] expanded_exn t distance =
   if Option.is_none opt
   then (
     match
-      Core.raise_s
+      raise_s
         [%message
           "S2_cap.expanded: distance must be non-negative" (distance : S1_angle.t)]
     with

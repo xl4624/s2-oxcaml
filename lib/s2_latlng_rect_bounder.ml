@@ -78,12 +78,13 @@ let add_internal (t : t) (b : S2_point.t) (b_latlng : S2_latlng.t) : t =
             in
             let hi =
               if m_a <= m_error && m_b >= Float_u.neg m_error
-              then Float_u.min max_lat (R1_interval.hi lat_ab + max_delta)
+              then Float_util.min_u max_lat (R1_interval.hi lat_ab + max_delta)
               else R1_interval.hi lat_ab
             in
             let lo =
               if m_b <= m_error && m_a >= Float_u.neg m_error
-              then Float_u.max (Float_u.neg max_lat) (R1_interval.lo lat_ab - max_delta)
+              then
+                Float_util.max_u (Float_u.neg max_lat) (R1_interval.lo lat_ab - max_delta)
               else R1_interval.lo lat_ab
             in
             R1_interval.create ~lo ~hi)
@@ -121,7 +122,7 @@ let[@zero_alloc ignore] expand_for_subregions bound =
         (Float_u.pi () - S1_interval.length lng - (#2.5 * Float_u.epsilon_float ()))
     in
     let min_abs_lat =
-      Float_u.max (R1_interval.lo lat) (Float_u.neg (R1_interval.hi lat))
+      Float_util.max_u (R1_interval.lo lat) (Float_u.neg (R1_interval.hi lat))
     in
     let lat_gap1 = (Float_u.pi () / #2.0) + R1_interval.lo lat in
     let lat_gap2 = (Float_u.pi () / #2.0) - R1_interval.hi lat in
@@ -130,7 +131,7 @@ let[@zero_alloc ignore] expand_for_subregions bound =
       then (#2.0 * min_abs_lat) + lng_gap < #1.354e-15
       else if lng_gap >= Float_u.pi () / #2.0
       then lat_gap1 + lat_gap2 < #1.687e-15
-      else Float_u.max lat_gap1 lat_gap2 * lng_gap < #1.765e-15
+      else Float_util.max_u lat_gap1 lat_gap2 * lng_gap < #1.765e-15
     in
     if returns_full
     then S2_latlng_rect.full

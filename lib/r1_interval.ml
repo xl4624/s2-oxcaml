@@ -50,7 +50,7 @@ let[@inline] [@zero_alloc] interior_intersects t y =
 ;;
 
 let[@inline] [@zero_alloc] intersection t y : t =
-  #{ lo = Float_u.max t.#lo y.#lo; hi = Float_u.min t.#hi y.#hi }
+  #{ lo = Float_util.max_u t.#lo y.#lo; hi = Float_util.min_u t.#hi y.#hi }
 ;;
 
 let[@inline] [@zero_alloc] union t y : t =
@@ -58,7 +58,7 @@ let[@inline] [@zero_alloc] union t y : t =
   then #{ lo = y.#lo; hi = y.#hi }
   else if is_empty y
   then #{ lo = t.#lo; hi = t.#hi }
-  else #{ lo = Float_u.min t.#lo y.#lo; hi = Float_u.max t.#hi y.#hi }
+  else #{ lo = Float_util.min_u t.#lo y.#lo; hi = Float_util.max_u t.#hi y.#hi }
 ;;
 
 let[@inline] [@zero_alloc] add_point t p : t =
@@ -88,7 +88,7 @@ let[@inline] [@zero_alloc] directed_hausdorff_distance t y =
   then #0.0
   else if is_empty y
   then Float_u.infinity ()
-  else Float_u.max #0.0 (Float_u.max (t.#hi - y.#hi) (y.#lo - t.#lo))
+  else Float_util.max_u #0.0 (Float_util.max_u (t.#hi - y.#hi) (y.#lo - t.#lo))
 ;;
 
 let[@inline] [@zero_alloc] approx_equal ~(max_error : Packed_float_option.Unboxed.t) t y =
