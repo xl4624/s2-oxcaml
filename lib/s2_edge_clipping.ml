@@ -1,6 +1,6 @@
 open Core
 
-(* Error bound constants, matching s2/s2edge_clipping.h. *)
+(* Error bound constants for face clipping and rectangle intersection. *)
 let face_clip_error_radians = Float_u.O.(#3.0 * Float_u.epsilon_float ())
 let face_clip_error_uv_dist = Float_u.O.(#9.0 * Float_u.epsilon_float ())
 
@@ -31,7 +31,7 @@ type clipped_uv =
 
 (* --- Exact sign tricks on u + v vs w --------------------------------- *)
 
-(* [sum_equals u v w] iff [u + v = w] exactly.  Mirrors SumEquals() in C++. *)
+(* [sum_equals u v w] iff [u + v = w] exactly. *)
 let[@inline] sum_equals u v w =
   let open Float_u.O in
   u + v = w && u = w - v && v = w - u
@@ -40,7 +40,7 @@ let[@inline] sum_equals u v w =
 (* [intersects_face n] iff the directed line with normal [n] (expressed in
    (u,v,w) coordinates of some face) intersects the [-1,1]x[-1,1] square of
    that face.  This is true iff |n.x| + |n.y| >= |n.z|, evaluated exactly
-   using the tricks from the C++ implementation. *)
+   evaluated exactly using floating-point sign checks. *)
 let[@inline] intersects_face (n : R3_vector.t) =
   let open Float_u.O in
   let u = Float_u.abs (R3_vector.x n) in
@@ -68,8 +68,7 @@ let[@inline] intersects_opposite_edges (n : R3_vector.t) =
    u = +/-1 edge, 1 means it exits through a v = +/-1 edge. *)
 
 (* [exit_axis n] returns 0 if the line with normal [n] exits the face
-   through u = +/-1, and 1 if it exits through v = +/-1.  Mirrors the C++
-   GetExitAxis() helper. *)
+   through u = +/-1, and 1 if it exits through v = +/-1. *)
 let[@inline] exit_axis (n : R3_vector.t) =
   if intersects_opposite_edges n
   then
@@ -120,7 +119,7 @@ let[@inline] clamp_uv (p : R2_point.t) : R2_point.t =
 (* [move_origin_to_valid_face face a ab a_uv] handles the case where the
    normal of AB, due to rounding, does not quite intersect the given face
    containing A.  Returns the possibly-updated face and the corresponding
-   UV coordinates of A.  Mirrors the C++ helper. *)
+   UV coordinates of A. *)
 let move_origin_to_valid_face face (a : S2_point.t) (ab : R3_vector.t) (a_uv : R2_point.t)
   =
   let open Float_u.O in
@@ -157,8 +156,7 @@ let move_origin_to_valid_face face (a : S2_point.t) (ab : R3_vector.t) (a_uv : R
 ;;
 
 (* [get_next_face face exit axis n target_face] returns the next face to
-   visit along the line AB when traversing the cube faces from A toward B.
-   Mirrors GetNextFace() in C++. *)
+   visit along the line AB when traversing the cube faces from A toward B. *)
 let[@inline] get_next_face face (exit : R2_point.t) axis (n : R3_vector.t) target_face =
   let other = if Int.equal axis 0 then R2_point.y exit else R2_point.x exit in
   let other_pos = Float_u.O.(other > #0.0) in
@@ -181,7 +179,7 @@ let[@inline] get_next_face face (exit : R2_point.t) axis (n : R3_vector.t) targe
    (u, v) coordinates of the clipped endpoint A' on the given face along
    with a score in 0..3 used to decide whether the segment intersects the
    face.  All arguments are expressed in the (u, v, w) coordinates of the
-   target face.  Mirrors ClipDestination() in C++. *)
+   target face. *)
 let clip_destination
   (a : R3_vector.t)
   (b : R3_vector.t)

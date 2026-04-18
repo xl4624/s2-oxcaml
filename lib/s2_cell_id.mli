@@ -95,24 +95,24 @@ val parent_exn : t -> t
 (** [parent_level t level] returns the ancestor of this cell at the given level. *)
 val parent_level : t -> int -> t
 
-(** [child_begin_at_level t level] is the first leaf-descendant boundary at [level] (C++
-    [child_begin(level)]). *)
+(** [child_begin_at_level t level] is the first leaf-descendant boundary at [level]. *)
 val child_begin_at_level : t -> int -> t
 
-(** [child_end_at_level t level] is the corresponding exclusive end ([child_end(level)]). *)
+(** [child_end_at_level t level] is the corresponding exclusive end. *)
 val child_end_at_level : t -> int -> t
 
-(** No-arg [child_begin]: first Hilbert child at one finer level (C++ [child_begin()]). *)
+(** No-arg [child_begin]: first Hilbert child at one finer level. *)
 val child_begin : t -> t
 
-(** No-arg [child_end]: exclusive end for iterating immediate children (C++
-    [child_end()]). *)
+(** No-arg [child_end]: exclusive end for iterating immediate children. *)
 val child_end : t -> t
 
-(** [hilbert_begin level] is [S2CellId::Begin(level)] (starts at face 0). *)
+(** [hilbert_begin level] is the first cell at [level] on the global Hilbert curve (face
+    0). *)
 val hilbert_begin : int -> t
 
-(** [hilbert_end level] is [S2CellId::End(level)] (ends on face 5). *)
+(** [hilbert_end level] is the exclusive end at [level] on the global Hilbert curve (past
+    face 5). *)
 val hilbert_end : int -> t
 
 (** [child_exn t k] returns the k-th child (k in [0, 3]). Raises if [t] is a leaf cell or

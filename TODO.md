@@ -167,7 +167,7 @@ All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, C
   - Deps: `s2_point`, `s2_projections`, `s2_edge_distances`
 
 
-- [ ] **s2_shape** - `S2_shape`
+- [x] **s2_shape** - `S2_shape`
   - Go: `s2/shape.go` | C++: `s2shape.h`
   - Deps: `s2_point`
 

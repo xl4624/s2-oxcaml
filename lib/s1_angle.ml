@@ -21,7 +21,8 @@ let[@inline] [@zero_alloc] of_e5 e = of_degrees Float_u.O.(#1e-5 * Float_u.of_in
 let[@inline] [@zero_alloc] of_e6 e = of_degrees Float_u.O.(#1e-6 * Float_u.of_int e)
 let[@inline] [@zero_alloc] of_e7 e = of_degrees Float_u.O.(#1e-7 * Float_u.of_int e)
 
-(* [u] is taken modulo [2^32] then cast to signed int32, like C++ [static_cast<int32_t>(u)]. *)
+(* [u] is taken modulo [2^32] then reinterpreted as a signed int32: keep the low 32 bits
+   and subtract [2^32] if the result exceeds [INT32_MAX]. *)
 let[@inline] [@zero_alloc] of_unsigned_e6 (u : int) =
   let u = u land 0xFFFF_FFFF in
   let bits = if u > 0x7FFF_FFFF then u - 0x1_0000_0000 else u in

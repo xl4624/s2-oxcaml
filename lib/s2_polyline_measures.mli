@@ -1,8 +1,7 @@
 (** Low-level measures for polylines on the sphere.
 
-    Mirrors [s2polyline_measures.h] in the canonical C++ S2 library. These helpers work
-    directly on an array of {!S2_point.t} vertices so that they can be reused by higher
-    level types (polylines, shapes, shape indices) once those are ported. *)
+    These helpers work directly on an array of {!S2_point.t} vertices so that they can be
+    reused by higher-level types (polylines, shapes, shape indices) once those are ported. *)
 
 open Core
 

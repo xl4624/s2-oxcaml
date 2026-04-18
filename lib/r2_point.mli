@@ -1,12 +1,9 @@
 (** A point in the two-dimensional Cartesian plane.
 
-    Represents a vector in R^2 with [x] and [y] coordinates. This type is the OCaml
-    equivalent of C++ [Vector2<double>] (aliased as [R2Point] in [s2/r2.h]) and Go
-    [r2.Point].
+    Represents a vector in R^2 with [x] and [y] coordinates.
 
     All operations are component-wise unless otherwise noted. The [angle] function
-    computes the signed angle from one vector to another using [atan2(cross, dot)],
-    matching [Vector2::Angle] in the C++ library. *)
+    computes the signed angle from one vector to another using [atan2(cross, dot)]. *)
 open Core
 
 [@@@zero_alloc all]

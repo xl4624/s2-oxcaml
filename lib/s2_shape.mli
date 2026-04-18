@@ -7,9 +7,9 @@
     are subdivided into {e chains}, where each chain is a sequence of edges connected
     end-to-end.
 
-    Unlike the corresponding C++ {!S2Shape} virtual class, an OCaml [S2_shape.t] is a
-    record-of-functions captured at construction time. Concrete shape types (loop,
-    polygon, polyline, lax_polyline, ...) provide their own [to_shape] conversion. *)
+    An OCaml [S2_shape.t] is a record-of-functions captured at construction time.
+    Concrete shape types (loop, polygon, polyline, lax_polyline, ...) provide their own
+    [to_shape] conversion. *)
 
 open Core
 

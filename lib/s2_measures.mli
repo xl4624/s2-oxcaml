@@ -1,8 +1,7 @@
 (** Angle and area measures on the unit sphere.
 
     These functions operate on triples of unit-length {!S2_point.t} values forming
-    spherical triangles. They match Google's C++ [S2::Angle], [S2::TurnAngle], [S2::Area],
-    [S2::GirardArea], and [S2::SignedArea]. *)
+    spherical triangles. *)
 
 open Core
 

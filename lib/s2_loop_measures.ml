@@ -31,13 +31,12 @@ let[@inline] loop_at (loop : S2_point.t array) i =
 ;;
 
 (* Maximum edge length (in radians) considered numerically stable for the
-   triangle-fan decomposition. Matches C++ s2loop_measures.cc. *)
+   triangle-fan decomposition. *)
 let k_max_length = Float.(pi - 1e-5)
 
 (* Compute the oriented surface integral of [f_tri] over the loop interior,
-   accumulating into an R3 vector via [add]. Mirrors
-   [internal::GetSurfaceIntegral] from the C++ header. Specialised to an
-   unboxed R3 accumulator so we can hold the running sum in [let mutable]. *)
+   accumulating into an R3 vector. Specialised to an unboxed R3 accumulator so
+   we can hold the running sum in [let mutable]. *)
 let surface_integral_r3 (loop : S2_point.t array) ~f_tri =
   let n = Array.length loop in
   if n < 3
@@ -324,7 +323,6 @@ let approx_area loop =
 
 let centroid loop =
   (* Non-Kahan variant because R3_vector does not fit naturally into scalar
-     Kahan summation. The C++ [GetCentroid] also uses the uncompensated
-     variant. *)
+     Kahan summation. *)
   surface_integral_r3 loop ~f_tri:(fun a b c -> S2_centroids.true_centroid a b c)
 ;;

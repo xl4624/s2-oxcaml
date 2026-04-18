@@ -1,7 +1,7 @@
 open Core
 
 module Internal = struct
-  (* kSwapMask and kInvertMask from s2coords_internal.h.  Mirrors S2_cell_id.Hilbert. *)
+  (* Hilbert orientation bits: swap_mask flips the i/j axes, invert_mask inverts both. *)
   let swap_mask = 0x01
   let invert_mask = 0x02
 
@@ -48,9 +48,8 @@ let[@inline] level t = t.#level
 let[@inline] orientation t = t.#orientation
 let[@inline] bound t = t.#bound
 
-(* Mirrors the C++ constructor [S2PaddedCell(S2CellId, double)].  For a top-level face we
-   precompute both [bound] and [middle]; otherwise [middle] is populated lazily by
-   [middle] the first time it is queried (the C++ code uses a mutable field). *)
+(* For a top-level face we precompute both [bound] and [middle]; otherwise [middle] is
+   populated lazily the first time it is queried. *)
 let create id ~padding =
   if S2_cell_id.is_face id
   then (
@@ -80,8 +79,8 @@ let create id ~padding =
     let _face, i, j, orientation = S2_cell_id.to_face_ij_orientation id in
     let level = S2_cell_id.level id in
     let ij_size = S2_cell_id.size_ij level in
-    (* Mirror [S2CellId::IJLevelToBoundUV].  Snapping [i] and [j] to the cell's lower
-       corner gives the (u, v)-bound of the cell before padding. *)
+    (* Snapping [i] and [j] to the cell's lower corner gives the (u, v)-bound before
+       padding. *)
     let extract_interval coord =
       let lo_ij = coord land -ij_size in
       let hi_ij = lo_ij + ij_size in
@@ -104,9 +103,9 @@ let create id ~padding =
      })
 ;;
 
-(* Lazy [middle] accessor.  Because [t] is an unboxed record we cannot mutate it in place
-   like the C++ version does; instead we recompute on demand when the cached field is
-   empty.  Callers that need repeated access can store the result locally. *)
+(* Lazy [middle] accessor.  Because [t] is an unboxed record we cannot mutate it in place;
+   instead we recompute on demand when the cached field is empty.  Callers that need
+   repeated access can store the result locally. *)
 let middle t =
   if R2_rect.is_empty t.#middle
   then (
@@ -120,8 +119,7 @@ let middle t =
   else t.#middle
 ;;
 
-(* Compute the (i, j) child indices given a Hilbert traversal position.  This mirrors the
-   inline [GetChildIJ] in s2padded_cell.h. *)
+(* Compute the (i, j) child indices given a Hilbert traversal position. *)
 let child_ij_of_pos t ~pos =
   let ij = Internal.pos_to_ij.(t.#orientation).(pos) in
   #(ij lsr 1, ij land 1)
@@ -194,8 +192,7 @@ let exit_vertex t =
     (S2_coords.face_si_ti_to_xyz (S2_cell_id.face t.#id) (2 * i) (2 * j))
 ;;
 
-(* Port of S2PaddedCell::ShrinkToFit.  The 1.5 * epsilon padding compensates for the
-   roundoff error in [uv_to_st]. *)
+(* The 1.5 * epsilon padding compensates for the roundoff error in [uv_to_st]. *)
 let shrink_to_fit t rect =
   let ij_size = S2_cell_id.size_ij t.#level in
   let rect_x = R2_rect.x rect in

@@ -16,7 +16,8 @@ let sexp_of_t t =
 
 (* {1 Internal helpers} *)
 
-(* Unsigned comparison for S2_cell_id.t. S2CellIds are compared as uint64 in C++. *)
+(* Unsigned comparison for S2_cell_id.t. Cell ids use the full 64-bit range and must be
+   compared as unsigned values for correct ordering on the Hilbert curve. *)
 let[@inline] unsigned_compare (a : S2_cell_id.t) (b : S2_cell_id.t) : int =
   Stdlib_upstream_compatible.Int64_u.unsigned_compare (S2_cell_id.id a) (S2_cell_id.id b)
 ;;

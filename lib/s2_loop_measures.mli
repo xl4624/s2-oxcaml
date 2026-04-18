@@ -3,9 +3,7 @@
     These are low-level functions that work directly with an array of {!S2_point.t}
     vertices. A loop is represented implicitly: the edges are
     [(v.(0), v.(1)), (v.(1), v.(2)), ..., (v.(n - 1), v.(0))]. The empty array represents
-    the full loop (containing all points on the sphere).
-
-    This mirrors Google's C++ [s2loop_measures.h]. *)
+    the full loop (containing all points on the sphere). *)
 
 open Core
 

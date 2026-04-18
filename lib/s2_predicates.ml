@@ -301,7 +301,7 @@ module Exact_vec = struct
 end
 
 (* ============================================================ *)
-(* Constants (from predicates.go).                               *)
+(* Orientation/determinant constants.                            *)
 (* ============================================================ *)
 
 (* dblEpsilon = 2^-52. *)
@@ -357,9 +357,9 @@ let[@inline] [@zero_alloc] triage_sign a b c =
 ;;
 
 (* Errors smaller than [min_no_underflow_error] cannot be trusted because the
-   intermediate product [e1n2 * e2n2] has already underflowed to zero. This
-   guard mirrors kMinNoUnderflowError in the C++ port; the Go port omits it,
-   which is why the Go-flavored version mishandles cases like Sign.StableSignUnderflow. *)
+   intermediate product [e1n2 * e2n2] has already underflowed to zero. Without this
+   guard the stable-sign formula returns [Indeterminate] instead of [Clockwise] for
+   nearly collinear points whose edge norms are near [DBL_MIN]. *)
 let[@inline] [@zero_alloc] min_no_underflow_error () =
   let open Float_u.O in
   (* DBL_MIN = 2.2250738585072014e-308 *)
@@ -398,7 +398,7 @@ let[@inline] [@zero_alloc] stable_sign a b c =
 (* Symbolic perturbation for exact_sign: assumes xa < xb < xc in lex order and
    the exact determinant is zero. Enumerates perturbation coefficients in order
    of decreasing magnitude (Simulation of Simplicity, Edelsbrunner and Muecke
-   1990), mirroring the table in predicates.go / s2predicates.cc. *)
+   1990). *)
 let[@zero_alloc] symbolically_perturbed_sign
   (a : Exact_vec.t @ local)
   (b : Exact_vec.t @ local)
@@ -468,9 +468,8 @@ let[@zero_alloc] symbolically_perturbed_sign
                         if s <> 0 then s else 1 (* dc.Z * db.Y * da.X *))))))))))))
 ;;
 
-(* exactSign: arbitrary-precision determinant evaluation plus symbolic
-   perturbation. Mirrors exactSign in predicates.go. Requires pairwise-distinct
-   inputs. *)
+(* exactSign: arbitrary-precision determinant evaluation plus symbolic perturbation.
+   Requires pairwise-distinct inputs. *)
 let[@zero_alloc] exact_sign a b c ~perturb =
   (* Sort (a, b, c) lexicographically, tracking the sign of the permutation.
      R3_vector.t has an unboxed layout, so we can't stash it in an ordinary

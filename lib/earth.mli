@@ -1,8 +1,7 @@
 (** Earth modeled as a sphere: conversions between distances on the Earth's surface and
     angles on the unit sphere.
 
-    This module is the OxCaml port of the Go [earth] package and mirrors the C++ [S2Earth]
-    class. The mean radius matches both Go and C++: 6371.01 km (6371010 m).
+    The mean radius is 6371.01 km (6371010 m).
 
     Because the Earth is modeled as a sphere, a given angle corresponds to a unique
     distance along the surface, so conversions are possible in both directions. The angle

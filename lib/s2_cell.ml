@@ -80,9 +80,8 @@ let uv_endpoint interval i =
 ;;
 
 let average_area level =
-  (* C++: S2::kAvgArea.GetValue(level)
-     AvgArea = 4*pi / (6 * 4^level)
-  *)
+  (* AvgArea = 4*pi / (6 * 4^level): divide the sphere (area 4*pi) evenly over
+     the 6 * 4^level cells at the given level. *)
   let open Float_u.O in
   Float_u.of_float Float.pi * #4.0 / #6.0 / (#4.0 ** Float_u.of_int level)
 ;;
@@ -178,8 +177,7 @@ let cap_bound t =
 let cell_union_bound t = [ Int64_u.to_int64 (S2_cell_id.id t.#id) ]
 
 let vertex_chord_dist t p i j =
-  (* C++: S2Point(uv_[0][i], uv_[1][j], 1).Normalize()
-     Both callers pass UVW-space points, so the vertex must also be in UVW space. *)
+  (* Both callers pass UVW-space points, so the vertex must also be in UVW space. *)
   let u =
     if i = 0 then R1_interval.lo (R2_rect.x t.#uv) else R1_interval.hi (R2_rect.x t.#uv)
   in

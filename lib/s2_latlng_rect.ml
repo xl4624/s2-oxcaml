@@ -358,10 +358,8 @@ let[@zero_alloc ignore] from_cell cell =
 
 let[@zero_alloc ignore] contains_cell t cell = contains t (from_cell cell)
 
-(* Mirrors C++ S2LatLngRect::MayIntersect: a cheap, conservative check that
-   reduces to "does this rectangle intersect the cell's bounding rectangle?".
-   The Go port goes further with edge-crossing tests, but the C++ reference
-   library uses this conservative form. *)
+(* Conservative intersection check: does this rectangle intersect the cell's bounding
+   lat-lng rectangle? This under-approximates true intersection but is O(1). *)
 let[@zero_alloc ignore] intersects_cell t cell = intersects t (from_cell cell)
 let[@zero_alloc ignore] cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
 

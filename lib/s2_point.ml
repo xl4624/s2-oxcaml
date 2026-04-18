@@ -128,8 +128,7 @@ let[@inline] [@zero_alloc] ceil t =
     ~z:(Float_u.round_up (R3_vector.z t))
 ;;
 
-(* Matches C++ [Vector3::FRound], which uses [std::rint] (round half-to-even
-   under the default IEEE rounding mode). *)
+(* Round half-to-even (banker's rounding) under the default IEEE rounding mode. *)
 let[@inline] [@zero_alloc] fround t =
   R3_vector.create
     ~x:(Float_u.round_nearest_half_to_even (R3_vector.x t))

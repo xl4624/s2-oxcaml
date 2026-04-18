@@ -36,8 +36,7 @@ let area a b c =
      tan(E/4) = sqrt(tan(s/2) tan((s-a)/2) tan((s-b)/2) tan((s-c)/2))
      where E is the spherical excess (area), a,b,c are the side lengths, and
      s is the semiperimeter. Girard's formula is used instead for long thin
-     triangles where l'Huilier's cancellation error dominates. See the C++
-     source for the full derivation of the thresholds. *)
+     triangles where l'Huilier's cancellation error dominates. *)
   let open Float_u.O in
   let sa = S1_angle.radians (S2_point.stable_angle b c) in
   let sb = S1_angle.radians (S2_point.stable_angle c a) in

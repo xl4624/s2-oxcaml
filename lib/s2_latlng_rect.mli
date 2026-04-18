@@ -72,7 +72,7 @@ val vertex : t -> int -> S2_latlng.t
 (** Surface area on the unit sphere. *)
 val area : t -> float# [@@zero_alloc ignore]
 
-(** Area-weighted centroid (not unit length). See [S2LatLngRect::GetCentroid]. *)
+(** Area-weighted centroid (not unit length). *)
 val centroid : t -> S2_point.t
 [@@zero_alloc ignore]
 
@@ -125,7 +125,8 @@ val intersection : t -> t -> t
 val add_point : t -> S2_latlng.t -> t
 
 (** Expand by [margin.lat] on each side in latitude and [margin.lng] on each side in
-    longitude. See C++ [S2LatLngRect::Expanded] for full semantics. *)
+    longitude. Negative margins shrink the rectangle; if either interval becomes empty
+    after shrinking the result is the canonical empty rectangle. *)
 val expanded : t -> S2_latlng.t -> t
 
 (** If the rectangle includes a pole, expand longitude to full. Otherwise return

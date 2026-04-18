@@ -1,7 +1,6 @@
 (** An axis-aligned rectangle in the (x,y) plane.
 
-    Represents a closed region defined by x and y intervals. This type is the OCaml
-    equivalent of C++ [R2Rect] (in [s2/r2rect.h]) and Go [r2.Rect].
+    Represents a closed region defined by x and y intervals.
 
     Rectangles are valid if both their x and y intervals are either empty or non-empty.
     The canonical empty rectangle is returned by [empty]. *)

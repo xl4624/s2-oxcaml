@@ -43,7 +43,7 @@ val is_unit_length : t -> bool
 (** {1 Geometry} *)
 
 (** [ortho t] returns a unit-length vector orthogonal to [t]. Satisfies the property that
-    [ortho (-t) = -(ortho t)]. Matches [S2Point::Ortho] in the C++ library. *)
+    [ortho (-t) = -(ortho t)]. *)
 val ortho : t -> t
 
 (** [robust_cross_prod a b] returns a vector orthogonal to both [a] and [b]. Uses
@@ -107,8 +107,7 @@ val floor : t -> t
 val ceil : t -> t
 
 (** [fround t] returns the component-wise nearest integer of [t], using banker's rounding
-    (round-half-to-even). Matches the semantics of [std::rint] used by the C++
-    [Vector3::FRound]. *)
+    (round-half-to-even). *)
 val fround : t -> t
 
 (** [nan ()] returns a point whose three components are all NaN. *)

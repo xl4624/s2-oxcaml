@@ -1,6 +1,6 @@
 open Core
 
-(* Stateful edge crosser that mirrors C++ S2EdgeCrosser / Go EdgeCrosser.
+(* Stateful edge crosser for a fixed edge AB.
 
    The fixed edge AB is stored along with its cross product and the outward-
    facing tangents at A and B (computed lazily the first time the slow path
@@ -36,7 +36,7 @@ type with_bool =
    ; crossing : bool
    }
 
-(* Matches C++ kError = (1.5 + 1/sqrt(3)) * DBL_EPSILON. *)
+(* Tangent error bound: (1.5 + 1/sqrt(3)) * DBL_EPSILON. *)
 let tangent_error =
   Float_u.O.((#1.5 + (#1.0 / Float_u.sqrt #3.0)) * #2.220446049250313e-16)
 ;;
@@ -105,7 +105,7 @@ let[@inline] ensure_tangents t =
      })
 ;;
 
-(* Slow path of chain_crossing_sign, mirroring C++ CrossingSignInternal2.
+(* Slow path of chain_crossing_sign.
    Precondition: [t.#bda] is already set to TriageSign(a, b, d). Returns the
    updated state (which may have [have_tangents] flipped, and [acb]/[bda]
    promoted from 0 to the exact sign) together with the crossing sign. *)
@@ -222,7 +222,8 @@ let[@inline] edge_or_vertex_crossing t c d =
   chain_edge_or_vertex_crossing t d
 ;;
 
-(* Signed version of VertexCrossing, mirroring C++ S2::SignedVertexCrossing. *)
+(* Signed version of VertexCrossing: returns +1 if the shared vertex crossing
+   is in the counter-clockwise sense, 0 if it is not a valid vertex crossing. *)
 let signed_vertex_crossing a b c d =
   if S2_point.equal a b || S2_point.equal c d
   then 0

@@ -86,7 +86,7 @@ val add_point : t -> float# -> t
 val project : t -> float# -> Packed_float_option.Unboxed.t
 
 (** [project_exn t p] returns the closest point in [t] to [p]. The interval must be
-    non-empty. Matches [R1Interval::Project] in the C++ library. *)
+    non-empty. *)
 val project_exn : t -> float# -> float#
 
 (** [expanded t margin] returns an interval expanded on each side by [margin]. If [margin]

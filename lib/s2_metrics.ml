@@ -51,8 +51,8 @@ let get_closest_level t value =
   get_level_for_max_value t Float_u.O.(x * value)
 ;;
 
-(* Metric constants for the quadratic projection. These values come directly from
-   s2metrics.cc and are the only projection the reference library supports at runtime. *)
+(* Metric constants for the quadratic projection, the only projection supported at
+   runtime. *)
 
 let min_angle_span = #{ dim = 1; deriv = Float_u.O.(#4.0 / #3.0) }
 let max_angle_span = #{ dim = 1; deriv = #1.704897179199218452 }

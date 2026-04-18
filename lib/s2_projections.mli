@@ -1,18 +1,15 @@
 (** Map projections between the unit sphere and the 2D plane.
 
-    Mirrors C++ [S2::Projection] (in [s2/s2projections.h]) and Go [Projection]. The
-    upstream C++ uses a virtual class hierarchy; here we encode the two concrete
-    projections ([PlateCarreeProjection] and [MercatorProjection]) as a single tagged
-    record, dispatching on {!kind}. This keeps the API flat and avoids the
-    first-class-module indirection while still supporting both projections uniformly.
+    Two concrete projections ([PlateCarreeProjection] and [MercatorProjection]) are
+    encoded as a single tagged record, dispatching on {!kind}. This keeps the API flat
+    while still supporting both projections uniformly.
 
     The plate carree projection maps the sphere to [(longitude, latitude)] pairs, with a
     configurable scale. The Mercator projection maps longitude the same way but distorts
     latitude by [0.5 * log((1+sin phi)/(1-sin phi))], yielding an unbounded y range (poles
     are at +/-infinity).
 
-    Note that [(x, y)] coordinates are ordered with x = longitude and y = latitude,
-    matching the C++/Go convention. *)
+    Note that [(x, y)] coordinates are ordered with x = longitude and y = latitude. *)
 
 open Core
 

@@ -4,8 +4,7 @@
     simpler regions. The interface is restricted to methods that are useful for computing
     approximations.
 
-    Unlike the corresponding C++ {{!S2Region} virtual class}, an OCaml [S2_region.t] is a
-    variant whose constructors wrap each concrete S2 type.
+    An OCaml [S2_region.t] is a variant whose constructors wrap each concrete S2 type.
 
     User-defined regions (polygons, polylines, custom shapes) go through {!custom}, which
     takes a {!methods} record of callbacks. *)

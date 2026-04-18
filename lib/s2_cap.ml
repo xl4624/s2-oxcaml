@@ -233,8 +233,8 @@ let[@inline] [@zero_alloc] rec union t other =
       of_center_angle result_center result_r))
 ;;
 
-(* C++ S2Cap::GetCellUnionBound. The returned ids are not sorted. Most caps yield
-   at most 4 cells; very large caps may need all 6 face cells. *)
+(* The returned ids are not sorted. Most caps yield at most 4 cells; very large caps
+   may need all 6 face cells. *)
 let[@zero_alloc ignore] cell_union_bound t =
   let radius_rad = S1_angle.radians (radius_angle t) in
   let level = S2_metrics.get_level_for_min_value S2_metrics.min_width radius_rad - 1 in

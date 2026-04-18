@@ -89,13 +89,13 @@ let[@inline] [@zero_alloc] is_valid t =
 
 let[@inline] [@zero_alloc] face t = Int64_u.to_int_trunc Int64_u.O.(t lsr pos_bits)
 
-(* [lsb_for_level(0) - 1] - used by [is_face] (C++ masks low non-face bits). *)
+(* [lsb_for_level(0) - 1]: mask covering all position bits below the face bits. *)
 let pos_mask =
   let n = pos_bits - 1 in
   Int64_u.O.((#1L lsl n) - #1L)
 ;;
 
-(* Low [pos_bits] bits: C++ [id & (~0 >> kFaceBits)]. *)
+(* Mask for the low [pos_bits] bits (all bits below the face field). *)
 let pos_id_mask = Int64_u.O.((#1L lsl pos_bits) - #1L)
 let[@inline] [@zero_alloc] pos t : int64# = Int64_u.O.(t land pos_id_mask)
 
@@ -150,8 +150,8 @@ let[@inline] [@zero_alloc] from_face_ij face i j =
   Int64_u.O.((n lsl 1) lor #1L)
 ;;
 
-(* C++ [S2CellId::FromFaceIJWrap]: clamps (i, j) to one cell beyond the face,
-   reprojects via XYZ to find the adjacent face and corresponding (i', j'). *)
+(* Clamps (i, j) to one cell beyond the face boundary, then reprojects via XYZ
+   to find the adjacent face and corresponding (i', j'). *)
 let[@zero_alloc ignore] from_face_ij_wrap face i j =
   let limit_ij = max_size in
   let i = Int.max (-1) (Int.min limit_ij i) in
@@ -212,19 +212,20 @@ let[@inline] [@zero_alloc] parent_level t level =
   Int64_u.O.(t land Int64_u.neg lsb_val lor lsb_val)
 ;;
 
-(* C++ [(face << kPosBits) + (pos | 1)] then [parent(level)]. *)
+(* Construct from face, Hilbert position, and level: place [pos | 1] at the face
+   position, then snap to [level] by calling [parent_level]. *)
 let[@inline] [@zero_alloc] from_face_pos_level face (pos : int64#) level =
   let open Int64_u.O in
   let cell = (Int64_u.of_int face lsl pos_bits) + (pos lor #1L) in
   parent_level cell level
 ;;
 
-(** Hilbert subtree range for [t] at a target [level] (C++ [child_begin(level)]). *)
+(** Hilbert subtree range for [t] at a target [level]: first leaf-descendant boundary. *)
 let[@inline] [@zero_alloc] child_begin_at_level t level =
   Int64_u.O.(t - lsb t + lsb_for_level level)
 ;;
 
-(** Upper bound of Hilbert subtree (C++ [child_end(level)]). *)
+(** Upper bound of Hilbert subtree at a target [level] (exclusive). *)
 let[@inline] [@zero_alloc] child_end_at_level t level =
   Int64_u.O.(t + lsb t + lsb_for_level level)
 ;;
@@ -239,12 +240,12 @@ let[@inline] [@zero_alloc] child_end t =
   Int64_u.O.(t + old_lsb + (old_lsb lsr 2))
 ;;
 
-(** First cell at [level] on the global Hilbert curve ([S2CellId::Begin]). *)
+(** First cell at [level] on the global Hilbert curve (starts at face 0). *)
 let[@inline] [@zero_alloc] hilbert_begin level =
   child_begin_at_level (from_face_exn 0) level
 ;;
 
-(** One past the last cell at [level] on face 5 ([S2CellId::End]). *)
+(** One past the last cell at [level] on the global Hilbert curve (past face 5). *)
 let[@inline] [@zero_alloc] hilbert_end level = child_end_at_level (from_face_exn 5) level
 
 (* [S2CellId::child]: [t + (2*pos - 3) * (lsb t >> 2)]. *)
@@ -431,8 +432,9 @@ let[@inline always] [@zero_alloc ignore] to_face_ij_orientation t =
           lsl (k * Hilbert.lookup_bits));
     bits <- bits land (Hilbert.swap_mask lor Hilbert.invert_mask)
   done;
-  (* For non-leaf cells the Hilbert position suffix "10" reverses kSwapMask.
-     C++: [if (lsb() & 0x1111111111111110ULL) bits ^= kSwapMask]. *)
+  (* For non-leaf cells the Hilbert position suffix "10" causes one extra swap.
+     Detect this by testing whether any of the bits in 0x1111111111111110 are set
+     in the least significant bit of the cell id, then flip swap_mask accordingly. *)
   let orientation =
     if not (Int64_u.equal Int64_u.O.(lsb t land #0x1111111111111110L) #0L)
     then bits lxor Hilbert.swap_mask
@@ -441,9 +443,9 @@ let[@inline always] [@zero_alloc ignore] to_face_ij_orientation t =
   face_val, i, j, orientation
 ;;
 
-(* C++ [S2CellId::AppendVertexNeighbors]: returns the cells at [level] that share
-   the closest cell vertex to [t]. Result has 3 or 4 entries. The result is boxed
-   to [Int64.t] because [t] has layout [bits64]. *)
+(* Returns the cells at [level] that share the closest cell vertex to [t].
+   Result has 3 or 4 entries. The result is boxed to [Int64.t] because [t] has
+   layout [bits64]. *)
 let[@zero_alloc ignore] vertex_neighbors t level =
   let face, i, j, _ = to_face_ij_orientation t in
   let halfsize = size_ij (level + 1) in
@@ -496,7 +498,7 @@ let[@inline] [@zero_alloc] to_point t : R3_vector.t =
   R3_vector.normalize (to_point_raw t) [@nontail]
 ;;
 
-(* C++ [S2CellId::ToToken] / [FromToken]: hex without low trailing zero nibbles; id 0 -> ["X"]. *)
+(* Token: hex representation without low trailing zero nibbles; id 0 encodes as ["X"]. *)
 let[@zero_alloc ignore] to_token t =
   if Int64_u.equal t #0L
   then "X"

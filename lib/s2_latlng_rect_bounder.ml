@@ -12,8 +12,7 @@ let[@inline] [@zero_alloc] create () =
   #{ a = S2_point.origin; a_latlng = S2_latlng.zero; bound = S2_latlng_rect.empty }
 ;;
 
-(* The core update: accumulate the edge [a_ -> b] into [bound]. Mirrors
-   S2LatLngRectBounder::AddInternal in the canonical C++ implementation. *)
+(* The core update: accumulate the edge [a_ -> b] into [bound]. *)
 let add_internal (t : t) (b : S2_point.t) (b_latlng : S2_latlng.t) : t =
   if S2_latlng_rect.is_empty t.#bound
   then #{ a = b; a_latlng = b_latlng; bound = S2_latlng_rect.add_point t.#bound b_latlng }

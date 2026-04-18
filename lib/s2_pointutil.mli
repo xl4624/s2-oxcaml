@@ -1,9 +1,7 @@
 (** Utility operations for points on the unit sphere.
 
-    This module mirrors [s2pointutil.h] in the C++ S2 library. The underlying point
-    representation is [S2_point.t], and most operations are thin wrappers around functions
-    already exposed by [S2_point]. The purpose of this module is to group the upstream
-    "S2::" utility helpers under a single namespace. *)
+    Most operations are thin wrappers around functions exposed by [S2_point]; this module
+    groups the sphere-geometry helpers under a single namespace. *)
 
 open Core
 
@@ -15,14 +13,13 @@ open Core
 val origin : unit -> S2_point.t
 [@@zero_alloc ignore]
 
-(** [is_unit_length p] returns true if [p] is approximately unit length, using the C++
-    tolerance of [5 * DBL_EPSILON] on [|p|^2 - 1]. *)
+(** [is_unit_length p] returns true if [p] is approximately unit length, tolerating
+    [5 * DBL_EPSILON] error on [|p|^2 - 1]. *)
 val is_unit_length : S2_point.t -> bool
 
 (** [approx_equals ~max_error_radians a b] returns true if the angle between [a] and [b]
     is at most [max_error_radians]. The default tolerance (when [max_error_radians] is
-    [none]) matches C++'s [S1Angle::Radians(1e-15)]. Both [a] and [b] must be non-zero
-    vectors. *)
+    [none]) defaults to [1e-15] radians. Both [a] and [b] must be non-zero vectors. *)
 val approx_equals
   :  max_error_radians:Packed_float_option.Unboxed.t
   -> S2_point.t
@@ -31,13 +28,13 @@ val approx_equals
 [@@zero_alloc]
 
 (** [ortho a] returns a unit-length vector orthogonal to [a]. Satisfies
-    [ortho (-a) = -(ortho a)]. Matches C++ [S2::Ortho]; prefers results whose coordinates
-    are all non-zero to reduce degeneracies. *)
+    [ortho (-a) = -(ortho a)]. Prefers results whose coordinates are all non-zero to
+    reduce degeneracies. *)
 val ortho : S2_point.t -> S2_point.t
 
 (** [ref_dir a] returns a unit-length vector different from [a], used as the reference
     direction for deciding whether a polygon with semi-open boundaries contains the vertex
-    [a]. Currently aliased to [ortho], matching C++ [S2::RefDir]. *)
+    [a]. Currently aliased to [ortho]. *)
 val ref_dir : S2_point.t -> S2_point.t
 
 (** [rotate p ~axis ~angle] rotates [p] about [axis] by [angle]. Both [p] and [axis] must

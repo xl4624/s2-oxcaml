@@ -144,8 +144,8 @@ let[@inline] [@zero_alloc] project x a b =
        Use n (normalized) rather than a_cross_b to avoid underflow. *)
     let nx = S2_point.robust_cross_prod n x in
     let p = R3_vector.normalize (R3_vector.cross nx n) in
-    (* Check if p is on the edge ab by testing orientation.
-       s2pred::Sign(p, n, a, pn) = pn . a, and similarly for b. *)
+    (* Check if p is on the edge ab by testing orientation via pn = p x n:
+       p is between a and b iff pn . a > 0 and pn . b < 0. *)
     let pn = R3_vector.cross p n in
     let open Float_u.O in
     if R3_vector.dot pn a > #0.0 && R3_vector.dot pn b < #0.0
@@ -202,8 +202,7 @@ type closest_points =
    ; b : S2_point.t
    }
 
-(* Project that takes a precomputed a_cross_b (not necessarily normalized).
-   Mirrors the three-argument C++ Project overload. *)
+(* Project that takes a precomputed a_cross_b (not necessarily normalized). *)
 let[@inline] [@zero_alloc] project_with_cross x a b a_cross_b =
   if S2_point.equal x a || S2_point.equal x b
   then x
@@ -315,8 +314,7 @@ let[@inline] [@zero_alloc] get_edge_pair_closest_points a0 a1 b0 b1 =
     | _ -> #{ a = project b1 a0 a1; b = b1 })
 ;;
 
-(* TODO(ericv): Optimize to use S1_chord_angle rather than S1_angle, as the
-   upstream C++ TODO suggests. *)
+(* TODO: Optimize to use S1_chord_angle rather than S1_angle. *)
 let[@inline] [@zero_alloc] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
   let open Float_u.O in
   (* Compute an orthogonal to the plane containing A.  We use the raw
@@ -327,9 +325,9 @@ let[@inline] [@zero_alloc] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
   let a_nearest_b0 = project_with_cross b0 a0 a1 a_ortho_raw in
   let a_nearest_b1 = project_with_cross b1 a0 a1 a_ortho_raw in
   (* If the two projections have opposite orientation relative to a_ortho,
-     flip a_ortho so that it agrees with a_nearest_b0 x a_nearest_b1.  This
-     mirrors s2pred::Sign(a_ortho, a_nearest_b0, a_nearest_b1) < 0, where
-     Sign(a, b, c) = (c x a) . b. *)
+     flip a_ortho so that it agrees with a_nearest_b0 x a_nearest_b1.
+     Sign(a, b, c) = (c x a) . b, so this is equivalent to checking whether
+     (a_nearest_b1 x a_ortho) . a_nearest_b0 < 0. *)
   let s = R3_vector.dot (R3_vector.cross a_nearest_b1 a_ortho0) a_nearest_b0 in
   let a_ortho = if s < #0.0 then R3_vector.neg a_ortho0 else a_ortho0 in
   let tol_rad = S1_angle.radians tolerance in

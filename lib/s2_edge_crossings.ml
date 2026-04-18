@@ -2,7 +2,7 @@ open Core
 
 [@@@zero_alloc all]
 
-(* Precision constants, matching C++ s2predicates. *)
+(* Precision constants for edge crossing predicates. *)
 let dbl_error = Float_u.O.(#0.5 * Float_u.epsilon_float ())
 
 (* Maximum error in the determinant (AxB).C for unit-length vectors. *)
@@ -358,8 +358,7 @@ let ordered_ccw (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) (o : S2_point
 
 (* --- Crossing predicates -------------------------------------------------- *)
 
-(* Crossing sign implementation following the C++/Go EdgeCrosser logic.
-   For edges AB and CD to cross at an interior point, all four oriented
+(* For edges AB and CD to cross at an interior point, all four oriented
    triangles ACB, BDA, CBD, DAC must have the same non-zero orientation. *)
 let[@inline] [@zero_alloc] crossing_sign
   (a : S2_point.t)

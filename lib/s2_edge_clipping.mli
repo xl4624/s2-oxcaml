@@ -2,8 +2,7 @@
     against 2D rectangles.
 
     These functions can be used to efficiently find the set of [S2_cell_id]s that are
-    intersected by a geodesic edge. See the C++ header [s2/s2edge_clipping.h] for
-    additional details. *)
+    intersected by a geodesic edge. *)
 
 open Core
 

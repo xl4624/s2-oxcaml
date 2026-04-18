@@ -1,13 +1,10 @@
 open Core
 
-(* Mean radius: 6371.01 km == 6371010 meters. Matches Go's
-   [earth.Radius = 6371.01 * unit.Kilometer] and C++ [S2Earth::RadiusMeters()]. *)
+(* Mean radius: 6371.01 km == 6371010 meters. *)
 let radius_meters = #6_371_010.0
 let radius_km = #6_371.01
 
-(* Go: LowestAltitude = -10898 m, HighestAltitude = 8848 m. The C++ S2Earth
-   header reports 8846 m; we follow Go since this module is the port of the
-   Go [earth] package. *)
+(* Altitude range: Dead Sea (-10898 m) to Mount Everest (8848 m). *)
 let lowest_altitude_meters = -#10_898.0
 let highest_altitude_meters = #8_848.0
 

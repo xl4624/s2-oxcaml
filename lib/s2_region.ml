@@ -75,10 +75,10 @@ let cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3 =
 exception Cap_missed_vertex
 exception Cap_contains_vertex
 
-(* Lazy vertex evaluation matches Go/C++: compute vertex k, check, exit early if the
-   answer is decided. In the coverer hot path [cap_contains_cell] usually fails on the
-   first vertex (the cap is smaller than the cell at early tree levels), so eager
-   computation of all 4 vertices wastes ~3 [R3_vector.normalize] calls per check. *)
+(* Lazy vertex evaluation: compute vertex k, check, exit early if the answer is decided.
+   In the coverer hot path [cap_contains_cell] usually fails on the first vertex (the cap
+   is smaller than the cell at early tree levels), so eager computation of all 4 vertices
+   wastes ~3 [R3_vector.normalize] calls per check. *)
 let cap_contains_cell cap cell =
   try
     let v0 = S2_cell.vertex cell 0 in

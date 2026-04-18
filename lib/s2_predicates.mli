@@ -3,9 +3,9 @@
     These predicates compute conservative error bounds using floating-point arithmetic and
     fall back to more stable formulas when triage is inconclusive. When even the stable
     formula is ambiguous, the implementation falls back to arbitrary-precision arithmetic
-    (a small internal bignum / dyadic-rational module) plus symbolic perturbations,
-    matching the canonical C++ and Go S2 ports. Results are self-consistent: e.g.
-    {!robust_sign} always satisfies [robust_sign a b c = -(robust_sign c b a)]. *)
+    (a small internal bignum / dyadic-rational module) plus symbolic perturbations.
+    Results are self-consistent: e.g. {!robust_sign} always satisfies
+    [robust_sign a b c = -(robust_sign c b a)]. *)
 
 open Core
 
