@@ -1,6 +1,6 @@
 open Core
 
-type t =
+type methods =
   #{ cap_bound : unit -> S2_cap.t
    ; rect_bound : unit -> S2_latlng_rect.t
    ; contains_cell : S2_cell.t -> bool
@@ -8,6 +8,13 @@ type t =
    ; contains_point : S2_point.t -> bool
    ; cell_union_bound : unit -> Int64.t list
    }
+
+type t =
+  | Cap of S2_cap.t
+  | Rect of S2_latlng_rect.t
+  | Cell of S2_cell.t
+  | Cell_union of S2_cell_union.t
+  | Custom of methods
 
 let sexp_of_t _ = Sexp.Atom "<S2_region.t>"
 
@@ -103,42 +110,59 @@ let cap_intersects_cell cap cell =
   | Cap_contains_vertex -> true
 ;;
 
-let of_cap c =
-  #{ cap_bound = (fun () -> c)
-   ; rect_bound = (fun () -> S2_latlng_rect.from_cap c)
-   ; contains_cell = (fun cell -> cap_contains_cell c cell)
-   ; intersects_cell = (fun cell -> cap_intersects_cell c cell)
-   ; contains_point = (fun p -> S2_cap.contains_point c p)
-   ; cell_union_bound = (fun () -> S2_cap.cell_union_bound c)
-   }
+let of_cap c = Cap c
+let of_rect r = Rect r
+let of_cell c = Cell c
+let of_cell_union u = Cell_union u
+let custom m = Custom m
+
+let[@inline] cap_bound = function
+  | Cap c -> c
+  | Rect r -> S2_latlng_rect.cap_bound r
+  | Cell c -> S2_cell.cap_bound c
+  | Cell_union u -> S2_cell_union.cap_bound u
+  | Custom m -> m.#cap_bound ()
 ;;
 
-let of_rect r =
-  #{ cap_bound = (fun () -> S2_latlng_rect.cap_bound r)
-   ; rect_bound = (fun () -> r)
-   ; contains_cell = (fun cell -> S2_latlng_rect.contains_cell r cell)
-   ; intersects_cell = (fun cell -> S2_latlng_rect.intersects_cell r cell)
-   ; contains_point = (fun p -> S2_latlng_rect.contains_point r p)
-   ; cell_union_bound = (fun () -> S2_latlng_rect.cell_union_bound r)
-   }
+let[@inline] rect_bound = function
+  | Cap c -> S2_latlng_rect.from_cap c
+  | Rect r -> r
+  | Cell c -> S2_latlng_rect.from_cell c
+  | Cell_union u -> S2_cell_union.rect_bound u
+  | Custom m -> m.#rect_bound ()
 ;;
 
-let of_cell c =
-  #{ cap_bound = (fun () -> S2_cell.cap_bound c)
-   ; rect_bound = (fun () -> S2_latlng_rect.from_cell c)
-   ; contains_cell = (fun other -> S2_cell.contains_cell c other)
-   ; intersects_cell = (fun other -> S2_cell.intersects_cell c other)
-   ; contains_point = (fun p -> S2_cell.contains_point c p)
-   ; cell_union_bound = (fun () -> S2_cell.cell_union_bound c)
-   }
+let[@inline] contains_cell t cell =
+  match t with
+  | Cap c -> cap_contains_cell c cell
+  | Rect r -> S2_latlng_rect.contains_cell r cell
+  | Cell c -> S2_cell.contains_cell c cell
+  | Cell_union u -> S2_cell_union.contains_cell u cell
+  | Custom m -> m.#contains_cell cell
 ;;
 
-let of_cell_union u =
-  #{ cap_bound = (fun () -> S2_cell_union.cap_bound u)
-   ; rect_bound = (fun () -> S2_cell_union.rect_bound u)
-   ; contains_cell = (fun cell -> S2_cell_union.contains_cell u cell)
-   ; intersects_cell = (fun cell -> S2_cell_union.intersects_cell u cell)
-   ; contains_point = (fun p -> S2_cell_union.contains_point u p)
-   ; cell_union_bound = (fun () -> S2_cell_union.cell_union_bound u)
-   }
+let[@inline] intersects_cell t cell =
+  match t with
+  | Cap c -> cap_intersects_cell c cell
+  | Rect r -> S2_latlng_rect.intersects_cell r cell
+  | Cell c -> S2_cell.intersects_cell c cell
+  | Cell_union u -> S2_cell_union.intersects_cell u cell
+  | Custom m -> m.#intersects_cell cell
+;;
+
+let[@inline] contains_point t p =
+  match t with
+  | Cap c -> S2_cap.contains_point c p
+  | Rect r -> S2_latlng_rect.contains_point r p
+  | Cell c -> S2_cell.contains_point c p
+  | Cell_union u -> S2_cell_union.contains_point u p
+  | Custom m -> m.#contains_point p
+;;
+
+let[@inline] cell_union_bound = function
+  | Cap c -> S2_cap.cell_union_bound c
+  | Rect r -> S2_latlng_rect.cell_union_bound r
+  | Cell c -> S2_cell.cell_union_bound c
+  | Cell_union u -> S2_cell_union.cell_union_bound u
+  | Custom m -> m.#cell_union_bound ()
 ;;

@@ -147,7 +147,7 @@ let test_cap_coverings () =
     for i = 0 to n - 1 do
       let cid = S2.S2_cell_union.cell_id interior i in
       let cell = S2.S2_cell.of_cell_id cid in
-      if not (region.#S2.S2_region.contains_cell cell)
+      if not (S2.S2_region.contains_cell region cell)
       then
         Alcotest.fail
           (sprintf

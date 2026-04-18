@@ -5,13 +5,16 @@
     approximations.
 
     Unlike the corresponding C++ {{!S2Region} virtual class}, an OCaml [S2_region.t] is a
-    record-of-functions captured at construction time. The constructors {!of_cap},
-    {!of_rect}, {!of_cell}, and {!of_cell_union} build a region from each concrete S2
-    type. *)
+    variant whose constructors wrap each concrete S2 type.
+
+    User-defined regions (polygons, polylines, custom shapes) go through {!custom}, which
+    takes a {!methods} record of callbacks. *)
 
 open Core
 
-type t =
+(** Callbacks used by {!custom} to implement a user-defined region. The fields mirror the
+    methods exposed at module level. *)
+type methods =
   #{ cap_bound : unit -> S2_cap.t
    ; rect_bound : unit -> S2_latlng_rect.t
    ; contains_cell : S2_cell.t -> bool
@@ -19,6 +22,13 @@ type t =
    ; contains_point : S2_point.t -> bool
    ; cell_union_bound : unit -> Int64.t list
    }
+
+type t =
+  | Cap of S2_cap.t
+  | Rect of S2_latlng_rect.t
+  | Cell of S2_cell.t
+  | Cell_union of S2_cell_union.t
+  | Custom of methods
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
@@ -35,3 +45,31 @@ val of_cell : S2_cell.t -> t
 
 (** [of_cell_union u] wraps a cell union as a region. *)
 val of_cell_union : S2_cell_union.t -> t
+
+(** [custom m] wraps a user-supplied methods record. Use this for regions that are not
+    natively covered by the built-in constructors. *)
+val custom : methods -> t
+
+(** {1 Region methods}
+
+    Each accessor dispatches on the variant tag. Pattern-matching [t] directly is also
+    fine, and can let the compiler eliminate the dispatch at known-tag call sites. *)
+
+(** [cap_bound t] returns a bounding {!S2_cap.t} that contains [t]. *)
+val cap_bound : t -> S2_cap.t
+
+(** [rect_bound t] returns a bounding {!S2_latlng_rect.t} that contains [t]. *)
+val rect_bound : t -> S2_latlng_rect.t
+
+(** [contains_cell t cell] returns [true] if [cell] is fully contained in [t]. *)
+val contains_cell : t -> S2_cell.t -> bool
+
+(** [intersects_cell t cell] returns [true] if [cell] intersects [t]. *)
+val intersects_cell : t -> S2_cell.t -> bool
+
+(** [contains_point t p] returns [true] if the unit-length point [p] lies in [t]. *)
+val contains_point : t -> S2_point.t -> bool
+
+(** [cell_union_bound t] returns a small cell-union cover of [t], encoded as a list of raw
+    [S2_cell_id.t] bit patterns. *)
+val cell_union_bound : t -> Int64.t list

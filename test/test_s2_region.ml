@@ -61,8 +61,8 @@ let check_region label region region_j =
   let r = region in
   let expected_cap = cap_of_json (member "cap_bound" region_j) in
   let expected_rect = latlng_rect_of_json (member "rect_bound" region_j) in
-  let actual_cap = r.#S2.S2_region.cap_bound () in
-  let actual_rect = r.#S2.S2_region.rect_bound () in
+  let actual_cap = S2.S2_region.cap_bound r in
+  let actual_rect = S2.S2_region.rect_bound r in
   check_cap (label ^ " cap_bound") ~expected:expected_cap ~actual:actual_cap;
   check_rect (label ^ " rect_bound") ~expected:expected_rect ~actual:actual_rect;
   let cell_tokens = probe_cell_tokens () in
@@ -75,7 +75,7 @@ let check_region label region region_j =
       check_bool
         (sprintf "%s contains_cell[%d]" label i)
         ~expected:(bool_of_json_exn exp_j)
-        ~actual:(r.#S2.S2_region.contains_cell cell));
+        ~actual:(S2.S2_region.contains_cell r cell));
   let expected_intersects_cell = to_list (member "intersects_cell" region_j) in
   List.iteri
     (List.zip_exn cell_tokens expected_intersects_cell)
@@ -84,7 +84,7 @@ let check_region label region region_j =
       check_bool
         (sprintf "%s intersects_cell[%d]" label i)
         ~expected:(bool_of_json_exn exp_j)
-        ~actual:(r.#S2.S2_region.intersects_cell cell));
+        ~actual:(S2.S2_region.intersects_cell r cell));
   let expected_contains_point = to_list (member "contains_point" region_j) in
   List.iteri
     (List.zip_exn point_jsons expected_contains_point)
@@ -93,9 +93,9 @@ let check_region label region region_j =
       check_bool
         (sprintf "%s contains_point[%d]" label i)
         ~expected:(bool_of_json_exn exp_j)
-        ~actual:(r.#S2.S2_region.contains_point p));
+        ~actual:(S2.S2_region.contains_point r p));
   let expected_cu_bound = to_list (member "cell_union_bound" region_j) in
-  let actual_cu_bound = r.#S2.S2_region.cell_union_bound () in
+  let actual_cu_bound = S2.S2_region.cell_union_bound r in
   (check int)
     (label ^ " cell_union_bound length")
     (List.length expected_cu_bound)

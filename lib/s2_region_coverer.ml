@@ -50,13 +50,12 @@ type candidate =
   ; mutable priority : int
   }
 
-(* Internal coverer state. Region callbacks are extracted from the unboxed
-   S2_region.t at the call boundary so they can live in a normal boxed record. *)
+(* Internal coverer state. Holding the [S2_region.t] directly (rather than extracting
+   callbacks) avoids allocating closures and lets the compiler specialize each dispatch
+   via pattern match on the variant tag. *)
 type coverer =
   { opts : t
-  ; intersects_cell : S2_cell.t -> bool
-  ; contains_cell : S2_cell.t -> bool
-  ; cell_union_bound : unit -> Int64.t list
+  ; region : S2_region.t
   ; mutable result : S2_cell_id.t array
   ; mutable result_len : int
   ; mutable pq : candidate Pairing_heap.t
@@ -83,9 +82,7 @@ let result_push c id =
 
 let new_coverer opts (region : S2_region.t) =
   { opts
-  ; intersects_cell = region.#S2_region.intersects_cell
-  ; contains_cell = region.#S2_region.contains_cell
-  ; cell_union_bound = region.#S2_region.cell_union_bound
+  ; region
   ; result = Array.create ~len:8 S2_cell_id.none
   ; result_len = 0
   ; pq = Pairing_heap.create ~cmp:(fun a b -> compare b.priority a.priority) ()
@@ -95,7 +92,7 @@ let new_coverer opts (region : S2_region.t) =
 ;;
 
 let new_candidate c cell =
-  if not (c.intersects_cell cell)
+  if not (S2_region.intersects_cell c.region cell)
   then None
   else (
     let level = S2_cell.level cell in
@@ -105,11 +102,12 @@ let new_candidate c cell =
     then
       if c.interior_covering
       then (
-        if c.contains_cell cell
+        if S2_region.contains_cell c.region cell
         then is_terminal <- true
         else if level + c.opts.level_mod > c.opts.max_level
         then reject <- true)
-      else if level + c.opts.level_mod > c.opts.max_level || c.contains_cell cell
+      else if level + c.opts.level_mod > c.opts.max_level
+              || S2_region.contains_cell c.region cell
       then is_terminal <- true;
     if reject
     then None
@@ -133,7 +131,7 @@ let rec expand_children c cand cell num_levels =
     let child_cell = S2_cell.of_cell_id child_id in
     if num_levels > 0
     then (
-      if c.intersects_cell child_cell
+      if S2_region.intersects_cell c.region child_cell
       then num_terminals <- num_terminals + expand_children c cand child_cell num_levels)
     else (
       match new_candidate c child_cell with
@@ -378,13 +376,13 @@ let rec get_initial_candidates c =
   done
 
 and fast_covering_internal_coverer opts c =
-  let cell_ids = cids_of_int64_list (c.cell_union_bound ()) in
+  let cell_ids = cids_of_int64_list (S2_region.cell_union_bound c.region) in
   let cu = S2_cell_union.from_verbatim cell_ids in
   let result = canonicalize_covering_internal opts (S2_cell_union.cell_ids_raw cu) in
   S2_cell_union.from_verbatim result
 
 and fast_covering_internal opts (region : S2_region.t) =
-  let cell_ids = cids_of_int64_list (region.#S2_region.cell_union_bound ()) in
+  let cell_ids = cids_of_int64_list (S2_region.cell_union_bound region) in
   let cu = S2_cell_union.from_verbatim cell_ids in
   let result = canonicalize_covering_internal opts (S2_cell_union.cell_ids_raw cu) in
   S2_cell_union.from_verbatim result
