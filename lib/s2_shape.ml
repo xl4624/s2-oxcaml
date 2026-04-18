@@ -26,6 +26,10 @@ module Edge = struct
   let[@inline] equal a b = S2_point.equal a.#v0 b.#v0 && S2_point.equal a.#v1 b.#v1
 end
 
+module Edge_sort = Unboxed_array.Make_3_3 (struct
+    type t = Edge.t
+  end)
+
 module Chain = struct
   type t =
     #{ start : int
@@ -107,3 +111,74 @@ type t =
 let sexp_of_t _ = Sexp.Atom "<S2_shape.t>"
 let is_empty t = t.#num_edges () = 0 && (t.#dimension () < 2 || t.#num_chains () = 0)
 let is_full t = t.#num_edges () = 0 && t.#dimension () = 2 && t.#num_chains () > 0
+
+(* Returns 0 if [vtest] is balanced (matched sibling pairs only), otherwise
+   the sign reported by [S2_contains_vertex_query]: positive means contained,
+   negative means not contained. *)
+let contains_sign_at_vertex ~vtest ~num_edges ~edge =
+  let q = S2_contains_vertex_query.create vtest in
+  for e = 0 to num_edges - 1 do
+    let #{ v0; v1 } : Edge.t = edge e in
+    if S2_point.equal v0 vtest then S2_contains_vertex_query.add_edge q v1 ~direction:1;
+    if S2_point.equal v1 vtest then S2_contains_vertex_query.add_edge q v0 ~direction:(-1)
+  done;
+  S2_contains_vertex_query.contains_sign q
+;;
+
+let get_reference_point ~num_edges ~num_chains ~edge ~chain =
+  if num_edges = 0
+  then Reference_point.contained (num_chains > 0)
+  else (
+    let #{ v0 = first_v0; v1 = _ } : Edge.t = edge 0 in
+    let first_sign = contains_sign_at_vertex ~vtest:first_v0 ~num_edges ~edge in
+    if first_sign <> 0
+    then Reference_point.create ~point:first_v0 ~contained:(first_sign > 0)
+    else (
+      (* No unmatched edge at the first vertex; sort forward and reverse edges
+         and find the first edge present in one list but not the other. *)
+      let edges = Array.create ~len:num_edges (edge 0) in
+      let rev_edges = Array.create ~len:num_edges (Edge.reversed edges.(0)) in
+      for i = 0 to num_edges - 1 do
+        let e = edge i in
+        edges.(i) <- e;
+        rev_edges.(i) <- Edge.reversed e
+      done;
+      Edge_sort.sort edges ~compare:Edge.compare;
+      Edge_sort.sort rev_edges ~compare:Edge.compare;
+      let mutable found_point = S2_point.origin in
+      let mutable found_sign = 0 in
+      let mutable i = 0 in
+      while i < num_edges && found_sign = 0 do
+        let e = edges.(i) in
+        let r = rev_edges.(i) in
+        let cmp = Edge.compare e r in
+        if cmp < 0
+        then (
+          let #{ v0; v1 = _ } : Edge.t = e in
+          let s = contains_sign_at_vertex ~vtest:v0 ~num_edges ~edge in
+          if s <> 0
+          then (
+            found_point <- v0;
+            found_sign <- s))
+        else if cmp > 0
+        then (
+          let #{ v0; v1 = _ } : Edge.t = r in
+          let s = contains_sign_at_vertex ~vtest:v0 ~num_edges ~edge in
+          if s <> 0
+          then (
+            found_point <- v0;
+            found_sign <- s));
+        i <- i + 1
+      done;
+      if found_sign <> 0
+      then Reference_point.create ~point:found_point ~contained:(found_sign > 0)
+      else (
+        (* Every vertex is balanced: the shape is empty or full depending on
+           whether any chain has zero edges. *)
+        let mutable any_empty_chain = false in
+        for i = 0 to num_chains - 1 do
+          let #{ start = _; length } : Chain.t = chain i in
+          if length = 0 then any_empty_chain <- true
+        done;
+        Reference_point.contained any_empty_chain)))
+;;

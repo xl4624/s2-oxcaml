@@ -7,9 +7,9 @@
     are subdivided into {e chains}, where each chain is a sequence of edges connected
     end-to-end.
 
-    An OCaml [S2_shape.t] is a record-of-functions captured at construction time.
-    Concrete shape types (loop, polygon, polyline, lax_polyline, ...) provide their own
-    [to_shape] conversion. *)
+    An OCaml [S2_shape.t] is a record-of-functions captured at construction time. Concrete
+    shape types (loop, polygon, polyline, lax_polyline, ...) provide their own [to_shape]
+    conversion. *)
 
 open Core
 
@@ -131,3 +131,19 @@ val is_empty : t -> bool
 (** [is_full t] is true when the shape contains all points on the sphere. Only polygonal
     shapes with no edges and at least one chain are full. *)
 val is_full : t -> bool
+
+(** [get_reference_point ~num_edges ~num_chains ~edge ~chain] computes a reference point
+    for a closed polygonal shape (dimension 2) that allows duplicate vertices and edges.
+    An edge and its reverse cancel each other; a shape consisting solely of degenerate
+    loop(s) is empty unless it contains at least one zero-length chain (in which case it
+    is full).
+
+    The arguments mirror the corresponding fields of {!t}, so callers can supply them
+    directly without first allocating a full shape record (avoiding the chicken-and-egg
+    problem of computing the reference point during construction). *)
+val get_reference_point
+  :  num_edges:int
+  -> num_chains:int
+  -> edge:(int -> Edge.t)
+  -> chain:(int -> Chain.t)
+  -> Reference_point.t
