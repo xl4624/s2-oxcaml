@@ -304,22 +304,19 @@ end
 (* Orientation/determinant constants.                            *)
 (* ============================================================ *)
 
-(* dblEpsilon = 2^-52. *)
-let[@inline] [@zero_alloc] dbl_epsilon () = Float_u.of_float 2.220446049250313e-16
-
 (* roundingEpsilon for float64 = 2^-53. *)
-let[@inline] [@zero_alloc] dbl_error () = Float_u.of_float 1.110223024625156e-16
+let[@inline] [@zero_alloc] dbl_error () = Float_u.O.(Float_u.epsilon_float () / #2.0)
 
 (* Maximum error in triageSign's determinant. *)
 let[@inline] [@zero_alloc] max_determinant_error () =
   let open Float_u.O in
-  #1.8274 * dbl_epsilon ()
+  #1.8274 * Float_u.epsilon_float ()
 ;;
 
 (* Scaling factor for stableSign. *)
 let[@inline] [@zero_alloc] det_error_multiplier () =
   let open Float_u.O in
-  #3.2321 * dbl_epsilon ()
+  #3.2321 * Float_u.epsilon_float ()
 ;;
 
 module Direction = struct
@@ -363,7 +360,7 @@ let[@inline] [@zero_alloc] triage_sign a b c =
 let[@inline] [@zero_alloc] min_no_underflow_error () =
   let open Float_u.O in
   (* DBL_MIN = 2.2250738585072014e-308 *)
-  det_error_multiplier () * Float_u.sqrt (Float_u.of_float 2.2250738585072014e-308)
+  det_error_multiplier () * Float_u.sqrt (Float_u.min_positive_normal_value ())
 ;;
 
 (* stableSign: numerically stable formula that handles near-collinear points. *)
@@ -537,7 +534,7 @@ let[@inline] [@zero_alloc] sin2_distance_err x y =
   let open Float_u.O in
   let n = V.cross (V.sub x y) (V.add x y) in
   let sin2 = #0.25 * V.norm2 n in
-  let sqrt3 = Float_u.of_float 1.7320508075688772 in
+  let sqrt3 = #1.7320508075688772 in
   let err =
     (#21.0 * dbl_error () * sin2)
     + (#4.0 * sqrt3 * dbl_error () * sin2)
@@ -602,7 +599,7 @@ let[@zero_alloc] compare_distances x a b =
   then 0
   else (
     let cos_ax = V.dot a x in
-    let inv_sqrt2 = Float_u.of_float 0.7071067811865476 in
+    let inv_sqrt2 = #0.7071067811865476 in
     let s =
       let open Float_u.O in
       if cos_ax > inv_sqrt2
@@ -619,9 +616,7 @@ let[@zero_alloc] compare_distances x a b =
 ;;
 
 (* ca45Degrees length^2 = 2 - sqrt(2). *)
-let[@inline] [@zero_alloc] ca_45_degrees_length2 () =
-  Float_u.of_float (2.0 -. 1.4142135623730951)
-;;
+let[@inline] [@zero_alloc] ca_45_degrees_length2 () = #0.5857864376269049
 
 let[@inline] [@zero_alloc] triage_compare_cos_distance x y r2 =
   let open Float_u.O in
@@ -684,7 +679,7 @@ let[@zero_alloc] compare_distance x y r =
    3.046875 * dblEpsilon. *)
 let[@zero_alloc] sign_dot_prod a b =
   let open Float_u.O in
-  let max_error = #3.046875 * dbl_epsilon () in
+  let max_error = #3.046875 * Float_u.epsilon_float () in
   let dp = V.dot a b in
   if Float_u.abs dp > max_error
   then if dp > #0.0 then 1 else -1

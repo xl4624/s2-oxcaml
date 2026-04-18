@@ -137,15 +137,3 @@ let[@inline] [@zero_alloc] max_angle_error t =
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare a b
 let[@inline] [@zero_alloc] equal a b = Float_u.O.(a = b)
-
-module Option = struct
-  include Option
-
-  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
-    : Sexp.t
-    =
-    if Float_u.is_nan t
-    then Sexp.Atom "None"
-    else (sexp_of_t [@alloc a]) t [@exclave_if_stack a]
-  ;;
-end

@@ -15,17 +15,6 @@ val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
 val to_string : t -> string [@@zero_alloc ignore]
 
-(** {1 Optional LatLng}
-
-    An optional latlng representation that avoids allocating an [option] wrapper. Uses a
-    NaN sentinel to represent absence. *)
-module Option : sig
-  include module type of Option
-
-  val%template sexp_of_t : t -> Sexp.t @ m
-  [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
-end
-
 (** {1 Constructors} *)
 
 (** Construct from latitude and longitude angles. The values are allowed to be outside the

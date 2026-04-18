@@ -11,7 +11,6 @@ open Core
     counting the number of edge crossings). This is NOT (0, 0, 0); it is a carefully
     chosen unit-length point that is unlikely to be collinear with commonly used edges. *)
 val origin : unit -> S2_point.t
-[@@zero_alloc ignore]
 
 (** [is_unit_length p] returns true if [p] is approximately unit length, tolerating
     [5 * DBL_EPSILON] error on [|p|^2 - 1]. *)

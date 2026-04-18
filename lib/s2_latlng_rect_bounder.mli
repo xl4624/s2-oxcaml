@@ -35,14 +35,12 @@ val add_latlng : t -> S2_latlng.t -> t
 (** [get_bound t] returns the bounding rectangle of the vertices accumulated so far. The
     result satisfies the guarantee described at the top of this file. *)
 val get_bound : t -> S2_latlng_rect.t
-[@@zero_alloc ignore]
 
 (** [expand_for_subregions bound] expands [bound] so that it is guaranteed to contain the
     bounds of any subregion whose bounds are computed using this module. That is, if [L]
     is a loop that does not contain either pole, and [S] is a loop with [L.contains s],
     then [expand_for_subregions (rect_bound L)] contains [rect_bound S]. *)
 val expand_for_subregions : S2_latlng_rect.t -> S2_latlng_rect.t
-[@@zero_alloc ignore]
 
 (** [max_error_for_tests ()] returns the maximum latitude/longitude error in {!get_bound}
     provided that the result does not include either pole. It is intended for tests (e.g.

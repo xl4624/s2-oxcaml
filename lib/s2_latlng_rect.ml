@@ -96,7 +96,7 @@ let[@inline] [@zero_alloc] is_valid t =
   && Bool.equal (R1_interval.is_empty t.#lat) (S1_interval.is_empty t.#lng)
 ;;
 
-let[@zero_alloc ignore] area t =
+let[@zero_alloc] area t =
   if is_empty t
   then #0.0
   else
@@ -106,7 +106,7 @@ let[@zero_alloc ignore] area t =
         (Float_u.sin (R1_interval.hi t.#lat) - Float_u.sin (R1_interval.lo t.#lat))
 ;;
 
-let[@zero_alloc ignore] centroid t =
+let[@zero_alloc] centroid t =
   if is_empty t
   then R3_vector.zero
   else
@@ -196,7 +196,7 @@ let of_center_size ~center ~size =
   expanded (of_point center) half
 ;;
 
-let[@zero_alloc ignore] cap_bound t =
+let[@inline] [@zero_alloc] cap_bound t =
   if is_empty t
   then S2_cap.empty
   else
@@ -229,7 +229,7 @@ let[@zero_alloc ignore] cap_bound t =
 let[@inline] [@zero_alloc] rect_bound t = t
 
 (* Bounding rectangle of a cap. *)
-let[@zero_alloc ignore] from_cap c =
+let[@inline] [@zero_alloc] from_cap c =
   let open Float_u.O in
   if S2_cap.is_empty c
   then empty
@@ -270,7 +270,7 @@ let pole_min_lat =
 ;;
 
 (* Bounding rectangle of an S2 cell. *)
-let[@zero_alloc ignore] from_cell cell =
+let[@zero_alloc] from_cell cell =
   let level = S2_cell.level cell in
   let face = S2_cell.face cell in
   let uv = S2_cell.bound_uv cell in
@@ -301,25 +301,19 @@ let[@zero_alloc ignore] from_cell cell =
       then 1
       else 0
     in
-    let pick_u idx = if Stdlib.( = ) idx 0 then u0 else u1 in
-    let pick_v idx = if Stdlib.( = ) idx 0 then v0 else v1 in
-    let lat_at i j =
-      S1_angle.radians
-        (S2_latlng.latitude (S2_coords.face_uv_to_xyz face (pick_u i) (pick_v j)))
-    in
-    let lng_at i j =
-      S1_angle.radians
-        (S2_latlng.longitude (S2_coords.face_uv_to_xyz face (pick_u i) (pick_v j)))
-    in
+    let u_i = if Int.equal i 0 then u0 else u1 in
+    let u_ni = if Int.equal i 0 then u1 else u0 in
+    let v_j = if Int.equal j 0 then v0 else v1 in
+    let v_nj = if Int.equal j 0 then v1 else v0 in
     let lat =
       R1_interval.from_point_pair
-        (lat_at i j)
-        (lat_at (Stdlib.( - ) 1 i) (Stdlib.( - ) 1 j))
+        (S1_angle.radians (S2_latlng.latitude (S2_coords.face_uv_to_xyz face u_i v_j)))
+        (S1_angle.radians (S2_latlng.latitude (S2_coords.face_uv_to_xyz face u_ni v_nj)))
     in
     let lng =
       S1_interval.from_point_pair
-        (lng_at i (Stdlib.( - ) 1 j))
-        (lng_at (Stdlib.( - ) 1 i) j)
+        (S1_angle.radians (S2_latlng.longitude (S2_coords.face_uv_to_xyz face u_i v_nj)))
+        (S1_angle.radians (S2_latlng.longitude (S2_coords.face_uv_to_xyz face u_ni v_j)))
     in
     polar_closure (expanded #{ lat; lng } two_eps_ll)
   else
@@ -356,17 +350,17 @@ let[@zero_alloc ignore] from_cell cell =
     expanded bound one_eps_ll
 ;;
 
-let[@zero_alloc ignore] contains_cell t cell = contains t (from_cell cell)
+let[@zero_alloc] contains_cell t cell = contains t (from_cell cell)
 
 (* Conservative intersection check: does this rectangle intersect the cell's bounding
    lat-lng rectangle? This under-approximates true intersection but is O(1). *)
-let[@zero_alloc ignore] intersects_cell t cell = intersects t (from_cell cell)
+let[@zero_alloc] intersects_cell t cell = intersects t (from_cell cell)
 let[@zero_alloc ignore] cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
 
 (* Distance helpers -- these mirror s2edge_distances functions. *)
 
 (* Minimum distance from point p to great-circle segment (a, b). *)
-let[@zero_alloc ignore] point_to_segment_distance p a b =
+let[@zero_alloc] point_to_segment_distance p a b =
   let open Float_u.O in
   (* Cross product n = a x b (normal to the great circle). *)
   let n = R3_vector.cross a b in
@@ -396,7 +390,7 @@ let[@zero_alloc ignore] point_to_segment_distance p a b =
       S1_angle.of_radians (Float_util.min_u da db)))
 ;;
 
-let[@zero_alloc ignore] distance_to_latlng t ll =
+let[@zero_alloc] distance_to_latlng t ll =
   let open Float_u.O in
   let lng_rad = S1_angle.radians (S2_latlng.lng ll) in
   if S1_interval.contains t.#lng lng_rad
@@ -431,7 +425,7 @@ let[@zero_alloc ignore] distance_to_latlng t ll =
     point_to_segment_distance p_pt lo_pt hi_pt)
 ;;
 
-let[@zero_alloc ignore] distance t other =
+let[@zero_alloc] distance t other =
   let open Float_u.O in
   if S1_interval.intersects t.#lng other.#lng
   then
@@ -486,7 +480,7 @@ let[@zero_alloc ignore] distance t other =
 (* Max distance from a point b to the segment spanning latitude range a_lat on
    longitude 0, if the max occurs in the interior of a_lat. Otherwise returns
    a negative value. *)
-let[@zero_alloc ignore] interior_max_distance a_lat b =
+let[@zero_alloc] interior_max_distance a_lat b =
   let open Float_u.O in
   if R1_interval.is_empty a_lat || R3_vector.x b >= #0.0
   then S1_angle.of_radians (-#1.0)
@@ -506,7 +500,7 @@ let[@zero_alloc ignore] interior_max_distance a_lat b =
 
 (* Intersection of longitude 0 with the bisector of an edge on longitude lng
    spanning latitude range lat. *)
-let[@zero_alloc ignore] bisector_intersection lat_interval lng_val =
+let[@zero_alloc] bisector_intersection lat_interval lng_val =
   let open Float_u.O in
   let lng_abs = Float_u.abs lng_val in
   let lat_center = R1_interval.center lat_interval in
@@ -522,7 +516,7 @@ let[@zero_alloc ignore] bisector_intersection lat_interval lng_val =
   S2_point.robust_cross_prod ortho_lng (S2_latlng.to_point ortho_bisector)
 ;;
 
-let[@zero_alloc ignore] directed_hausdorff_distance_helper lng_diff a b =
+let[@zero_alloc] directed_hausdorff_distance_helper lng_diff a b =
   let open Float_u.O in
   if lng_diff = #0.0
   then S1_angle.of_radians (R1_interval.directed_hausdorff_distance a b)
@@ -583,7 +577,7 @@ let[@zero_alloc ignore] directed_hausdorff_distance_helper lng_diff a b =
       max_distance))
 ;;
 
-let[@zero_alloc ignore] directed_hausdorff_distance t other =
+let[@zero_alloc] directed_hausdorff_distance t other =
   if is_empty t
   then S1_angle.of_radians #0.0
   else if is_empty other
@@ -593,7 +587,7 @@ let[@zero_alloc ignore] directed_hausdorff_distance t other =
     directed_hausdorff_distance_helper lng_diff t.#lat other.#lat)
 ;;
 
-let[@zero_alloc ignore] hausdorff_distance t other =
+let[@zero_alloc] hausdorff_distance t other =
   let d1 = directed_hausdorff_distance t other in
   let d2 = directed_hausdorff_distance other t in
   if Float_u.O.(S1_angle.radians d1 >= S1_angle.radians d2) then d1 else d2

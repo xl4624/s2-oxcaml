@@ -187,7 +187,7 @@ val to_point : t -> R3_vector.t
 val to_point_raw : t -> R3_vector.t
 
 val to_center_uv : t -> R2_point.t
-val to_face_ij_orientation : t -> int * int * int * int [@@zero_alloc ignore]
+val to_face_ij_orientation : t -> #(int * int * int * int)
 
 (** [to_token t] returns a hex string representing the cell ID. *)
 val to_token : t -> string

@@ -17,16 +17,16 @@ type t =
    }
 [@@deriving sexp_of]
 
-let id t = t.#id
-let face t = t.#face
-let level t = t.#level
-let orientation t = t.#orientation
-let is_leaf t = t.#level = S2_cell_id.max_level
-let bound_uv t = t.#uv
-let size_ij t = S2_cell_id.size_ij t.#level
-let size_st t = S2_cell_id.size_st t.#level
+let[@inline] [@zero_alloc] id t = t.#id
+let[@inline] [@zero_alloc] face t = t.#face
+let[@inline] [@zero_alloc] level t = t.#level
+let[@inline] [@zero_alloc] orientation t = t.#orientation
+let[@inline] [@zero_alloc] is_leaf t = t.#level = S2_cell_id.max_level
+let[@inline] [@zero_alloc] bound_uv t = t.#uv
+let[@inline] [@zero_alloc] size_ij t = S2_cell_id.size_ij t.#level
+let[@inline] [@zero_alloc] size_st t = S2_cell_id.size_st t.#level
 
-let ij_level_to_bound_uv ~i ~j level =
+let[@inline] [@zero_alloc] ij_level_to_bound_uv ~i ~j level =
   let sz = 1 lsl (S2_cell_id.max_level - level) in
   let extract_interval coord =
     let lo_ij = coord land -sz in
@@ -41,7 +41,7 @@ let ij_level_to_bound_uv ~i ~j level =
 ;;
 
 let of_cell_id id =
-  let face, i, j, orientation = S2_cell_id.to_face_ij_orientation id in
+  let #(face, i, j, orientation) = S2_cell_id.to_face_ij_orientation id in
   let level = S2_cell_id.level id in
   let uv = ij_level_to_bound_uv ~i ~j level in
   #{ id; face; level; orientation; uv }
@@ -62,7 +62,7 @@ let vertex_raw t k =
 
 let vertex t k = R3_vector.normalize (vertex_raw t k)
 
-let edge_raw t k =
+let[@inline] [@zero_alloc] edge_raw t k =
   match k land 3 with
   | 0 -> S2_coords.get_v_norm t.#face (R1_interval.lo (R2_rect.y t.#uv))
   | 1 -> S2_coords.get_u_norm t.#face (R1_interval.hi (R2_rect.x t.#uv))
@@ -71,22 +71,22 @@ let edge_raw t k =
   | _ -> assert false
 ;;
 
-let edge t k = R3_vector.normalize (edge_raw t k)
-let center_raw t = S2_cell_id.to_point_raw t.#id
-let center t = S2_cell_id.to_point t.#id
+let[@inline] [@zero_alloc] edge t k = R3_vector.normalize (edge_raw t k)
+let[@inline] [@zero_alloc] center_raw t = S2_cell_id.to_point_raw t.#id
+let[@inline] [@zero_alloc] center t = S2_cell_id.to_point t.#id
 
-let uv_endpoint interval i =
+let[@inline] [@zero_alloc] uv_endpoint interval i =
   if i = 0 then R1_interval.lo interval else R1_interval.hi interval
 ;;
 
-let average_area level =
+let[@inline] [@zero_alloc] average_area level =
   (* AvgArea = 4*pi / (6 * 4^level): divide the sphere (area 4*pi) evenly over
      the 6 * 4^level cells at the given level. *)
   let open Float_u.O in
-  Float_u.of_float Float.pi * #4.0 / #6.0 / (#4.0 ** Float_u.of_int level)
+  Float_u.pi () * #4.0 / #6.0 / (#4.0 ** of_int level)
 ;;
 
-let spherical_area a b c =
+let[@inline] [@zero_alloc] spherical_area a b c =
   let open Float_u.O in
   let area =
     #2.0
@@ -119,9 +119,7 @@ let approx_area t =
     in
     flat_area
     * #2.0
-    / (#1.0
-       + Float_u.sqrt
-           (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.of_float Float.pi)))
+    / (#1.0 + Float_u.sqrt (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.pi ())))
 ;;
 
 let contains_point t p =
@@ -133,10 +131,10 @@ let contains_point t p =
     R2_rect.contains_point (R2_rect.expanded_scalar t.#uv margin) uv
 ;;
 
-let contains_cell t other = S2_cell_id.contains t.#id other.#id
-let intersects_cell t other = S2_cell_id.intersects t.#id other.#id
+let[@inline] [@zero_alloc] contains_cell t other = S2_cell_id.contains t.#id other.#id
+let[@inline] [@zero_alloc] intersects_cell t other = S2_cell_id.intersects t.#id other.#id
 
-let child t ~pos =
+let[@inline] [@zero_alloc] child t ~pos =
   let uv_mid = S2_cell_id.to_center_uv t.#id in
   let uv_mid_x = R2_point.x uv_mid in
   let uv_mid_y = R2_point.y uv_mid in
@@ -176,7 +174,7 @@ let cap_bound t =
 
 let cell_union_bound t = [ Int64_u.to_int64 (S2_cell_id.id t.#id) ]
 
-let vertex_chord_dist t p i j =
+let[@inline] [@zero_alloc] vertex_chord_dist t p i j =
   (* Both callers pass UVW-space points, so the vertex must also be in UVW space. *)
   let u =
     if i = 0 then R1_interval.lo (R2_rect.x t.#uv) else R1_interval.hi (R2_rect.x t.#uv)
@@ -188,7 +186,7 @@ let vertex_chord_dist t p i j =
   S2_point.chord_angle_between p vert
 ;;
 
-let u_edge_is_closest t p v_end =
+let[@inline] [@zero_alloc] u_edge_is_closest t p v_end =
   let u0 = R1_interval.lo (R2_rect.x t.#uv) in
   let u1 = R1_interval.hi (R2_rect.x t.#uv) in
   let v =
@@ -206,7 +204,7 @@ let u_edge_is_closest t p v_end =
   R3_vector.dot p dir0 > #0.0 && R3_vector.dot p dir1 < #0.0
 ;;
 
-let v_edge_is_closest t p u_end =
+let[@inline] [@zero_alloc] v_edge_is_closest t p u_end =
   let v0 = R1_interval.lo (R2_rect.y t.#uv) in
   let v1 = R1_interval.hi (R2_rect.y t.#uv) in
   let u =
@@ -224,7 +222,7 @@ let v_edge_is_closest t p u_end =
   R3_vector.dot p dir0 > #0.0 && R3_vector.dot p dir1 < #0.0
 ;;
 
-let edge_distance dir_ij uv =
+let[@inline] [@zero_alloc] edge_distance dir_ij uv =
   let open Float_u.O in
   let pq2 = dir_ij * dir_ij / (#1.0 + (uv * uv)) in
   let qr = #1.0 - Float_u.sqrt (#1.0 - pq2) in
@@ -311,14 +309,14 @@ let max_distance_to_point t target =
       (distance_to_point t (R3_vector.neg target))
 ;;
 
-let uv_coord_of_edge t k =
+let[@inline] [@zero_alloc] uv_coord_of_edge t k =
   let k = k land 3 in
   if k % 2 = 0
   then R2_point.y (R2_rect.get_vertex t.#uv k)
   else R2_point.x (R2_rect.get_vertex t.#uv k)
 ;;
 
-let ij_coord_of_edge t k =
+let[@inline] [@zero_alloc] ij_coord_of_edge t k =
   Float_util.iround_half_to_even_u
     Float_u.O.(
       Float_u.of_int S2_coords.limit_ij * S2_coords.uv_to_st (uv_coord_of_edge t k))

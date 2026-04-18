@@ -6,16 +6,6 @@ type t =
    }
 [@@deriving sexp_of, unboxed_option { sentinel = true }]
 
-module Option = struct
-  include Option
-
-  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
-    : Sexp.t
-    =
-    if is_none t then sexp_of_string "None" else sexp_of_t t [@exclave_if_stack a]
-  ;;
-end
-
 let empty =
   #{ center = S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#0.0
    ; radius = S1_chord_angle.negative
@@ -71,7 +61,7 @@ let is_valid t =
   && Float_u.O.(S1_chord_angle.length2 t.#radius <= #4.0)
 ;;
 
-let[@zero_alloc ignore] centroid t =
+let[@zero_alloc] centroid t =
   let open Float_u.O in
   if is_empty t
   then R3_vector.zero

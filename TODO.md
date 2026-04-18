@@ -171,11 +171,11 @@ All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, C
   - Go: `s2/shape.go` | C++: `s2shape.h`
   - Deps: `s2_point`
 
-- [ ] **s2_lax_polyline** - `S2_lax_polyline`
+- [x] **s2_lax_polyline** - `S2_lax_polyline`
   - Go: `s2/lax_polyline.go` | C++: `s2lax_polyline_shape.h`, `s2lax_polyline_shape.cc`
   - Deps: `s2_shape`, `s2_point`
 
-- [ ] **s2_lax_loop** - `S2_lax_loop`
+- [x] **s2_lax_loop** - `S2_lax_loop`
   - Go: `s2/lax_loop.go` | C++: `s2lax_loop_shape.h`, `s2lax_loop_shape.cc`
   - Deps: `s2_shape`, `s2_point`
 

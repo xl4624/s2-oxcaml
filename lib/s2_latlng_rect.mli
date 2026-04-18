@@ -70,11 +70,10 @@ val size : t -> S2_latlng.t
 val vertex : t -> int -> S2_latlng.t
 
 (** Surface area on the unit sphere. *)
-val area : t -> float# [@@zero_alloc ignore]
+val area : t -> float#
 
 (** Area-weighted centroid (not unit length). *)
 val centroid : t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** {1 Predicates} *)
 
@@ -137,27 +136,22 @@ val polar_closure : t -> t
 
 (** A bounding cap (the smaller of center-cap and pole-cap). *)
 val cap_bound : t -> S2_cap.t
-[@@zero_alloc ignore]
 
 (** [from_cap c] returns a bounding latitude-longitude rectangle for [c]. *)
 val from_cap : S2_cap.t -> t
-[@@zero_alloc ignore]
 
 (** [from_cell c] returns a bounding latitude-longitude rectangle for [c]. The bounds are
     tight. *)
 val from_cell : S2_cell.t -> t
-[@@zero_alloc ignore]
 
 (** Returns itself. *)
 val rect_bound : t -> t
 
 (** [contains_cell t c] reports whether the rectangle contains the given cell. *)
 val contains_cell : t -> S2_cell.t -> bool
-[@@zero_alloc ignore]
 
 (** [intersects_cell t c] reports whether the rectangle intersects the given cell. *)
 val intersects_cell : t -> S2_cell.t -> bool
-[@@zero_alloc ignore]
 
 (** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Returned
     as boxed [Int64.t] for the same reason as {!S2_cap.cell_union_bound}. *)
@@ -169,19 +163,15 @@ val cell_union_bound : t -> Int64.t list
 (** Minimum distance on the sphere from the rectangle to the given point. The rectangle
     must be non-empty and [ll] must be valid. *)
 val distance_to_latlng : t -> S2_latlng.t -> S1_angle.t
-[@@zero_alloc ignore]
 
 (** Minimum distance on the sphere between two non-empty rectangles. *)
 val distance : t -> t -> S1_angle.t
-[@@zero_alloc ignore]
 
 (** Directed Hausdorff distance: [max_{p in t} min_{q in other} d(p,q)]. *)
 val directed_hausdorff_distance : t -> t -> S1_angle.t
-[@@zero_alloc ignore]
 
 (** Undirected Hausdorff distance: [max(h(t,other), h(other,t))]. *)
 val hausdorff_distance : t -> t -> S1_angle.t
-[@@zero_alloc ignore]
 
 (** {1 Comparison} *)
 

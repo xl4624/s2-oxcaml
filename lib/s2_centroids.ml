@@ -2,7 +2,7 @@ open Core
 
 let[@inline] [@zero_alloc] planar_centroid a b c =
   let sum = R3_vector.add (R3_vector.add a b) c in
-  R3_vector.mul sum (Float_u.of_float (1.0 /. 3.0))
+  R3_vector.mul sum Float_u.O.(#1.0 / #3.0)
 ;;
 
 let[@zero_alloc] true_centroid a b c =

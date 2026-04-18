@@ -152,7 +152,7 @@ let[@inline] [@zero_alloc] from_face_ij face i j =
 
 (* Clamps (i, j) to one cell beyond the face boundary, then reprojects via XYZ
    to find the adjacent face and corresponding (i', j'). *)
-let[@zero_alloc ignore] from_face_ij_wrap face i j =
+let[@zero_alloc] from_face_ij_wrap face i j =
   let limit_ij = max_size in
   let i = Int.max (-1) (Int.min limit_ij i) in
   let j = Int.max (-1) (Int.min limit_ij j) in
@@ -179,7 +179,7 @@ let[@zero_alloc ignore] from_face_ij_wrap face i j =
   from_face_ij new_face new_i new_j
 ;;
 
-let[@inline] [@zero_alloc ignore] from_face_ij_same face i j ~same_face =
+let[@inline] [@zero_alloc] from_face_ij_same face i j ~same_face =
   if same_face then from_face_ij face i j else from_face_ij_wrap face i j
 ;;
 
@@ -407,8 +407,7 @@ let[@inline] [@zero_alloc] maximum_tile t limit =
   else grow_maximum_tile t ~start ~limit
 ;;
 
-(* TODO: zero_alloc *)
-let[@inline always] [@zero_alloc ignore] to_face_ij_orientation t =
+let[@inline] [@zero_alloc] to_face_ij_orientation t =
   let mutable i = 0 in
   let mutable j = 0 in
   let face_val = face t in
@@ -440,14 +439,14 @@ let[@inline always] [@zero_alloc ignore] to_face_ij_orientation t =
     then bits lxor Hilbert.swap_mask
     else bits
   in
-  face_val, i, j, orientation
+  #(face_val, i, j, orientation)
 ;;
 
 (* Returns the cells at [level] that share the closest cell vertex to [t].
    Result has 3 or 4 entries. The result is boxed to [Int64.t] because [t] has
    layout [bits64]. *)
 let[@zero_alloc ignore] vertex_neighbors t level =
-  let face, i, j, _ = to_face_ij_orientation t in
+  let #(face, i, j, _) = to_face_ij_orientation t in
   let halfsize = size_ij (level + 1) in
   let size = halfsize lsl 1 in
   let ioffset, isame =
@@ -469,8 +468,8 @@ let[@zero_alloc ignore] vertex_neighbors t level =
   else [ n0; n1; n2 ]
 ;;
 
-let[@inline always] [@zero_alloc ignore] get_center_si_ti t =
-  let face, i, j, _ = to_face_ij_orientation t in
+let[@inline] [@zero_alloc] get_center_si_ti t =
+  let #(face, i, j, _) = to_face_ij_orientation t in
   let delta =
     if is_leaf t
     then 1
@@ -479,18 +478,18 @@ let[@inline always] [@zero_alloc ignore] get_center_si_ti t =
       let xor_val = i lxor i_shifted in
       if xor_val land 1 <> 0 then 2 else 0)
   in
-  face, (i lsl 1) + delta, (j lsl 1) + delta
+  #(face, (i lsl 1) + delta, (j lsl 1) + delta)
 ;;
 
 let[@inline] [@zero_alloc] to_center_uv t =
-  let _face, si, ti = get_center_si_ti t in
+  let #(_face, si, ti) = get_center_si_ti t in
   let s = S2_coords.si_ti_to_st si in
   let t_val = S2_coords.si_ti_to_st ti in
   R2_point.create ~x:(S2_coords.st_to_uv s) ~y:(S2_coords.st_to_uv t_val)
 ;;
 
 let[@inline] [@zero_alloc] to_point_raw t : R3_vector.t =
-  let face, si, ti = get_center_si_ti t in
+  let #(face, si, ti) = get_center_si_ti t in
   S2_coords.face_si_ti_to_xyz face si ti
 ;;
 

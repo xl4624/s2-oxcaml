@@ -80,14 +80,3 @@ val normalize : t -> t
 
 (** [equal a b] returns true iff both coordinates are exactly equal. *)
 val equal : t -> t -> bool
-
-(** {1 Optional Point}
-
-    An optional point representation that avoids allocating an [option] wrapper. Uses a
-    NaN sentinel to represent absence. *)
-module Option : sig
-  include module type of Option
-
-  val%template sexp_of_t : t -> Sexp.t @ m
-  [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
-end

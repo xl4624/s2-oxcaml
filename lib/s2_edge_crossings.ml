@@ -56,7 +56,7 @@ let[@inline] [@zero_alloc] stable_sign (a : S2_point.t) (b : S2_point.t) (c : S2
     det <- Float_u.neg (R3_vector.dot (R3_vector.cross bc ab) (S2_point.to_r3 b));
     max_error <- det_error_multiplier * Float_u.sqrt (bc2 * ab2));
   let min_no_underflow_error =
-    det_error_multiplier * Float_u.sqrt (Float_u.of_float Float.min_value)
+    det_error_multiplier * Float_u.sqrt (Float_u.min_positive_normal_value ())
   in
   if max_error < min_no_underflow_error
   then 0
@@ -517,7 +517,7 @@ let get_intersection_stable_sorted
       + (#2.0 * t_err * dist_sum)
     in
     let x_len2 = R3_vector.norm2 x in
-    if x_len2 < Float_u.of_float Float.min_value
+    if x_len2 < Float_u.min_positive_normal_value ()
     then R3_vector.Option.none
     else (
       let x_len = Float_u.sqrt x_len2 in

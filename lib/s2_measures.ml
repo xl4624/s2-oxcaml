@@ -67,9 +67,6 @@ let area a b c =
 
 let signed_area a b c =
   let open Float_u.O in
-  let sign =
-    Float_u.of_float
-      (Int.to_float (S2_predicates.Direction.to_int (S2_predicates.robust_sign a b c)))
-  in
+  let sign = of_int (S2_predicates.Direction.to_int (S2_predicates.robust_sign a b c)) in
   sign * area a b c
 ;;

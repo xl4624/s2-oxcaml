@@ -100,7 +100,7 @@ let[@inline] [@zero_alloc] add_latlng t b_latlng =
   add_internal t (S2_latlng.to_point b_latlng) b_latlng
 ;;
 
-let[@zero_alloc ignore] get_bound t =
+let[@zero_alloc] get_bound t =
   (* Expand the bound by a small amount to account for the latitude error in
      converting S2Points to S2LatLngs when checking containment. *)
   let open Float_u.O in
@@ -108,7 +108,7 @@ let[@zero_alloc ignore] get_bound t =
   S2_latlng_rect.polar_closure (S2_latlng_rect.expanded t.#bound expansion)
 ;;
 
-let[@zero_alloc ignore] expand_for_subregions bound =
+let[@zero_alloc] expand_for_subregions bound =
   if S2_latlng_rect.is_empty bound
   then bound
   else

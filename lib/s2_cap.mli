@@ -26,17 +26,6 @@ type t : (float64 & float64 & float64) & float64
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
-(** {1 Optional Cap}
-
-    An optional cap representation that avoids allocating an [option] wrapper. Uses a NaN
-    sentinel to represent absence. *)
-module Option : sig
-  include module type of Option
-
-  val%template sexp_of_t : t -> Sexp.t @ m
-  [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]
-end
-
 (** {1 Constructors} *)
 
 val empty : t
@@ -69,11 +58,10 @@ val height : t -> float#
 (** Angular radius (may differ slightly from the angle passed to {!of_center_angle}). *)
 val radius_angle : t -> S1_angle.t
 
-val area : t -> float# [@@zero_alloc ignore]
+val area : t -> float#
 
 (** Area-weighted centroid; for an empty cap this is [(0,0,0)]. *)
 val centroid : t -> S2_point.t
-[@@zero_alloc ignore]
 
 (** {1 Predicates} *)
 

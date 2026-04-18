@@ -1,6 +1,6 @@
 open Core
 
-let[@inline] [@zero_alloc ignore] origin () = S2_point.origin
+let[@inline] [@zero_alloc] origin () = S2_point.origin
 let[@inline] [@zero_alloc] is_unit_length p = S2_point.is_unit_length p
 
 let[@inline] [@zero_alloc] approx_equals

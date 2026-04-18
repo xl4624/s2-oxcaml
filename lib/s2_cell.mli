@@ -1,5 +1,7 @@
 open Core
 
+[@@@zero_alloc all]
+
 (** S2Cell represents a cell on the unit sphere.
 
     An S2Cell is an S2Region object that represents a cell. Unlike S2CellIds, it supports
@@ -105,6 +107,7 @@ val cap_bound : t -> S2_cap.t
 (** [cell_union_bound t] returns a covering of [t]. The result is a single-element list
     containing [t]'s id, returned as boxed [Int64.t]. *)
 val cell_union_bound : t -> Int64.t list
+[@@zero_alloc ignore]
 
 (** {1 Distance} *)
 

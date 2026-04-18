@@ -76,7 +76,7 @@ let create id ~padding =
      ; level = 0
      })
   else (
-    let _face, i, j, orientation = S2_cell_id.to_face_ij_orientation id in
+    let #(_face, i, j, orientation) = S2_cell_id.to_face_ij_orientation id in
     let level = S2_cell_id.level id in
     let ij_size = S2_cell_id.size_ij level in
     (* Snapping [i] and [j] to the cell's lower corner gives the (u, v)-bound before

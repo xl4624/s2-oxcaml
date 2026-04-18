@@ -22,16 +22,6 @@ let[@inline] [@zero_alloc] is_valid t =
   Bool.equal (R1_interval.is_empty t.#x) (R1_interval.is_empty t.#y)
 ;;
 
-module Option = struct
-  include Option
-
-  let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t
-    : Sexp.t
-    =
-    if is_none t then sexp_of_string "None" else sexp_of_t t [@exclave_if_stack a]
-  ;;
-end
-
 let[@inline] [@zero_alloc] create ~(lo : R2_point.t) ~(hi : R2_point.t) : Option.t =
   let x = R1_interval.create ~lo:(R2_point.x lo) ~hi:(R2_point.x hi) in
   let y = R1_interval.create ~lo:(R2_point.y lo) ~hi:(R2_point.y hi) in

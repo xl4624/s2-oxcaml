@@ -105,14 +105,14 @@ let%expect_test "option_none_sexp" =
   Stdlib.print_endline
     (Sexp.to_string
        ([%sexp_of: S2.S1_chord_angle.Option.t] S2.S1_chord_angle.Option.none));
-  [%expect {| None |}]
+  [%expect {| () |}]
 ;;
 
 let%expect_test "option_some_sexp" =
   let ca = S2.S1_chord_angle.of_degrees #45.0 in
   let opt = S2.S1_chord_angle.Option.some ca in
   Stdlib.print_endline (Sexp.to_string ([%sexp_of: S2.S1_chord_angle.Option.t] opt));
-  [%expect {| ((length2 0.585786437626905)) |}]
+  [%expect {| (0.585786437626905) |}]
 ;;
 
 let%expect_test "option_value_exn_none" =
