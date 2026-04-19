@@ -198,17 +198,6 @@ let adjust_cell_levels opts (cells : S2_cell_id.t array) =
     (Array.sub [@kind bits64]) out ~pos:0 ~len:out_len)
 ;;
 
-(* Convert boxed Int64.t list from cell_union_bound to S2_cell_id.t array *)
-let cids_of_int64_list (l : Int64.t list) : S2_cell_id.t array =
-  let arr = List.to_array l in
-  let n = Array.length arr in
-  let result = Array.create ~len:n S2_cell_id.none in
-  for i = 0 to n - 1 do
-    result.(i) <- S2_cell_id.of_int64 (Int64_u.of_int64 arr.(i))
-  done;
-  result
-;;
-
 (* {1 Non-recursive helpers for canonicalize/reduce} *)
 
 let replace_cells_with_ancestor (covering : S2_cell_id.t array) (id : S2_cell_id.t) =
@@ -376,15 +365,13 @@ let rec get_initial_candidates c =
   done
 
 and fast_covering_internal_coverer opts c =
-  let cell_ids = cids_of_int64_list (S2_region.cell_union_bound c.region) in
-  let cu = S2_cell_union.from_verbatim cell_ids in
-  let result = canonicalize_covering_internal opts (S2_cell_union.cell_ids_raw cu) in
+  let cell_ids = S2_region.cell_union_bound c.region in
+  let result = canonicalize_covering_internal opts cell_ids in
   S2_cell_union.from_verbatim result
 
 and fast_covering_internal opts (region : S2_region.t) =
-  let cell_ids = cids_of_int64_list (S2_region.cell_union_bound region) in
-  let cu = S2_cell_union.from_verbatim cell_ids in
-  let result = canonicalize_covering_internal opts (S2_cell_union.cell_ids_raw cu) in
+  let cell_ids = S2_region.cell_union_bound region in
+  let result = canonicalize_covering_internal opts cell_ids in
   S2_cell_union.from_verbatim result
 
 and canonicalize_covering_internal opts (covering : S2_cell_id.t array) =

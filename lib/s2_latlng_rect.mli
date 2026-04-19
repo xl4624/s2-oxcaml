@@ -153,9 +153,8 @@ val contains_cell : t -> S2_cell.t -> bool
 (** [intersects_cell t c] reports whether the rectangle intersects the given cell. *)
 val intersects_cell : t -> S2_cell.t -> bool
 
-(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Returned
-    as boxed [Int64.t] for the same reason as {!S2_cap.cell_union_bound}. *)
-val cell_union_bound : t -> Int64.t list
+(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. *)
+val cell_union_bound : t -> S2_cell_id.t array
 [@@zero_alloc ignore]
 
 (** {1 Distance} *)

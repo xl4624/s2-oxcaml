@@ -99,9 +99,8 @@ val union : t -> t -> t
 
 (** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Generally
     returns at most 4 cells, except for very large caps which may need 6 face cells. The
-    result is not sorted. Returned as boxed [Int64.t] because [S2_cell_id.t] has layout
-    [bits64]. *)
-val cell_union_bound : t -> Int64.t list
+    result is not sorted. *)
+val cell_union_bound : t -> S2_cell_id.t array
 [@@zero_alloc ignore]
 
 (** {1 Comparison} *)

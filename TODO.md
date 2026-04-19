@@ -230,3 +230,49 @@ All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, C
 - [ ] **s2_boolean_operation** - `S2_boolean_operation`
   - Go: (not in Go) | C++: `s2boolean_operation.h`, `s2boolean_operation.cc`
   - Deps: `s2_builder`, `s2_shape_index`
+
+## Performance - region_coverer hot path
+
+The Cap and CellUnion coverer scenarios currently run ~1.25x-1.40x slower than
+the Go port; Cell is already 0.87x. The gap is concentrated in allocations on
+the coverage hot path rather than a systemic codegen issue.
+
+- [~] **Unbox `cell_union_bound` result** *(partial)*
+  - Done: API now returns `S2_cell_id.t array` (unboxed `int64#` array)
+    instead of `Int64.t list` across `S2_cap`, `S2_cell`, `S2_latlng_rect`,
+    `S2_cell_union`, `S2_region` (and the `Custom` `methods` record).
+    `vertex_neighbors` was changed in the same shape. The
+    `cids_of_int64_list` helper and the `from_verbatim` / `cell_ids_raw`
+    round-trip in `fast_covering_internal{,_coverer}` are gone.
+  - Result: cuts the per-call alloc chain from ~14 small allocations to ~5,
+    but the savings (~60 of ~1,950 minor-heap words/iter) are below the
+    bench noise floor. The dominant per-coverage allocations live in the
+    candidate / heap path (next two items).
+  - Still open: full zero-alloc variant via a caller-provided buffer
+    (`val cell_union_bound : t -> ids:S2_cell_id.t array -> int`). Defer
+    until candidate / heap allocations are removed - until then the
+    remaining single fresh array per call is a rounding error.
+
+- [ ] **Replace `Pairing_heap` with flat array-backed binary heap**
+  - `coverer.pq : candidate Pairing_heap.t` allocates a node per `add` and per
+    `pop_exn` (see `lib/s2_region_coverer.ml:88, 167, 431`). Every candidate
+    pushed or popped during a coverage hits the allocator.
+  - Replace with a binary heap over an array of candidate indices into a flat
+    candidate buffer.
+
+- [ ] **Flatten `candidate.children : candidate option array`**
+  - `new_candidate` at `lib/s2_region_coverer.ml:49,120` allocates a
+    4-or-16-slot option array for every candidate, and `expand_children` at
+    `lib/s2_region_coverer.ml:140` allocates a `Some` box for every child push.
+  - Flatten into a single growable candidate buffer with parent -> children
+    index ranges, removing both the per-candidate option array and the `Some`
+    wrappers.
+
+- [ ] **Reuse a single working buffer in canonicalize/reduce**
+  - `canonicalize_covering_internal` at `lib/s2_region_coverer.ml:391` starts
+    with an `Array.copy`, and `replace_cells_with_ancestor` at
+    `lib/s2_region_coverer.ml:214,239-253` allocates a fresh result array on
+    every call. `reduce_covering` at `lib/s2_region_coverer.ml:328,347,354`
+    calls it in a loop, so the allocator is hit O(reductions) times.
+  - Use a single growable buffer and shift in place instead of allocating a new
+    array per replacement.

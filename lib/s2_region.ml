@@ -6,7 +6,7 @@ type methods =
    ; contains_cell : S2_cell.t -> bool
    ; intersects_cell : S2_cell.t -> bool
    ; contains_point : S2_point.t -> bool
-   ; cell_union_bound : unit -> Int64.t list
+   ; cell_union_bound : unit -> S2_cell_id.t array
    }
 
 type t =

@@ -140,10 +140,8 @@ val cap_bound : t -> S2_cap.t
 (** [rect_bound t] returns a bounding latitude-longitude rectangle for the union. *)
 val rect_bound : t -> S2_latlng_rect.t
 
-(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. Returned
-    as boxed [Int64.t] because [S2_cell_id.t] has layout [bits64] and cannot live in
-    lists. *)
-val cell_union_bound : t -> Int64.t list
+(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. *)
+val cell_union_bound : t -> S2_cell_id.t array
 
 (** {1 Comparison} *)
 

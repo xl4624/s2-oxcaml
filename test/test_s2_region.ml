@@ -99,15 +99,13 @@ let check_region label region region_j =
   (check int)
     (label ^ " cell_union_bound length")
     (List.length expected_cu_bound)
-    (List.length actual_cu_bound);
-  List.iteri
-    (List.zip_exn expected_cu_bound actual_cu_bound)
-    ~f:(fun i (expected_j, actual_id) ->
-      let expected_id = cell_id_of_token_json expected_j in
-      check_bool
-        (sprintf "%s cell_union_bound[%d]" label i)
-        ~expected:true
-        ~actual:(S2.S2_cell_id.equal expected_id (cid_of_int64 actual_id)))
+    (Array.length actual_cu_bound);
+  List.iteri expected_cu_bound ~f:(fun i expected_j ->
+    let expected_id = cell_id_of_token_json expected_j in
+    check_bool
+      (sprintf "%s cell_union_bound[%d]" label i)
+      ~expected:true
+      ~actual:(S2.S2_cell_id.equal expected_id actual_cu_bound.(i)))
 ;;
 
 let test_caps () =

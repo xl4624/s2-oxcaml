@@ -443,8 +443,7 @@ let[@inline] [@zero_alloc] to_face_ij_orientation t =
 ;;
 
 (* Returns the cells at [level] that share the closest cell vertex to [t].
-   Result has 3 or 4 entries. The result is boxed to [Int64.t] because [t] has
-   layout [bits64]. *)
+   Result has 3 or 4 entries. *)
 let[@zero_alloc ignore] vertex_neighbors t level =
   let #(face, i, j, _) = to_face_ij_orientation t in
   let halfsize = size_ij (level + 1) in
@@ -455,17 +454,18 @@ let[@zero_alloc ignore] vertex_neighbors t level =
   let joffset, jsame =
     if j land halfsize <> 0 then size, j + size < max_size else -size, j - size >= 0
   in
-  let box t = Int64_u.to_int64 (id (parent_level t level)) in
-  let n0 = box t in
-  let n1 = box (from_face_ij_same face (i + ioffset) j ~same_face:isame) in
-  let n2 = box (from_face_ij_same face i (j + joffset) ~same_face:jsame) in
+  let n0 = parent_level t level in
+  let n1 = parent_level (from_face_ij_same face (i + ioffset) j ~same_face:isame) level in
+  let n2 = parent_level (from_face_ij_same face i (j + joffset) ~same_face:jsame) level in
   if isame || jsame
   then (
     let n3 =
-      box (from_face_ij_same face (i + ioffset) (j + joffset) ~same_face:(isame && jsame))
+      parent_level
+        (from_face_ij_same face (i + ioffset) (j + joffset) ~same_face:(isame && jsame))
+        level
     in
-    [ n0; n1; n2; n3 ])
-  else [ n0; n1; n2 ]
+    [| n0; n1; n2; n3 |])
+  else [| n0; n1; n2 |]
 ;;
 
 let[@inline] [@zero_alloc] get_center_si_ti t =

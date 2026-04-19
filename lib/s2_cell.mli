@@ -104,9 +104,9 @@ val child : t -> pos:int -> t
 (** [cap_bound] returns a bounding cap for this cell. *)
 val cap_bound : t -> S2_cap.t
 
-(** [cell_union_bound t] returns a covering of [t]. The result is a single-element list
-    containing [t]'s id, returned as boxed [Int64.t]. *)
-val cell_union_bound : t -> Int64.t list
+(** [cell_union_bound t] returns a covering of [t]. The result is a single-element array
+    containing [t]'s id. *)
+val cell_union_bound : t -> S2_cell_id.t array
 [@@zero_alloc ignore]
 
 (** {1 Distance} *)

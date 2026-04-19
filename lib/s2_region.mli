@@ -19,7 +19,7 @@ type methods =
    ; contains_cell : S2_cell.t -> bool
    ; intersects_cell : S2_cell.t -> bool
    ; contains_point : S2_point.t -> bool
-   ; cell_union_bound : unit -> Int64.t list
+   ; cell_union_bound : unit -> S2_cell_id.t array
    }
 
 type t =
@@ -69,6 +69,5 @@ val intersects_cell : t -> S2_cell.t -> bool
 (** [contains_point t p] returns [true] if the unit-length point [p] lies in [t]. *)
 val contains_point : t -> S2_point.t -> bool
 
-(** [cell_union_bound t] returns a small cell-union cover of [t], encoded as a list of raw
-    [S2_cell_id.t] bit patterns. *)
-val cell_union_bound : t -> Int64.t list
+(** [cell_union_bound t] returns a small cell-union cover of [t]. *)
+val cell_union_bound : t -> S2_cell_id.t array
