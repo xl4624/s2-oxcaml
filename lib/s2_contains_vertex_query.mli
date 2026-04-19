@@ -13,11 +13,14 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t
 
 (** [create target] returns a new query whose containment will be determined for the
     vertex [target]. *)
 val create : S2_point.t -> t
+[@@zero_alloc ignore]
 
 (** [target t] returns the vertex whose containment [t] is tracking. *)
 val target : t -> S2_point.t
@@ -26,13 +29,16 @@ val target : t -> S2_point.t
     [v] with the given [direction]: [+1] for outgoing, [-1] for incoming, [0] for a
     degenerate edge. *)
 val add_edge : t -> S2_point.t -> direction:int -> unit
+[@@zero_alloc ignore]
 
 (** [contains_sign t] returns [+1] if the target vertex is contained by the polygon, [-1]
     if it is not, and [0] if the incident edges consisted of matched sibling pairs. *)
 val contains_sign : t -> int
+[@@zero_alloc ignore]
 
 (** [duplicate_edges t] returns [true] if the same directed edge incident to [target] has
     been added more than once since the query was created. An incoming and an outgoing
     edge to the same vertex do not count as duplicates because they cancel each other in
     the direction sum. *)
 val duplicate_edges : t -> bool
+[@@zero_alloc ignore]

@@ -132,6 +132,26 @@ let[@inline] are_merged_siblings (out : S2_cell_id.t array) out_len id =
   out_len >= 3 && are_siblings out.(out_len - 3) out.(out_len - 2) out.(out_len - 1) id
 ;;
 
+(* Append [id] to the [(out, out_len)] accumulator, applying the
+   ancestor-absorbs-descendant and four-siblings-collapse rules. Assumes ids
+   are pushed in sorted order; returns the new length. *)
+let[@inline] push_normalized (out : S2_cell_id.t array) out_len id =
+  if is_contained_or_absorbed out out_len id
+  then out_len
+  else (
+    let mutable out_len = out_len in
+    let mutable id = id in
+    while out_len > 0 && S2_cell_id.contains id out.(out_len - 1) do
+      out_len <- out_len - 1
+    done;
+    while are_merged_siblings out out_len id do
+      id <- S2_cell_id.parent_exn id;
+      out_len <- out_len - 3
+    done;
+    out.(out_len) <- id;
+    out_len + 1)
+;;
+
 let normalize_ids (ids : S2_cell_id.t array) =
   sort_unsigned ids;
   let n = Array.length ids in
@@ -141,18 +161,7 @@ let normalize_ids (ids : S2_cell_id.t array) =
     let out = Array.create ~len:n S2_cell_id.none in
     let mutable out_len = 0 in
     for idx = 0 to n - 1 do
-      let mutable id = ids.(idx) in
-      if not (is_contained_or_absorbed out out_len id)
-      then (
-        while out_len > 0 && S2_cell_id.contains id out.(out_len - 1) do
-          out_len <- out_len - 1
-        done;
-        while are_merged_siblings out out_len id do
-          id <- S2_cell_id.parent_exn id;
-          out_len <- out_len - 3
-        done;
-        out.(out_len) <- id;
-        out_len <- out_len + 1)
+      out_len <- push_normalized out out_len ids.(idx)
     done;
     (Array.sub [@kind bits64]) out ~pos:0 ~len:out_len)
 ;;
@@ -162,7 +171,9 @@ let create ids =
   { cell_ids = normalize_ids ids }
 ;;
 
+let of_raw_owned ids = { cell_ids = normalize_ids ids }
 let from_verbatim ids = { cell_ids = (Array.copy [@kind bits64]) ids }
+let of_verbatim_owned ids = { cell_ids = ids }
 
 let from_begin_end begin_id end_id =
   let result = cid_buf_create () in
@@ -197,11 +208,7 @@ let cell_id t i = t.cell_ids.(i)
 
 (* {1 Validation} *)
 
-(* Shared driver for [is_valid] and [is_normalized]: every cell must be a
-   valid S2CellId, and [pair_ok ids i] is run for every adjacent pair
-   [(ids.(i-1), ids.(i))] so each caller can layer its own ordering /
-   sibling constraints on top. *)
-let validate_cells t ~pair_ok =
+let is_valid t =
   let ids = t.cell_ids in
   let n = Array.length ids in
   if n > 0 && not (S2_cell_id.is_valid ids.(0))
@@ -212,24 +219,38 @@ let validate_cells t ~pair_ok =
     while i < n && ok do
       if not (S2_cell_id.is_valid ids.(i))
       then ok <- false
-      else if not (pair_ok ids i)
+      else if not
+                (unsigned_lt
+                   (S2_cell_id.range_max ids.(i - 1))
+                   (S2_cell_id.range_min ids.(i)))
       then ok <- false;
       i <- i + 1
     done;
     ok)
 ;;
 
-let is_valid t =
-  validate_cells t ~pair_ok:(fun ids i ->
-    unsigned_lt (S2_cell_id.range_max ids.(i - 1)) (S2_cell_id.range_min ids.(i)))
-;;
-
 let is_normalized t =
-  validate_cells t ~pair_ok:(fun ids i ->
-    let prev_max = S2_cell_id.range_max ids.(i - 1) in
-    let curr_min = S2_cell_id.range_min ids.(i) in
-    Int64_u.compare (S2_cell_id.id prev_max) (S2_cell_id.id curr_min) < 0
-    && not (i >= 3 && are_siblings ids.(i - 3) ids.(i - 2) ids.(i - 1) ids.(i)))
+  let ids = t.cell_ids in
+  let n = Array.length ids in
+  if n > 0 && not (S2_cell_id.is_valid ids.(0))
+  then false
+  else (
+    let mutable ok = true in
+    let mutable i = 1 in
+    while i < n && ok do
+      if not (S2_cell_id.is_valid ids.(i))
+      then ok <- false
+      else (
+        let prev_max = S2_cell_id.range_max ids.(i - 1) in
+        let curr_min = S2_cell_id.range_min ids.(i) in
+        if not
+             (Int64_u.compare (S2_cell_id.id prev_max) (S2_cell_id.id curr_min) < 0
+              && not (i >= 3 && are_siblings ids.(i - 3) ids.(i - 2) ids.(i - 1) ids.(i))
+             )
+        then ok <- false);
+      i <- i + 1
+    done;
+    ok)
 ;;
 
 (* {1 Normalize / Denormalize} *)
@@ -330,23 +351,42 @@ let contains_point t p = contains_cell_id t (S2_cell_id.from_point p)
 
 (* {1 Set Operations} *)
 
+(* Both inputs are already sorted and individually normalized. Walk the two
+   runs in lockstep, pushing the smaller head through [push_normalized] to
+   handle the rare ancestor-absorbs-descendant and four-siblings-collapse
+   cases that can arise at the boundary between the two inputs. *)
 let union t other =
-  let n1 = Array.length t.cell_ids in
-  let n2 = Array.length other.cell_ids in
-  let combined = Array.create ~len:(n1 + n2) S2_cell_id.none in
-  (Array.unsafe_blit [@kind bits64])
-    ~src:t.cell_ids
-    ~dst:combined
-    ~src_pos:0
-    ~dst_pos:0
-    ~len:n1;
-  (Array.unsafe_blit [@kind bits64])
-    ~src:other.cell_ids
-    ~dst:combined
-    ~src_pos:0
-    ~dst_pos:n1
-    ~len:n2;
-  { cell_ids = normalize_ids combined }
+  let a = t.cell_ids in
+  let b = other.cell_ids in
+  let na = Array.length a in
+  let nb = Array.length b in
+  if na = 0
+  then { cell_ids = (Array.copy [@kind bits64]) b }
+  else if nb = 0
+  then { cell_ids = (Array.copy [@kind bits64]) a }
+  else (
+    let out = Array.create ~len:(na + nb) S2_cell_id.none in
+    let mutable out_len = 0 in
+    let mutable i = 0 in
+    let mutable j = 0 in
+    while i < na && j < nb do
+      if unsigned_le a.(i) b.(j)
+      then (
+        out_len <- push_normalized out out_len a.(i);
+        i <- i + 1)
+      else (
+        out_len <- push_normalized out out_len b.(j);
+        j <- j + 1)
+    done;
+    while i < na do
+      out_len <- push_normalized out out_len a.(i);
+      i <- i + 1
+    done;
+    while j < nb do
+      out_len <- push_normalized out out_len b.(j);
+      j <- j + 1
+    done;
+    { cell_ids = (Array.sub [@kind bits64]) out ~pos:0 ~len:out_len })
 ;;
 
 let intersection_with_cell_id t id =
@@ -423,7 +463,7 @@ let difference t other =
 
 (* {1 Measures} *)
 
-let leaf_cells_covered t =
+let[@inline] leaf_cells_covered_u t =
   let mutable num_leaves = #0L in
   let n = Array.length t.cell_ids in
   for i = 0 to n - 1 do
@@ -432,13 +472,14 @@ let leaf_cells_covered t =
     let shift = inverted_level lsl 1 in
     num_leaves <- Int64_u.O.(num_leaves + Int64_u.shift_left #1L shift)
   done;
-  Int64_u.to_int64 num_leaves
+  num_leaves
 ;;
+
+let leaf_cells_covered t = Int64_u.to_int64 (leaf_cells_covered_u t)
 
 let average_based_area t =
   let open Float_u.O in
-  S2_cell.average_area S2_cell_id.max_level
-  * Float_u.of_float (Int64.to_float (leaf_cells_covered t))
+  S2_cell.average_area S2_cell_id.max_level * Int64_u.to_float (leaf_cells_covered_u t)
 ;;
 
 let approx_area t =

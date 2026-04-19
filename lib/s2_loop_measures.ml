@@ -35,14 +35,16 @@ let[@inline] loop_at (loop : S2_point.t array) i =
 let k_max_length = Float.(pi - 1e-5)
 
 (* Compute the oriented surface integral of [f_tri] over the loop interior,
-   accumulating into an R3 vector. Specialised to an unboxed R3 accumulator so
-   we can hold the running sum in [let mutable]. *)
+   accumulating into an R3 vector. The running sum is held in three [float#]
+   components so no intermediate [R3_vector.t] is allocated. *)
 let surface_integral_r3 (loop : S2_point.t array) ~f_tri =
   let n = Array.length loop in
   if n < 3
   then R3_vector.zero
   else (
-    let mutable sum = R3_vector.zero in
+    let mutable sum_x = #0.0 in
+    let mutable sum_y = #0.0 in
+    let mutable sum_z = #0.0 in
     let mutable origin = loop.(0) in
     let mutable i = 1 in
     while i + 1 < n do
@@ -61,14 +63,27 @@ let surface_integral_r3 (loop : S2_point.t array) ~f_tri =
         then origin <- loop.(0)
         else (
           origin <- R3_vector.cross loop.(0) old_origin;
-          sum <- R3_vector.add sum (f_tri loop.(0) old_origin origin));
-        sum <- R3_vector.add sum (f_tri old_origin vi origin));
-      sum <- R3_vector.add sum (f_tri origin vi vi1);
+          let v = f_tri loop.(0) old_origin origin in
+          sum_x <- Float_u.add sum_x (R3_vector.x v);
+          sum_y <- Float_u.add sum_y (R3_vector.y v);
+          sum_z <- Float_u.add sum_z (R3_vector.z v));
+        let v = f_tri old_origin vi origin in
+        sum_x <- Float_u.add sum_x (R3_vector.x v);
+        sum_y <- Float_u.add sum_y (R3_vector.y v);
+        sum_z <- Float_u.add sum_z (R3_vector.z v));
+      let v = f_tri origin vi vi1 in
+      sum_x <- Float_u.add sum_x (R3_vector.x v);
+      sum_y <- Float_u.add sum_y (R3_vector.y v);
+      sum_z <- Float_u.add sum_z (R3_vector.z v);
       i <- i + 1
     done;
     if not (S2_point.equal origin loop.(0))
-    then sum <- R3_vector.add sum (f_tri origin loop.(n - 1) loop.(0));
-    sum)
+    then (
+      let v = f_tri origin loop.(n - 1) loop.(0) in
+      sum_x <- Float_u.add sum_x (R3_vector.x v);
+      sum_y <- Float_u.add sum_y (R3_vector.y v);
+      sum_z <- Float_u.add sum_z (R3_vector.z v));
+    R3_vector.create ~x:sum_x ~y:sum_y ~z:sum_z)
 ;;
 
 (* Kahan-compensated surface integral specialised to [float#] accumulators,

@@ -10,38 +10,60 @@
 
 open Core
 
-type t [@@deriving sexp_of]
+[@@@zero_alloc all]
+
+type t
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** {1 Constructors} *)
 
 (** [create ids] constructs a cell union from the given cell ids, then normalizes it
     (sorts, removes duplicates, merges siblings). *)
 val create : S2_cell_id.t array -> t
+[@@zero_alloc ignore]
 
 (** [from_verbatim ids] constructs a cell union from sorted, non-overlapping cell ids
     without normalizing. The caller must ensure the ids satisfy [is_valid]. *)
 val from_verbatim : S2_cell_id.t array -> t
+[@@zero_alloc ignore]
+
+(** [of_raw_owned ids] is [create ids] except that [ids] is consumed (sorted and reused)
+    rather than copied first. The caller transfers ownership and must not use [ids]
+    afterwards. *)
+val of_raw_owned : S2_cell_id.t array -> t
+[@@zero_alloc ignore]
+
+(** [of_verbatim_owned ids] is [from_verbatim ids] except that [ids] is stored directly
+    rather than copied. The caller transfers ownership and must not mutate [ids]
+    afterwards. *)
+val of_verbatim_owned : S2_cell_id.t array -> t
+[@@zero_alloc ignore]
 
 (** [from_min_max min_id max_id] constructs a normalized cell union covering the leaf
     cells between [min_id] and [max_id] inclusive. Both must be leaf cells, and
     [min_id <= max_id]. *)
 val from_min_max : S2_cell_id.t -> S2_cell_id.t -> t
+[@@zero_alloc ignore]
 
 (** [from_begin_end begin_id end_id] constructs a normalized cell union covering the
     half-open range of leaf cells [\[begin_id, end_id)]. If [begin_id = end_id] the result
     is empty. Both must be leaf cells, and [begin_id <= end_id]. *)
 val from_begin_end : S2_cell_id.t -> S2_cell_id.t -> t
+[@@zero_alloc ignore]
 
 (** [whole_sphere ()] returns a cell union covering the entire sphere (6 face cells). *)
 val whole_sphere : unit -> t
+[@@zero_alloc ignore]
 
 (** [empty ()] returns an empty cell union. *)
-val empty : unit -> t
+val empty : unit -> t [@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
 (** [cell_ids_raw t] returns a copy of the underlying sorted array of cell ids. *)
 val cell_ids_raw : t -> S2_cell_id.t array
+[@@zero_alloc ignore]
 
 (** [num_cells t] returns the number of cells in the union. *)
 val num_cells : t -> int
@@ -65,12 +87,14 @@ val is_normalized : t -> bool
 
 (** [normalize t] returns a normalized version of the cell union. *)
 val normalize : t -> t
+[@@zero_alloc ignore]
 
 (** [denormalize t ~min_level ~level_mod] replaces any cell whose level is less than
     [min_level] or where [(level - min_level)] is not a multiple of [level_mod] with its
     children, until both conditions are satisfied or the maximum level is reached. Returns
     an array of cell ids. *)
 val denormalize : t -> min_level:int -> level_mod:int -> S2_cell_id.t array
+[@@zero_alloc ignore]
 
 (** {1 Containment and Intersection} *)
 
@@ -105,21 +129,26 @@ val contains_point : t -> S2_point.t -> bool
 
 (** [union t other] returns the union of two cell unions. *)
 val union : t -> t -> t
+[@@zero_alloc ignore]
 
 (** [intersection t other] returns the intersection of two cell unions. *)
 val intersection : t -> t -> t
+[@@zero_alloc ignore]
 
 (** [intersection_with_cell_id t id] returns the intersection of the union with a single
     cell id. *)
 val intersection_with_cell_id : t -> S2_cell_id.t -> t
+[@@zero_alloc ignore]
 
 (** [difference t other] returns the difference [t - other]. *)
 val difference : t -> t -> t
+[@@zero_alloc ignore]
 
 (** {1 Measures} *)
 
 (** [leaf_cells_covered t] returns the number of leaf cells covered by this union. *)
 val leaf_cells_covered : t -> int64
+[@@zero_alloc ignore]
 
 (** [average_based_area t] returns the approximate area by summing each cell's average
     area. Accurate to within a factor of 1.7. *)
@@ -136,12 +165,15 @@ val exact_area : t -> float#
 
 (** [cap_bound t] returns a bounding cap for the union. *)
 val cap_bound : t -> S2_cap.t
+[@@zero_alloc ignore]
 
 (** [rect_bound t] returns a bounding latitude-longitude rectangle for the union. *)
 val rect_bound : t -> S2_latlng_rect.t
+[@@zero_alloc ignore]
 
 (** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. *)
 val cell_union_bound : t -> S2_cell_id.t array
+[@@zero_alloc ignore]
 
 (** {1 Comparison} *)
 

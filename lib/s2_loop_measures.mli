@@ -7,6 +7,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** {1 Perimeter, area, and centroid} *)
 
 (** [perimeter loop] returns the sum of the lengths of the loop's edges. *)
@@ -17,11 +19,13 @@ val perimeter : S2_point.t array -> S1_angle.t
     ensures that nearly-degenerate clockwise loops have areas close to [0], while
     nearly-degenerate counter-clockwise loops have areas close to [4 * pi]. *)
 val area : S2_point.t array -> float#
+[@@zero_alloc ignore]
 
 (** [approx_area loop] is like {!area}, except that it is faster and has more error. The
     result is between [0] and [4 * pi] steradians. The maximum error is about [2.22e-15]
     per vertex. See {!curvature_max_error}. *)
 val approx_area : S2_point.t array -> float#
+[@@zero_alloc ignore]
 
 (** [signed_area loop] returns either the positive area of the region on the left of the
     loop, or the negative area of the region on its right, whichever is smaller in
@@ -33,6 +37,7 @@ val approx_area : S2_point.t array -> float#
     - The full loop (represented by the empty array) has area
       [-min_positive_normal_value], the signed-equivalent of [4 * pi]. *)
 val signed_area : S2_point.t array -> float#
+[@@zero_alloc ignore]
 
 (** [curvature loop] returns the geodesic curvature of the loop, i.e. the sum of the turn
     angles at each vertex. The result is positive for counter-clockwise loops, negative
@@ -41,6 +46,7 @@ val signed_area : S2_point.t array -> float#
     - Degenerate loops have a curvature of exactly [2 * pi].
     - The full loop (represented by the empty array) has a curvature of exactly [-2 * pi]. *)
 val curvature : S2_point.t array -> float#
+[@@zero_alloc ignore]
 
 (** [curvature_max_error loop] returns the maximum error in {!curvature} for the given
     loop. This value is also an upper bound on the error in {!area}, {!signed_area}, and
@@ -51,10 +57,12 @@ val curvature_max_error : S2_point.t array -> float#
     {!S2_centroids.true_centroid} for details on centroids). The result is not unit
     length, and the centroid may not be contained by the loop. *)
 val centroid : S2_point.t array -> S2_point.t
+[@@zero_alloc ignore]
 
 (** [is_normalized loop] returns [true] iff the loop area is at most [2 * pi]. A small
     error is allowed so that hemispheres are always considered normalized. *)
 val is_normalized : S2_point.t array -> bool
+[@@zero_alloc ignore]
 
 (** {1 Canonical loop order and pruning} *)
 
@@ -66,13 +74,17 @@ type loop_order =
   }
 [@@deriving sexp_of]
 
+val sexp_of_loop_order : loop_order -> Sexp.t [@@zero_alloc ignore]
+
 (** [canonical_loop_order loop] returns a {!loop_order} value that is invariant under
     rotations and reversals of the input vertex sequence. This lets callers traverse the
     loop in a canonical order. *)
 val canonical_loop_order : S2_point.t array -> loop_order
+[@@zero_alloc ignore]
 
 (** [prune_degeneracies loop] returns a new array obtained by removing all degeneracies
     that can be detected by comparing adjacent vertices and edges for equality (i.e.
     removing subsequences of the form [AA] or [ABA] repeatedly until none remain). A loop
     of length 0, 1, or 2 is collapsed to an empty loop. *)
 val prune_degeneracies : S2_point.t array -> S2_point.t array
+[@@zero_alloc ignore]

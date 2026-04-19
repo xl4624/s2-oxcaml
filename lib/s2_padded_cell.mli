@@ -5,6 +5,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t :
   bits64
   & float64
@@ -21,11 +23,13 @@ val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** [create id ~padding] constructs a padded cell with the given cell id and padding. *)
 val create : S2_cell_id.t -> padding:float# -> t
+[@@zero_alloc ignore]
 
 (** [child_ij parent ~i ~j] constructs the child of [parent] with the given (i, j) index.
     The four child cells have indices (0, 0), (0, 1), (1, 0), (1, 1), where [i] and [j]
     correspond to increasing u- and v-values respectively. *)
 val child_ij : t -> i:int -> j:int -> t
+[@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
@@ -75,3 +79,4 @@ val child_ij_of_pos : t -> pos:int -> #(int * int)
 
     Requires that [bound t] intersects [rect]. *)
 val shrink_to_fit : t -> R2_rect.t -> S2_cell_id.t
+[@@zero_alloc ignore]

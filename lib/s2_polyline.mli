@@ -7,13 +7,18 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t [@@deriving sexp_of]
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** {1 Constructors} *)
 
 (** [of_vertices vs] copies [vs] and returns the resulting polyline. The vertices are
     expected to satisfy {!is_valid}; pass [validate:false] to skip the check. *)
 val of_vertices : ?validate:bool -> S2_point.t array -> t
+[@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
@@ -25,6 +30,7 @@ val vertex : t -> int -> S2_point.t
 
 (** [vertices t] returns a copy of the vertex array. *)
 val vertices : t -> S2_point.t array
+[@@zero_alloc ignore]
 
 (** {1 Validation} *)
 
@@ -88,6 +94,7 @@ val is_on_right : t -> S2_point.t -> bool
 
 (** [reverse t] returns a polyline with the vertices in reverse order. *)
 val reverse : t -> t
+[@@zero_alloc ignore]
 
 (** [intersects a b] returns true if the two polylines intersect. Sharing a vertex counts
     as intersecting; when an endpoint is the only intersection the result is unspecified.
@@ -108,6 +115,7 @@ val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
     may contain only a single index. Negative tolerances behave like zero (every vertex is
     preserved up to floating-point coincidence). *)
 val subsample_vertices : t -> S1_angle.t -> int array
+[@@zero_alloc ignore]
 
 (** {1 Region interface} *)
 
@@ -119,6 +127,7 @@ val rect_bound : t -> S2_latlng_rect.t
 
 (** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. *)
 val cell_union_bound : t -> S2_cell_id.t array
+[@@zero_alloc ignore]
 
 (** [contains_cell t _] always returns false: containment is not numerically well-defined
     except at vertices. *)
@@ -132,6 +141,7 @@ val contains_point : t -> S2_point.t -> bool
 
 (** [to_region t] exposes [t] through the generic region interface. *)
 val to_region : t -> S2_region.t
+[@@zero_alloc ignore]
 
 (** {1 Shape interface} *)
 
@@ -164,3 +174,4 @@ val type_tag : S2_shape.Type_tag.t
 
 (** [to_shape t] exposes [t] through the generic shape interface. *)
 val to_shape : t -> S2_shape.t
+[@@zero_alloc ignore]

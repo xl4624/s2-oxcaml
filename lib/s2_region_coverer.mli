@@ -35,6 +35,10 @@
     by the region. For performance reasons, it is wise to specify a [max_level] when
     computing interior coverings. *)
 
+open Core
+
+[@@@zero_alloc all]
+
 type t
 
 (** {1 Constructors} *)
@@ -54,6 +58,7 @@ val create
   -> ?max_cells:int
   -> unit
   -> t
+[@@zero_alloc ignore]
 
 (** {1 Covering} *)
 
@@ -61,16 +66,19 @@ val create
     the restrictions. Note that if [min_level > 0] or [level_mod > 1], the result may not
     be normalized (groups of 4 child cells may not be replaced by their parent). *)
 val covering : t -> S2_region.t -> S2_cell_union.t
+[@@zero_alloc ignore]
 
 (** [interior_covering t region] returns a cell union that is contained within the given
     region and satisfies the restrictions. *)
 val interior_covering : t -> S2_region.t -> S2_cell_union.t
+[@@zero_alloc ignore]
 
 (** [fast_covering t region] returns a cell union that covers the given region similar to
     {!covering}, except that this method is much faster and the coverings are not as
     tight. All of the usual parameters are respected, except that the implementation makes
     no attempt to take advantage of large values of [max_cells]. *)
 val fast_covering : t -> S2_region.t -> S2_cell_union.t
+[@@zero_alloc ignore]
 
 (** {1 Validation} *)
 
@@ -82,3 +90,4 @@ val is_canonical : t -> S2_cell_id.t array -> bool
     conforms to the current covering parameters. There are no restrictions on the input
     cell ids (they may be unsorted, overlapping, etc). Returns a new conforming array. *)
 val canonicalize_covering : t -> S2_cell_id.t array -> S2_cell_id.t array
+[@@zero_alloc ignore]
