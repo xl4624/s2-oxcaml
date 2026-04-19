@@ -50,6 +50,12 @@ type candidate =
   ; mutable priority : int
   }
 
+module Candidate_heap = Binary_heap.Make (struct
+    type t = candidate
+
+    let[@inline] higher_priority a b = a.priority > b.priority
+  end)
+
 (* Internal coverer state. Holding the [S2_region.t] directly (rather than extracting
    callbacks) avoids allocating closures and lets the compiler specialize each dispatch
    via pattern match on the variant tag. *)
@@ -58,8 +64,7 @@ type coverer =
   ; region : S2_region.t
   ; mutable result : S2_cell_id.t array
   ; mutable result_len : int
-  ; mutable pq : candidate Pairing_heap.t
-  ; mutable pq_size : int
+  ; pq : Candidate_heap.t
   ; mutable interior_covering : bool
   }
 
@@ -85,8 +90,7 @@ let new_coverer opts (region : S2_region.t) =
   ; region
   ; result = Array.create ~len:8 S2_cell_id.none
   ; result_len = 0
-  ; pq = Pairing_heap.create ~cmp:(fun a b -> compare b.priority a.priority) ()
-  ; pq_size = 0
+  ; pq = Candidate_heap.create ()
   ; interior_covering = false
   }
 ;;
@@ -164,8 +168,7 @@ let rec add_candidate c cand =
     else (
       let level = S2_cell.level cand.cell in
       cand.priority <- -(((level lsl mcs) + cand.num_children) lsl mcs) - num_terminals;
-      Pairing_heap.add c.pq cand;
-      c.pq_size <- c.pq_size + 1))
+      Candidate_heap.add c.pq cand))
 ;;
 
 let add_candidate_opt c = function
@@ -412,15 +415,15 @@ and covering_internal opts (region : S2_region.t) interior_covering =
   c.interior_covering <- interior_covering;
   get_initial_candidates c;
   while
-    (not (Pairing_heap.is_empty c.pq))
+    (not (Candidate_heap.is_empty c.pq))
     && ((not c.interior_covering) || c.result_len < c.opts.max_cells)
   do
-    let cand = Pairing_heap.pop_exn c.pq in
-    c.pq_size <- c.pq_size - 1;
+    let cand = Candidate_heap.pop_exn c.pq in
     if c.interior_covering
        || S2_cell.level cand.cell < c.opts.min_level
        || cand.num_children = 1
-       || c.result_len + c.pq_size + cand.num_children <= c.opts.max_cells
+       || c.result_len + Candidate_heap.length c.pq + cand.num_children
+          <= c.opts.max_cells
     then
       for i = 0 to cand.num_children - 1 do
         match cand.children.(i) with

@@ -253,12 +253,9 @@ the coverage hot path rather than a systemic codegen issue.
     until candidate / heap allocations are removed - until then the
     remaining single fresh array per call is a rounding error.
 
-- [ ] **Replace `Pairing_heap` with flat array-backed binary heap**
-  - `coverer.pq : candidate Pairing_heap.t` allocates a node per `add` and per
-    `pop_exn` (see `lib/s2_region_coverer.ml:88, 167, 431`). Every candidate
-    pushed or popped during a coverage hits the allocator.
-  - Replace with a binary heap over an array of candidate indices into a flat
-    candidate buffer.
+- [x] **Replace `Pairing_heap` with flat array-backed binary heap**
+  - Now uses `Binary_heap.Make` from `lib/util/binary_heap.ml`; `coverer.pq`
+    is a flat array-backed heap (see `lib/s2_region_coverer.ml:53, 67, 93`).
 
 - [ ] **Flatten `candidate.children : candidate option array`**
   - `new_candidate` at `lib/s2_region_coverer.ml:49,120` allocates a
