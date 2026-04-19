@@ -6,12 +6,17 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t [@@deriving sexp_of]
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** {1 Constructors} *)
 
 (** [of_vertices vs] constructs a lax loop whose vertex sequence is a copy of [vs]. *)
 val of_vertices : S2_point.t array -> t
+[@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
@@ -54,3 +59,4 @@ val type_tag : S2_shape.Type_tag.t
 
 (** [to_shape t] exposes [t] through the generic shape interface. *)
 val to_shape : t -> S2_shape.t
+[@@zero_alloc ignore]

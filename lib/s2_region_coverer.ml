@@ -118,27 +118,35 @@ let push_child c child =
   c.children_len <- c.children_len + 1
 ;;
 
-let new_candidate c cell =
+(* Decide this cell's status. Returns:
+   - [-1] if the region doesn't intersect [cell] (cell is rejected).
+   - [0] if the cell should be added as a non-terminal candidate.
+   - [1] if the cell should be added as a terminal (leaf of the covering).
+   This is the [new_candidate] "allocate or not + is_terminal" logic split out so
+   callers can allocate the candidate directly without going through an [option]
+   wrapper, saving the [Some _] header per accepted candidate. *)
+let[@inline] classify_cell c cell =
   if not (S2_region.intersects_cell c.region cell)
-  then None
+  then -1
   else (
     let level = S2_cell.level cell in
-    let mutable is_terminal = false in
-    let mutable reject = false in
-    if level >= c.opts.min_level
+    if level < c.opts.min_level
+    then 0
+    else if c.interior_covering
     then
-      if c.interior_covering
-      then (
-        if S2_region.contains_cell c.region cell
-        then is_terminal <- true
-        else if level + c.opts.level_mod > c.opts.max_level
-        then reject <- true)
+      if S2_region.contains_cell c.region cell
+      then 1
       else if level + c.opts.level_mod > c.opts.max_level
-              || S2_region.contains_cell c.region cell
-      then is_terminal <- true;
-    if reject
-    then None
-    else Some { cell; is_terminal; num_children = 0; children_start = 0; priority = 0 })
+      then -1
+      else 0
+    else if level + c.opts.level_mod > c.opts.max_level
+            || S2_region.contains_cell c.region cell
+    then 1
+    else 0)
+;;
+
+let[@inline] make_candidate cell ~is_terminal =
+  { cell; is_terminal; num_children = 0; children_start = 0; priority = 0 }
 ;;
 
 let rec expand_children c cand cell num_levels =
@@ -153,12 +161,13 @@ let rec expand_children c cand cell num_levels =
       if S2_region.intersects_cell c.region child_cell
       then num_terminals <- num_terminals + expand_children c cand child_cell num_levels)
     else (
-      match new_candidate c child_cell with
-      | None -> ()
-      | Some child ->
-        push_child c child;
+      let status = classify_cell c child_cell in
+      if status >= 0
+      then (
+        let is_terminal = status = 1 in
+        push_child c (make_candidate child_cell ~is_terminal);
         cand.num_children <- cand.num_children + 1;
-        if child.is_terminal then num_terminals <- num_terminals + 1)
+        if is_terminal then num_terminals <- num_terminals + 1))
   done;
   num_terminals
 ;;
@@ -189,9 +198,9 @@ let rec add_candidate c cand =
       Candidate_heap.add c.pq cand))
 ;;
 
-let add_candidate_opt c = function
-  | None -> ()
-  | Some cand -> add_candidate c cand
+let[@inline] try_add_new_candidate c cell =
+  let status = classify_cell c cell in
+  if status >= 0 then add_candidate c (make_candidate cell ~is_terminal:(status = 1))
 ;;
 
 (* Adjust cell levels for level_mod compliance. *)
@@ -376,23 +385,22 @@ let rec get_initial_candidates c =
   let tmp =
     create ~max_level:c.opts.max_level ~max_cells:(Int.min 4 c.opts.max_cells) ()
   in
-  let cu = fast_covering_internal_coverer tmp c in
-  let raw = S2_cell_union.cell_ids_raw cu in
-  let cells = adjust_cell_levels c.opts raw in
+  (* Use the canonicalized array directly - wrapping it in an [S2_cell_union.t]
+     only to immediately [cell_ids_raw] it back would allocate two extra copies
+     of the array per covering. *)
+  let canonical =
+    canonicalize_covering_internal tmp (S2_region.cell_union_bound c.region)
+  in
+  let cells = adjust_cell_levels c.opts canonical in
   let n = Array.length cells in
   for i = 0 to n - 1 do
-    add_candidate_opt c (new_candidate c (S2_cell.of_cell_id cells.(i)))
+    try_add_new_candidate c (S2_cell.of_cell_id cells.(i))
   done
-
-and fast_covering_internal_coverer opts c =
-  let cell_ids = S2_region.cell_union_bound c.region in
-  let result = canonicalize_covering_internal opts cell_ids in
-  S2_cell_union.from_verbatim result
 
 and fast_covering_internal opts (region : S2_region.t) =
   let cell_ids = S2_region.cell_union_bound region in
   let result = canonicalize_covering_internal opts cell_ids in
-  S2_cell_union.from_verbatim result
+  S2_cell_union.of_verbatim_owned result
 
 and canonicalize_covering_internal opts (covering : S2_cell_id.t array) =
   (* Replace cells that are too small or don't satisfy [level_mod]. When
@@ -429,7 +437,7 @@ and canonicalize_covering_internal opts (covering : S2_cell_id.t array) =
   else if excess * working_len > 10000
   then (
     (* Use the region coverer for very large coverings *)
-    let cu2 = S2_cell_union.from_verbatim working in
+    let cu2 = S2_cell_union.of_verbatim_owned working in
     let region = S2_region.of_cell_union cu2 in
     let result = covering_internal opts region false in
     S2_cell_union.cell_ids_raw result)
@@ -461,15 +469,16 @@ and covering_internal opts (region : S2_region.t) interior_covering =
       cand.is_terminal <- true;
       add_candidate c cand)
   done;
-  (* Normalize result *)
+  (* Normalize result. [raw_result] is freshly owned, so we can transfer it to
+     [of_raw_owned] which skips the defensive copy that [create] would make. *)
   let raw_result = (Array.sub [@kind bits64]) c.result ~pos:0 ~len:c.result_len in
-  let cu = S2_cell_union.create raw_result in
+  let cu = S2_cell_union.of_raw_owned raw_result in
   if c.opts.min_level > 0 || c.opts.level_mod > 1
   then (
     let denorm =
       S2_cell_union.denormalize cu ~min_level:c.opts.min_level ~level_mod:c.opts.level_mod
     in
-    S2_cell_union.from_verbatim denorm)
+    S2_cell_union.of_verbatim_owned denorm)
   else cu
 ;;
 

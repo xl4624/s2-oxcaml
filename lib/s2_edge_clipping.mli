@@ -6,6 +6,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** {1 Error bounds} *)
 
 (** Maximum angle (in radians) between a returned vertex and the nearest point on the
@@ -42,11 +44,14 @@ type face_segment =
   }
 [@@deriving sexp_of]
 
+val sexp_of_face_segment : face_segment -> Sexp.t [@@zero_alloc ignore]
+
 (** [get_face_segments a b] subdivides the edge [a]->[b] at every point where it crosses
     the boundary between two S2 cube faces and returns the corresponding face segments in
     order from [a] toward [b]. The input points must be unit length. All returned vertices
     lie within the [[-1,1]x[-1,1]] cube face rectangles. *)
 val get_face_segments : S2_point.t -> S2_point.t -> face_segment list
+[@@zero_alloc ignore]
 
 (** A clipped edge in (u, v) coordinates on some cube face. *)
 type clipped_uv =
@@ -55,10 +60,13 @@ type clipped_uv =
   }
 [@@deriving sexp_of]
 
+val sexp_of_clipped_uv : clipped_uv -> Sexp.t [@@zero_alloc ignore]
+
 (** [clip_to_face a b face] returns [Some { a; b }] giving the (u, v) coordinates of the
     portion of [a]->[b] that intersects the given cube face, or [None] if the edge does
     not intersect the face. The test for face intersection is exact. *)
 val clip_to_face : S2_point.t -> S2_point.t -> int -> clipped_uv option
+[@@zero_alloc ignore]
 
 (** [clip_to_padded_face a b face ~padding] is like {!clip_to_face} but clips against the
     [[-R,R]x[-R,R]] rectangle where [R = 1 + padding]. [padding] must be non-negative. *)
@@ -68,6 +76,7 @@ val clip_to_padded_face
   -> int
   -> padding:float#
   -> clipped_uv option
+[@@zero_alloc ignore]
 
 (** {1 Rectangle clipping} *)
 
@@ -78,6 +87,7 @@ val intersects_rect : R2_point.t -> R2_point.t -> R2_rect.t -> bool
 (** [clip_edge a b clip] returns [Some { a; b }] giving the portion of [a]->[b] contained
     in [clip], or [None] if there is no intersection. *)
 val clip_edge : R2_point.t -> R2_point.t -> R2_rect.t -> clipped_uv option
+[@@zero_alloc ignore]
 
 (** [get_clipped_edge_bound a b clip] returns the bounding rectangle of the portion of
     [a]->[b] intersected by [clip]. The result may be empty. *)

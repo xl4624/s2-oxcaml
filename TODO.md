@@ -244,14 +244,15 @@ Listed in rough priority order (biggest / most self-contained first).
     `num_loops <= 12` or binary search over `loop_starts` otherwise. Matches
     the three-tier strategy in `s2lax_polygon_shape.h:266-294`.
 
-- [ ] **`s2_edge_distances.is_edge_b_near_edge_a`: switch to `S1_chord_angle`**
-  - `lib/s2_edge_distances.ml:317` has an explicit `TODO: Optimize to use
-    S1_chord_angle rather than S1_angle`. The current implementation calls
-    `R3_vector.angle` (a trig operation) twice per call to get `b0_dist` and
-    `b1_dist`, then compares against `tolerance` in radians.
-  - Change: rewrite the predicate to work in chord-angle squared-length space
-    (`S1_chord_angle.length2`), avoiding the `atan2`s. Self-contained to this
-    function plus any callers that pass `tolerance`.
+- [x] **`s2_edge_distances.is_edge_b_near_edge_a`: switch to `S1_chord_angle`**
+  - Replaced the three `R3_vector.angle` calls (`b0_dist`, `b1_dist`,
+    `planar_angle`) with `R3_vector.norm2 (R3_vector.sub ...)` chord
+    squared-length comparisons against a single precomputed
+    `tol2 = S1_chord_angle.length2 (S1_chord_angle.of_angle tolerance)`.
+    The `planar_angle >= pi/2` branch becomes `planar_l2 >= 2.0` since a
+    chord angle at pi/2 has length2 = 2. Added fixture-driven coverage via
+    the existing `is_edge_b_near_edge_a` JSON array in
+    `test/fixtures/s2edge_distances.json` (test/test_s2_edge_distances.ml).
 
 - [ ] **`s2_cell_union.union`: merge-aware normalize**
   - `lib/s2_cell_union.ml:333-350` allocates an `n1 + n2` array, blits both
@@ -277,3 +278,37 @@ Listed in rough priority order (biggest / most self-contained first).
     non-empty loop just to seed the fill value for `Array.create`. Small win,
     but trivial to remove: use `Array.init` to write vertices directly, or
     seed with any in-range point without searching.
+
+## `zero_alloc` annotation sweep
+
+Most `lib/` modules already carry `[@@@zero_alloc all]` in their `.mli`. The
+modules below still need the annotation (verified via `rg "zero_alloc" lib/*.mli`).
+For each one: add `[@@@zero_alloc all]` after `open Core`, mark
+`sexp_of_t` / `pp` / `to_string` and any genuinely allocating entry points
+with `[@@zero_alloc ignore]`, then `make build` and fix any reported
+non-zero-alloc call sites (usually via `[@inline]` or by adjusting callee
+signatures). Pattern reference: `lib/s2_predicates.mli`, `lib/s2_shape.mli`.
+
+- [x] **`s2_wedge_relations`** - annotated; sexp_of_t on `Relation` marked
+  ignore. All three predicates compose `S2_predicates.ordered_ccw` and
+  `S2_point.equal`, both already zero_alloc.
+- [ ] **`s2_contains_vertex_query`** (51 lines) - tiny, good next target.
+- [ ] **`s2_lax_polyline`** (49 lines) - shape wrapper; check closure
+  allocation in `to_shape`.
+- [ ] **`s2_lax_loop`** (66 lines) - shape wrapper; same caveat as lax_polyline.
+- [ ] **`s2_measures`** (72 lines) - point-measure helpers.
+- [ ] **`s2_metrics`** (73 lines) - constants + simple arithmetic.
+- [ ] **`s2_region`** (168 lines) - record-of-functions; many entries will
+  need `[@@zero_alloc ignore]` because they call user-supplied closures.
+- [ ] **`s2_edge_crosser`** (265 lines) - has mutable state; watch for
+  `S2_edge_crossings.crossing_sign` allocation.
+- [ ] **`s2_loop_measures`** (328 lines) - paired with the R3 accumulator
+  perf item above; annotate after that refactor lands.
+- [ ] **`s2_polyline`** (395 lines) - array-backed; `of_points` etc. will
+  need `ignore` but per-vertex accessors should be zero_alloc.
+- [ ] **`s2_edge_clipping`** (474 lines) - returns tuples/records; audit
+  each `clip_*` function individually.
+- [ ] **`s2_region_coverer`** (480 lines) - uses priority queue; most of
+  the public API will legitimately need `ignore`.
+- [ ] **`s2_cell_union`** (521 lines) - array-based; bulk operations
+  allocate, but predicates and accessors should be zero_alloc.

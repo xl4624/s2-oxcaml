@@ -22,6 +22,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** The full, unboxed crosser state. *)
 type t =
   #{ a : R3_vector.t

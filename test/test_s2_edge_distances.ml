@@ -22,7 +22,9 @@
    -  TEST(S2, EdgePairMinDistance) - requires s2_edge_crossings
    -  TEST(S2, EdgePairMaxDistance) - requires s2_edge_crossings
    -  TEST(IsEdgePairDistanceLess, Coverage) - requires s2_edge_crossings
-   -  TEST(S2, EdgeBNearEdgeA) - requires s2_edge_crossings *)
+
+   Covered via fixture-only (no upstream TEST() mirror beyond EdgeBNearEdgeA):
+   -  TEST(S2, EdgeBNearEdgeA) *)
 
 open Core
 open Test_helpers
@@ -289,6 +291,28 @@ let test_point_to_left_right () =
     ~actual:(S2.S2_point.approx_equal ~max_error:me actual_right expected_right)
 ;;
 
+(* ---------- IsEdgeBNearEdgeA ---------- *)
+
+let test_is_edge_b_near_edge_a () =
+  let cases = to_list (member "is_edge_b_near_edge_a" (Lazy.force fixture)) in
+  List.iteri cases ~f:(fun i c ->
+    let a0 = point_of_json (member "a0" c) in
+    let a1 = point_of_json (member "a1" c) in
+    let b0 = point_of_json (member "b0" c) in
+    let b1 = point_of_json (member "b1" c) in
+    let tol_deg = float_u_of_json_exn (member "tolerance_degrees" c) in
+    let expected = bool_of_json_exn (member "expected" c) in
+    let actual =
+      S2.S2_edge_distances.is_edge_b_near_edge_a
+        a0
+        a1
+        b0
+        b1
+        (S2.S1_angle.of_degrees tol_deg)
+    in
+    check_bool (sprintf "edge_b_near[%d]" i) ~expected ~actual)
+;;
+
 (* ---------- Project fixture ---------- *)
 
 let test_project_fixture () =
@@ -334,5 +358,7 @@ let () =
       , [ Alcotest.test_case "point_to_left_right" `Quick test_point_to_left_right ] )
     ; ( "error_bounds"
       , [ Alcotest.test_case "max_error" `Quick test_update_min_distance_max_error ] )
+    ; ( "edge_b_near_edge_a"
+      , [ Alcotest.test_case "is_edge_b_near_edge_a" `Quick test_is_edge_b_near_edge_a ] )
     ]
 ;;

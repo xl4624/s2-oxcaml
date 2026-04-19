@@ -22,6 +22,16 @@ val create : S2_cell_id.t array -> t
     without normalizing. The caller must ensure the ids satisfy [is_valid]. *)
 val from_verbatim : S2_cell_id.t array -> t
 
+(** [of_raw_owned ids] is [create ids] except that [ids] is consumed (sorted and reused)
+    rather than copied first. The caller transfers ownership and must not use [ids]
+    afterwards. *)
+val of_raw_owned : S2_cell_id.t array -> t
+
+(** [of_verbatim_owned ids] is [from_verbatim ids] except that [ids] is stored directly
+    rather than copied. The caller transfers ownership and must not mutate [ids]
+    afterwards. *)
+val of_verbatim_owned : S2_cell_id.t array -> t
+
 (** [from_min_max min_id max_id] constructs a normalized cell union covering the leaf
     cells between [min_id] and [max_id] inclusive. Both must be leaf cells, and
     [min_id <= max_id]. *)

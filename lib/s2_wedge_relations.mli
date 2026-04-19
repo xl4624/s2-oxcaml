@@ -9,6 +9,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** Detailed relation from one wedge [A] to another wedge [B]. *)
 module Relation : sig
   type t =
@@ -18,6 +20,8 @@ module Relation : sig
     | Properly_overlaps (** [A - B], [B - A], and [A inter B] are all non-empty. *)
     | Is_disjoint (** [A] and [B] are disjoint. *)
   [@@deriving sexp_of, compare, equal]
+
+  val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 end
 
 (** [get_wedge_relation ~a0 ~ab1 ~a2 ~b0 ~b2] returns the relation from wedge

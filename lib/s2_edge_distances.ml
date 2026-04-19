@@ -314,7 +314,6 @@ let[@inline] [@zero_alloc] get_edge_pair_closest_points a0 a1 b0 b1 =
     | _ -> #{ a = project b1 a0 a1; b = b1 })
 ;;
 
-(* TODO: Optimize to use S1_chord_angle rather than S1_angle. *)
 let[@inline] [@zero_alloc] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
   let open Float_u.O in
   (* Compute an orthogonal to the plane containing A.  We use the raw
@@ -330,17 +329,21 @@ let[@inline] [@zero_alloc] is_edge_b_near_edge_a a0 a1 b0 b1 tolerance =
      (a_nearest_b1 x a_ortho) . a_nearest_b0 < 0. *)
   let s = R3_vector.dot (R3_vector.cross a_nearest_b1 a_ortho0) a_nearest_b0 in
   let a_ortho = if s < #0.0 then R3_vector.neg a_ortho0 else a_ortho0 in
-  let tol_rad = S1_angle.radians tolerance in
-  let b0_dist = S1_angle.radians (R3_vector.angle b0 a_nearest_b0) in
-  let b1_dist = S1_angle.radians (R3_vector.angle b1 a_nearest_b1) in
-  if b0_dist > tol_rad || b1_dist > tol_rad
+  (* Work entirely in chord-length-squared space to avoid atan2 calls.
+     For unit vectors p, q with angle t between them,
+     |p - q|^2 = 2 - 2*cos(t), which is monotonic in t on [0, pi].
+     t = pi/2 corresponds to length2 = 2. *)
+  let tol2 = S1_chord_angle.length2 (S1_chord_angle.of_angle tolerance) in
+  let b0_l2 = R3_vector.norm2 (R3_vector.sub b0 a_nearest_b0) in
+  let b1_l2 = R3_vector.norm2 (R3_vector.sub b1 a_nearest_b1) in
+  if b0_l2 > tol2 || b1_l2 > tol2
   then false
   else (
     let b_ortho = R3_vector.normalize (S2_point.robust_cross_prod b0 b1) in
-    let planar_angle = S1_angle.radians (R3_vector.angle a_ortho b_ortho) in
-    if planar_angle <= tol_rad
+    let planar_l2 = R3_vector.norm2 (R3_vector.sub a_ortho b_ortho) in
+    if planar_l2 <= tol2
     then true
-    else if planar_angle >= Float_u.pi () / #2.0
+    else if planar_l2 >= #2.0
     then (
       (* When the planes meet at >= 90 degrees, edge B is near A iff b0 and
          b1 are closest to the same endpoint of A.  Compare planar distances

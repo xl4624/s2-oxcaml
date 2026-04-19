@@ -11,6 +11,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** Callbacks used by {!custom} to implement a user-defined region. The fields mirror the
     methods exposed at module level. *)
 type methods =
@@ -34,20 +36,24 @@ val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 (** {1 Constructors} *)
 
 (** [of_cap c] wraps a cap as a region. *)
-val of_cap : S2_cap.t -> t
+val of_cap : S2_cap.t -> t [@@zero_alloc ignore]
 
 (** [of_rect r] wraps a latitude-longitude rectangle as a region. *)
 val of_rect : S2_latlng_rect.t -> t
+[@@zero_alloc ignore]
 
 (** [of_cell c] wraps a cell as a region. *)
 val of_cell : S2_cell.t -> t
+[@@zero_alloc ignore]
 
 (** [of_cell_union u] wraps a cell union as a region. *)
 val of_cell_union : S2_cell_union.t -> t
+[@@zero_alloc ignore]
 
 (** [custom m] wraps a user-supplied methods record. Use this for regions that are not
     natively covered by the built-in constructors. *)
 val custom : methods -> t
+[@@zero_alloc ignore]
 
 (** {1 Region methods}
 
@@ -56,18 +62,24 @@ val custom : methods -> t
 
 (** [cap_bound t] returns a bounding {!S2_cap.t} that contains [t]. *)
 val cap_bound : t -> S2_cap.t
+[@@zero_alloc ignore]
 
 (** [rect_bound t] returns a bounding {!S2_latlng_rect.t} that contains [t]. *)
 val rect_bound : t -> S2_latlng_rect.t
+[@@zero_alloc ignore]
 
 (** [contains_cell t cell] returns [true] if [cell] is fully contained in [t]. *)
 val contains_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
 
 (** [intersects_cell t cell] returns [true] if [cell] intersects [t]. *)
 val intersects_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
 
 (** [contains_point t p] returns [true] if the unit-length point [p] lies in [t]. *)
 val contains_point : t -> S2_point.t -> bool
+[@@zero_alloc ignore]
 
 (** [cell_union_bound t] returns a small cell-union cover of [t]. *)
 val cell_union_bound : t -> S2_cell_id.t array
+[@@zero_alloc ignore]

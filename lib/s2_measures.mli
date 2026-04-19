@@ -5,6 +5,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** [angle a b c] returns the interior angle at vertex [b] in the spherical triangle
     [abc]. The result is always in the range [[0, pi]]. All points should be normalized.
     Satisfies [angle a b c = angle c b a] for all [a], [b], [c].

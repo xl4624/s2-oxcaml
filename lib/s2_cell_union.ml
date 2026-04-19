@@ -162,7 +162,9 @@ let create ids =
   { cell_ids = normalize_ids ids }
 ;;
 
+let of_raw_owned ids = { cell_ids = normalize_ids ids }
 let from_verbatim ids = { cell_ids = (Array.copy [@kind bits64]) ids }
+let of_verbatim_owned ids = { cell_ids = ids }
 
 let from_begin_end begin_id end_id =
   let result = cid_buf_create () in
