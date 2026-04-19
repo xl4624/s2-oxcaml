@@ -221,54 +221,51 @@ let adjust_cell_levels opts (cells : S2_cell_id.t array) =
 
 (* {1 Non-recursive helpers for canonicalize/reduce} *)
 
-let replace_cells_with_ancestor (covering : S2_cell_id.t array) (id : S2_cell_id.t) =
+(* Shift [end_..len) left into [begin_+1..], then write [id] at position [begin_].
+   Returns the new length. Requires [begin_ + 1 <= end_], which holds in
+   [reduce_covering] because [id] is either the common ancestor of two adjacent
+   cells or a parent known to contain all its children, so at least two cells
+   fall in the [range_min..range_max] window. *)
+let replace_cells_with_ancestor_in_place
+  (covering : S2_cell_id.t array)
+  len
+  (id : S2_cell_id.t)
+  =
   let raw_min = S2_cell_id.range_min id in
   let raw_max = S2_cell_id.range_max id in
-  let n = Array.length covering in
-  (* Find begin: first element > range_min (upper_bound on range_min) *)
+  (* upper_bound on range_min *)
   let begin_ =
     let mutable lo = 0 in
-    let mutable hi = n in
+    let mutable hi = len in
     while lo < hi do
       let mid = lo + ((hi - lo) / 2) in
       if unsigned_compare covering.(mid) raw_min > 0 then hi <- mid else lo <- mid + 1
     done;
     lo
   in
-  (* Find end: first element > range_max (upper_bound on range_max) *)
+  (* upper_bound on range_max, starting from [begin_] since it's monotonic *)
   let end_ =
-    let mutable lo = 0 in
-    let mutable hi = n in
+    let mutable lo = begin_ in
+    let mutable hi = len in
     while lo < hi do
       let mid = lo + ((hi - lo) / 2) in
       if unsigned_compare covering.(mid) raw_max > 0 then hi <- mid else lo <- mid + 1
     done;
     lo
   in
-  let result_len = begin_ + 1 + (n - end_) in
-  let result = Array.create ~len:result_len S2_cell_id.none in
-  (Array.unsafe_blit [@kind bits64])
-    ~src:covering
-    ~dst:result
-    ~src_pos:0
-    ~dst_pos:0
-    ~len:begin_;
-  result.(begin_) <- id;
-  (Array.unsafe_blit [@kind bits64])
-    ~src:covering
-    ~dst:result
-    ~src_pos:end_
-    ~dst_pos:(begin_ + 1)
-    ~len:(n - end_);
-  result
+  let tail_len = len - end_ in
+  for i = 0 to tail_len - 1 do
+    covering.(begin_ + 1 + i) <- covering.(end_ + i)
+  done;
+  covering.(begin_) <- id;
+  begin_ + 1 + tail_len
 ;;
 
-let contains_all_children opts (covering : S2_cell_id.t array) (id : S2_cell_id.t) =
+let contains_all_children opts (covering : S2_cell_id.t array) len (id : S2_cell_id.t) =
   let raw_min = S2_cell_id.range_min id in
-  let n = Array.length covering in
   (* lower_bound: first element >= range_min *)
   let mutable lo = 0 in
-  let mutable hi = n in
+  let mutable hi = len in
   while lo < hi do
     let mid = lo + ((hi - lo) / 2) in
     if unsigned_compare covering.(mid) raw_min >= 0 then hi <- mid else lo <- mid + 1
@@ -279,7 +276,7 @@ let contains_all_children opts (covering : S2_cell_id.t array) (id : S2_cell_id.
   let mutable pos = lo in
   let mutable ok = true in
   while ok && not (S2_cell_id.equal child child_end) do
-    if pos >= n || not (S2_cell_id.equal covering.(pos) child)
+    if pos >= len || not (S2_cell_id.equal covering.(pos) child)
     then ok <- false
     else (
       pos <- pos + 1;
@@ -288,15 +285,14 @@ let contains_all_children opts (covering : S2_cell_id.t array) (id : S2_cell_id.
   ok
 ;;
 
-let is_canonical_internal opts (covering : S2_cell_id.t array) =
-  let n = Array.length covering in
+let is_canonical_internal opts (covering : S2_cell_id.t array) len =
   let true_max = true_max_level opts in
-  let too_many_cells = n > opts.max_cells in
+  let too_many_cells = len > opts.max_cells in
   let mutable same_parent_count = 1 in
   let mutable prev_id = S2_cell_id.none in
   let mutable ok = true in
   let mutable i = 0 in
-  while ok && i < n do
+  while ok && i < len do
     let id = covering.(i) in
     if not (S2_cell_id.is_valid id)
     then ok <- false
@@ -335,14 +331,17 @@ let is_canonical_internal opts (covering : S2_cell_id.t array) =
   ok
 ;;
 
-let reduce_covering opts (working : S2_cell_id.t array) =
-  let mutable working = (Array.copy [@kind bits64]) working in
+(* Mutates [working] in place (shifting elements left as cells are collapsed into
+   common ancestors). Takes ownership of [working], which must be large enough to
+   hold [working_len] initial entries. Returns the new length; the unused tail of
+   [working] is left with stale data and must not be read beyond the result. *)
+let reduce_covering opts (working : S2_cell_id.t array) working_len =
+  let mutable wlen = working_len in
   let mutable done_ = false in
-  while (not done_) && Array.length working > opts.max_cells do
+  while (not done_) && wlen > opts.max_cells do
     let mutable best_index = -1 in
     let mutable best_level = -1 in
-    let n = Array.length working in
-    for i = 0 to n - 2 do
+    for i = 0 to wlen - 2 do
       let level = S2_cell_id.get_common_ancestor_level working.(i) working.(i + 1) in
       let level = adjust_level opts level in
       if level > best_level
@@ -354,18 +353,18 @@ let reduce_covering opts (working : S2_cell_id.t array) =
     then done_ <- true
     else (
       let id = S2_cell_id.parent_level working.(best_index) best_level in
-      working <- replace_cells_with_ancestor working id;
+      wlen <- replace_cells_with_ancestor_in_place working wlen id;
       let mutable cont = true in
       let mutable bl = best_level in
       while cont && bl > opts.min_level do
         bl <- bl - opts.level_mod;
         let parent = S2_cell_id.parent_level id bl in
-        if contains_all_children opts working parent
-        then working <- replace_cells_with_ancestor working parent
+        if contains_all_children opts working wlen parent
+        then wlen <- replace_cells_with_ancestor_in_place working wlen parent
         else cont <- false
       done)
   done;
-  working
+  wlen
 ;;
 
 (* {1 Mutually recursive covering functions}
@@ -396,18 +395,25 @@ and fast_covering_internal opts (region : S2_region.t) =
   S2_cell_union.from_verbatim result
 
 and canonicalize_covering_internal opts (covering : S2_cell_id.t array) =
-  let covering = (Array.copy [@kind bits64]) covering in
-  (* Replace cells that are too small or don't satisfy level_mod *)
-  if opts.max_level < S2_cell_id.max_level || opts.level_mod > 1
-  then (
-    let n = Array.length covering in
-    for i = 0 to n - 1 do
-      let id = covering.(i) in
-      let level = S2_cell_id.level id in
-      let new_level = adjust_level opts (Int.min level opts.max_level) in
-      if new_level <> level then covering.(i) <- S2_cell_id.parent_level id new_level
-    done);
-  (* Sort and normalize *)
+  (* Replace cells that are too small or don't satisfy [level_mod]. When
+     adjustment is needed, emit into a fresh array so the caller's input is
+     not mutated; otherwise pass the input straight through, because
+     [S2_cell_union.create] copies its argument before mutating it. *)
+  let covering =
+    if opts.max_level < S2_cell_id.max_level || opts.level_mod > 1
+    then (
+      let n = Array.length covering in
+      let out = Array.create ~len:n S2_cell_id.none in
+      for i = 0 to n - 1 do
+        let id = covering.(i) in
+        let level = S2_cell_id.level id in
+        let new_level = adjust_level opts (Int.min level opts.max_level) in
+        out.(i)
+        <- (if new_level <> level then S2_cell_id.parent_level id new_level else id)
+      done;
+      out)
+    else covering
+  in
   let cu = S2_cell_union.create covering in
   let normalized = S2_cell_union.cell_ids_raw cu in
   (* Denormalize if needed *)
@@ -416,17 +422,20 @@ and canonicalize_covering_internal opts (covering : S2_cell_id.t array) =
     then S2_cell_union.denormalize cu ~min_level:opts.min_level ~level_mod:opts.level_mod
     else normalized
   in
-  let excess = Array.length working - opts.max_cells in
-  if excess <= 0 || is_canonical_internal opts working
+  let working_len = Array.length working in
+  let excess = working_len - opts.max_cells in
+  if excess <= 0 || is_canonical_internal opts working working_len
   then working
-  else if excess * Array.length working > 10000
+  else if excess * working_len > 10000
   then (
     (* Use the region coverer for very large coverings *)
     let cu2 = S2_cell_union.from_verbatim working in
     let region = S2_region.of_cell_union cu2 in
     let result = covering_internal opts region false in
     S2_cell_union.cell_ids_raw result)
-  else reduce_covering opts working
+  else (
+    let new_len = reduce_covering opts working working_len in
+    (Array.sub [@kind bits64]) working ~pos:0 ~len:new_len)
 
 and covering_internal opts (region : S2_region.t) interior_covering =
   let c = new_coverer opts region in
@@ -467,5 +476,5 @@ and covering_internal opts (region : S2_region.t) interior_covering =
 let covering t region = covering_internal t region false
 let interior_covering t region = covering_internal t region true
 let fast_covering t region = fast_covering_internal t region
-let is_canonical t cell_ids = is_canonical_internal t cell_ids
+let is_canonical t cell_ids = is_canonical_internal t cell_ids (Array.length cell_ids)
 let canonicalize_covering t cell_ids = canonicalize_covering_internal t cell_ids

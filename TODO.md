@@ -268,11 +268,19 @@ the coverage hot path rather than a systemic codegen issue.
     option match (`lib/s2_region_coverer.ml` near the `covering_internal`
     consumer loop).
 
-- [ ] **Reuse a single working buffer in canonicalize/reduce**
-  - `canonicalize_covering_internal` at `lib/s2_region_coverer.ml:391` starts
-    with an `Array.copy`, and `replace_cells_with_ancestor` at
-    `lib/s2_region_coverer.ml:214,239-253` allocates a fresh result array on
-    every call. `reduce_covering` at `lib/s2_region_coverer.ml:328,347,354`
-    calls it in a loop, so the allocator is hit O(reductions) times.
-  - Use a single growable buffer and shift in place instead of allocating a new
-    array per replacement.
+- [x] **Reuse a single working buffer in canonicalize/reduce**
+  - `replace_cells_with_ancestor_in_place` shifts elements left inside the
+    caller's array and returns the new length;
+    `reduce_covering` / `is_canonical_internal` / `contains_all_children` take
+    an explicit length. The per-replace allocation and the initial `Array.copy`
+    inside `reduce_covering` are gone, so the O(reductions) allocations in the
+    reduce loop collapse to a single `Array.sub` at the end of the reduce path
+    (see `lib/s2_region_coverer.ml:222-268, 331-368, 418-431`).
+  - The defensive `Array.copy` at the top of `canonicalize_covering_internal`
+    is now fused with the max-level / level_mod adjustment pass: if no
+    adjustment is needed the caller's array is passed straight to
+    `S2_cell_union.create` (which copies anyway), and if adjustment is needed
+    we allocate one fresh array and write the adjusted ids into it in a single
+    pass (`lib/s2_region_coverer.ml:397-416`). Net effect: canonicalize now
+    allocates at most one transient adjustment array per call instead of
+    unconditionally copying the input.
