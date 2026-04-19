@@ -273,7 +273,7 @@ Listed in rough priority order (biggest / most self-contained first).
     and build the final `R3_vector.t` once at the end. Verify whether
     `R3_vector` has an unboxed helper first.
 
-- [ ] **`s2_lax_polygon.of_loops`: drop the seed search**
+- [x] **`s2_lax_polygon.of_loops`: drop the seed search**
   - `lib/s2_lax_polygon.ml:~96-110` does a linear search for the first
     non-empty loop just to seed the fill value for `Array.create`. Small win,
     but trivial to remove: use `Array.init` to write vertices directly, or

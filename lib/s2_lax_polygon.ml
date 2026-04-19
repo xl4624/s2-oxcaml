@@ -129,18 +129,7 @@ let of_loops src_loops =
       if num_vertices = 0
       then [||]
       else (
-        (* Find the first vertex in any loop to seed the array. *)
-        let mutable seed = S2_point.origin in
-        let mutable found = false in
-        let mutable i = 0 in
-        while (not found) && i < num_loops do
-          if Array.length src_loops.(i) > 0
-          then (
-            seed <- src_loops.(i).(0);
-            found <- true);
-          i <- i + 1
-        done;
-        let dst = Array.create ~len:num_vertices seed in
+        let dst = Array.create ~len:num_vertices S2_point.origin in
         for i = 0 to num_loops - 1 do
           let base = loop_starts.(i) in
           let loop = src_loops.(i) in
