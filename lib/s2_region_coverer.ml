@@ -41,12 +41,14 @@ let adjust_level t level =
   else level
 ;;
 
-(* A candidate cell being considered for the covering. *)
+(* A candidate cell being considered for the covering. Children live in the coverer's
+   flat [children_buf]; [children_start] and [num_children] mark this candidate's
+   contiguous slice of that buffer. *)
 type candidate =
   { cell : S2_cell.t
   ; mutable is_terminal : bool
   ; mutable num_children : int
-  ; mutable children : candidate option array
+  ; mutable children_start : int
   ; mutable priority : int
   }
 
@@ -64,6 +66,8 @@ type coverer =
   ; region : S2_region.t
   ; mutable result : S2_cell_id.t array
   ; mutable result_len : int
+  ; mutable children_buf : candidate array
+  ; mutable children_len : int
   ; pq : Candidate_heap.t
   ; mutable interior_covering : bool
   }
@@ -90,9 +94,28 @@ let new_coverer opts (region : S2_region.t) =
   ; region
   ; result = Array.create ~len:8 S2_cell_id.none
   ; result_len = 0
+  ; children_buf = [||]
+  ; children_len = 0
   ; pq = Candidate_heap.create ()
   ; interior_covering = false
   }
+;;
+
+(* Append [child] to the flat children buffer, growing it on demand. The first-ever
+   append fills the freshly allocated slots with [child]; since we overwrite slot
+   [children_len] immediately and never read beyond [children_len], the fill value
+   is inert. *)
+let push_child c child =
+  let cap = Array.length c.children_buf in
+  if c.children_len >= cap
+  then (
+    let new_cap = if cap = 0 then 32 else cap * 2 in
+    let new_arr = Array.create ~len:new_cap child in
+    if cap > 0
+    then Array.blit ~src:c.children_buf ~src_pos:0 ~dst:new_arr ~dst_pos:0 ~len:cap;
+    c.children_buf <- new_arr);
+  c.children_buf.(c.children_len) <- child;
+  c.children_len <- c.children_len + 1
 ;;
 
 let new_candidate c cell =
@@ -115,15 +138,7 @@ let new_candidate c cell =
       then is_terminal <- true;
     if reject
     then None
-    else (
-      let max_ch = if is_terminal then 0 else 1 lsl max_children_shift c.opts in
-      Some
-        { cell
-        ; is_terminal
-        ; num_children = 0
-        ; children = Array.create ~len:max_ch None
-        ; priority = 0
-        }))
+    else Some { cell; is_terminal; num_children = 0; children_start = 0; priority = 0 })
 ;;
 
 let rec expand_children c cand cell num_levels =
@@ -141,7 +156,7 @@ let rec expand_children c cand cell num_levels =
       match new_candidate c child_cell with
       | None -> ()
       | Some child ->
-        cand.children.(cand.num_children) <- Some child;
+        push_child c child;
         cand.num_children <- cand.num_children + 1;
         if child.is_terminal then num_terminals <- num_terminals + 1)
   done;
@@ -155,6 +170,9 @@ let rec add_candidate c cand =
     let num_levels =
       if S2_cell.level cand.cell < c.opts.min_level then 1 else c.opts.level_mod
     in
+    (* Reserve this candidate's children slice at the current end of the flat
+       buffer, then expand: new children are appended in order. *)
+    cand.children_start <- c.children_len;
     let num_terminals = expand_children c cand cand.cell num_levels in
     let mcs = max_children_shift c.opts in
     if cand.num_children = 0
@@ -426,11 +444,9 @@ and covering_internal opts (region : S2_region.t) interior_covering =
           <= c.opts.max_cells
     then
       for i = 0 to cand.num_children - 1 do
-        match cand.children.(i) with
-        | None -> ()
-        | Some child ->
-          if (not c.interior_covering) || c.result_len < c.opts.max_cells
-          then add_candidate c child
+        let child = c.children_buf.(cand.children_start + i) in
+        if (not c.interior_covering) || c.result_len < c.opts.max_cells
+        then add_candidate c child
       done
     else (
       cand.is_terminal <- true;

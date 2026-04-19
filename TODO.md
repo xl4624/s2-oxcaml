@@ -257,13 +257,16 @@ the coverage hot path rather than a systemic codegen issue.
   - Now uses `Binary_heap.Make` from `lib/util/binary_heap.ml`; `coverer.pq`
     is a flat array-backed heap (see `lib/s2_region_coverer.ml:53, 67, 93`).
 
-- [ ] **Flatten `candidate.children : candidate option array`**
-  - `new_candidate` at `lib/s2_region_coverer.ml:49,120` allocates a
-    4-or-16-slot option array for every candidate, and `expand_children` at
-    `lib/s2_region_coverer.ml:140` allocates a `Some` box for every child push.
-  - Flatten into a single growable candidate buffer with parent -> children
-    index ranges, removing both the per-candidate option array and the `Some`
-    wrappers.
+- [x] **Flatten `candidate.children : candidate option array`**
+  - Per-candidate `children` option array and the `Some` wrappers on every
+    child push are gone. `coverer` now carries a flat growable `children_buf :
+    candidate array` (see `lib/s2_region_coverer.ml:69-70, 108-119`); each
+    candidate records its slice as `children_start` + `num_children`
+    (`lib/s2_region_coverer.ml:47-53`). `add_candidate` reserves the slice at
+    `c.children_len` before expansion (`lib/s2_region_coverer.ml:175`), and
+    the popped-candidate loop reads children directly from the buffer with no
+    option match (`lib/s2_region_coverer.ml` near the `covering_internal`
+    consumer loop).
 
 - [ ] **Reuse a single working buffer in canonicalize/reduce**
   - `canonicalize_covering_internal` at `lib/s2_region_coverer.ml:391` starts
