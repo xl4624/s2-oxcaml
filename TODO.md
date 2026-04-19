@@ -231,56 +231,49 @@ All deps are done. These two modules unlock `S2_region_coverer` for Cap, Rect, C
   - Go: (not in Go) | C++: `s2boolean_operation.h`, `s2boolean_operation.cc`
   - Deps: `s2_builder`, `s2_shape_index`
 
-## Performance - region_coverer hot path
+## Performance
 
-The Cap and CellUnion coverer scenarios currently run ~1.25x-1.40x slower than
-the Go port; Cell is already 0.87x. The gap is concentrated in allocations on
-the coverage hot path rather than a systemic codegen issue.
+Listed in rough priority order (biggest / most self-contained first).
 
-- [~] **Unbox `cell_union_bound` result** *(partial)*
-  - Done: API now returns `S2_cell_id.t array` (unboxed `int64#` array)
-    instead of `Int64.t list` across `S2_cap`, `S2_cell`, `S2_latlng_rect`,
-    `S2_cell_union`, `S2_region` (and the `Custom` `methods` record).
-    `vertex_neighbors` was changed in the same shape. The
-    `cids_of_int64_list` helper and the `from_verbatim` / `cell_ids_raw`
-    round-trip in `fast_covering_internal{,_coverer}` are gone.
-  - Result: cuts the per-call alloc chain from ~14 small allocations to ~5,
-    but the savings (~60 of ~1,950 minor-heap words/iter) are below the
-    bench noise floor. The dominant per-coverage allocations live in the
-    candidate / heap path (next two items).
-  - Still open: full zero-alloc variant via a caller-provided buffer
-    (`val cell_union_bound : t -> ids:S2_cell_id.t array -> int`). Defer
-    until candidate / heap allocations are removed - until then the
-    remaining single fresh array per call is a rounding error.
+- [x] **`s2_lax_polygon`: adopt upstream loop-lookup strategy**
+  - Added a `prev_loop : int ref` cache on `t` and a shared
+    `find_loop_containing` helper (`lib/s2_lax_polygon.ml:46-86`) used by
+    `edge_of` and `chain_position_of`. The helper checks the cached loop
+    first, handles the "next loop" case (skipping over empty loops with the
+    same start offset), and falls back to linear scan when
+    `num_loops <= 12` or binary search over `loop_starts` otherwise. Matches
+    the three-tier strategy in `s2lax_polygon_shape.h:266-294`.
 
-- [x] **Replace `Pairing_heap` with flat array-backed binary heap**
-  - Now uses `Binary_heap.Make` from `lib/util/binary_heap.ml`; `coverer.pq`
-    is a flat array-backed heap (see `lib/s2_region_coverer.ml:53, 67, 93`).
+- [ ] **`s2_edge_distances.is_edge_b_near_edge_a`: switch to `S1_chord_angle`**
+  - `lib/s2_edge_distances.ml:317` has an explicit `TODO: Optimize to use
+    S1_chord_angle rather than S1_angle`. The current implementation calls
+    `R3_vector.angle` (a trig operation) twice per call to get `b0_dist` and
+    `b1_dist`, then compares against `tolerance` in radians.
+  - Change: rewrite the predicate to work in chord-angle squared-length space
+    (`S1_chord_angle.length2`), avoiding the `atan2`s. Self-contained to this
+    function plus any callers that pass `tolerance`.
 
-- [x] **Flatten `candidate.children : candidate option array`**
-  - Per-candidate `children` option array and the `Some` wrappers on every
-    child push are gone. `coverer` now carries a flat growable `children_buf :
-    candidate array` (see `lib/s2_region_coverer.ml:69-70, 108-119`); each
-    candidate records its slice as `children_start` + `num_children`
-    (`lib/s2_region_coverer.ml:47-53`). `add_candidate` reserves the slice at
-    `c.children_len` before expansion (`lib/s2_region_coverer.ml:175`), and
-    the popped-candidate loop reads children directly from the buffer with no
-    option match (`lib/s2_region_coverer.ml` near the `covering_internal`
-    consumer loop).
+- [ ] **`s2_cell_union.union`: merge-aware normalize**
+  - `lib/s2_cell_union.ml:333-350` allocates an `n1 + n2` array, blits both
+    inputs, then calls `normalize_ids` which re-scans and typically
+    reallocates. Both inputs are already sorted and normalized individually.
+  - Change: add a `normalize_from_sorted_runs` (or merge-sort-then-dedup)
+    variant that produces the normalized output in a single pass over the
+    two sorted runs, dropping one allocation and one pass.
 
-- [x] **Reuse a single working buffer in canonicalize/reduce**
-  - `replace_cells_with_ancestor_in_place` shifts elements left inside the
-    caller's array and returns the new length;
-    `reduce_covering` / `is_canonical_internal` / `contains_all_children` take
-    an explicit length. The per-replace allocation and the initial `Array.copy`
-    inside `reduce_covering` are gone, so the O(reductions) allocations in the
-    reduce loop collapse to a single `Array.sub` at the end of the reduce path
-    (see `lib/s2_region_coverer.ml:222-268, 331-368, 418-431`).
-  - The defensive `Array.copy` at the top of `canonicalize_covering_internal`
-    is now fused with the max-level / level_mod adjustment pass: if no
-    adjustment is needed the caller's array is passed straight to
-    `S2_cell_union.create` (which copies anyway), and if adjustment is needed
-    we allocate one fresh array and write the adjusted ids into it in a single
-    pass (`lib/s2_region_coverer.ml:397-416`). Net effect: canonicalize now
-    allocates at most one transient adjustment array per call instead of
-    unconditionally copying the input.
+- [ ] **`s2_loop_measures.surface_integral_r3`: unbox the R3 accumulator**
+  - `lib/s2_loop_measures.ml:40-72` holds the running sum in `let mutable
+    sum = R3_vector.zero` and repeatedly does `sum <- R3_vector.add sum ...`.
+    If `R3_vector.t` is a boxed record, every iteration allocates a fresh
+    record. The Kahan variant immediately below (`surface_integral_kahan_f`,
+    `lib/s2_loop_measures.ml:76-126`) already uses `float#` accumulators and
+    is allocation-free - the r3 version should mirror that.
+  - Change: accumulate into three `let mutable` `float#` components (x, y, z)
+    and build the final `R3_vector.t` once at the end. Verify whether
+    `R3_vector` has an unboxed helper first.
+
+- [ ] **`s2_lax_polygon.of_loops`: drop the seed search**
+  - `lib/s2_lax_polygon.ml:~96-110` does a linear search for the first
+    non-empty loop just to seed the fill value for `Array.create`. Small win,
+    but trivial to remove: use `Array.init` to write vertices directly, or
+    seed with any in-range point without searching.

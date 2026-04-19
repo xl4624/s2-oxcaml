@@ -13,6 +13,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** An edge is a pair of vertices [v0] and [v1]. Zero-length edges are allowed and can be
     used to represent points. *)
 module Edge : sig
@@ -107,18 +109,19 @@ module Type_tag : sig
   val min_user : t
 end
 
-(** Handles for a shape's concrete implementation. Every function is captured at
-    construction time by the corresponding [to_shape] of a concrete module. *)
+(** Handles for a shape's concrete implementation. The scalar fields are fixed at
+    construction time; the indexed accessors ([edge], [chain], ...) are closures captured
+    by the corresponding [to_shape] of a concrete module. *)
 type t =
-  #{ num_edges : unit -> int
+  #{ num_edges : int
+   ; num_chains : int
+   ; dimension : int
+   ; type_tag : Type_tag.t
+   ; reference_point : Reference_point.t
    ; edge : int -> Edge.t
-   ; dimension : unit -> int
-   ; num_chains : unit -> int
    ; chain : int -> Chain.t
    ; chain_edge : int -> int -> Edge.t
    ; chain_position : int -> Chain_position.t
-   ; reference_point : unit -> Reference_point.t
-   ; type_tag : unit -> Type_tag.t
    }
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
@@ -147,3 +150,4 @@ val get_reference_point
   -> edge:(int -> Edge.t)
   -> chain:(int -> Chain.t)
   -> Reference_point.t
+[@@zero_alloc ignore]

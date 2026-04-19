@@ -36,14 +36,14 @@ let reference_point _ = S2_shape.Reference_point.contained false
 let type_tag = 4
 
 let to_shape t : S2_shape.t =
-  #{ num_edges = (fun () -> num_edges t)
+  #{ num_edges = num_edges t
+   ; num_chains = num_chains t
+   ; dimension = 1
+   ; type_tag
+   ; reference_point = reference_point t
    ; edge = edge t
-   ; dimension = (fun () -> 1)
-   ; num_chains = (fun () -> num_chains t)
    ; chain = chain t
    ; chain_edge = chain_edge t
    ; chain_position = chain_position t
-   ; reference_point = (fun () -> reference_point t)
-   ; type_tag = (fun () -> type_tag)
    }
 ;;

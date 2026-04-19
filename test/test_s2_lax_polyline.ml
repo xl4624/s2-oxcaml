@@ -92,13 +92,10 @@ let test_shapes () =
       (check int) (name ^ " type_tag") expected_type_tag S2.S2_lax_polyline.type_tag;
       (* Exercise the generic shape view for the same queries. *)
       let generic = S2.S2_lax_polyline.to_shape shape in
-      (check int) (name ^ " shape num_edges") expected_num_edges (generic.#num_edges ());
-      (check int)
-        (name ^ " shape num_chains")
-        expected_num_chains
-        (generic.#num_chains ());
-      (check int) (name ^ " shape dimension") expected_dim (generic.#dimension ());
-      (check int) (name ^ " shape type_tag") expected_type_tag (generic.#type_tag ());
+      (check int) (name ^ " shape num_edges") expected_num_edges generic.#num_edges;
+      (check int) (name ^ " shape num_chains") expected_num_chains generic.#num_chains;
+      (check int) (name ^ " shape dimension") expected_dim generic.#dimension;
+      (check int) (name ^ " shape type_tag") expected_type_tag generic.#type_tag;
       let is_empty = S2.S2_shape.is_empty generic in
       let is_full = S2.S2_shape.is_full generic in
       check_bool (name ^ " is_empty") ~expected:expected_is_empty ~actual:is_empty;
