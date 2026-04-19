@@ -292,6 +292,9 @@ signatures). Pattern reference: `lib/s2_predicates.mli`, `lib/s2_shape.mli`.
 - [x] **`s2_wedge_relations`** - annotated; sexp_of_t on `Relation` marked
   ignore. All three predicates compose `S2_predicates.ordered_ccw` and
   `S2_point.equal`, both already zero_alloc.
+- [x] **`s2_edge_tessellator`** - annotated; `project`, `unproject`, and
+  `sexp_of_t` marked ignore. `create` and `min_tolerance` rely on the
+  module-level annotation.
 - [ ] **`s2_contains_vertex_query`** (51 lines) - tiny, good next target.
 - [ ] **`s2_lax_polyline`** (49 lines) - shape wrapper; check closure
   allocation in `to_shape`.
