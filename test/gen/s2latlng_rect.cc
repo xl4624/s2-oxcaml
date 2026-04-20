@@ -248,6 +248,8 @@ int main() {
             json item;
             item["label"] = label;
             item["input"] = rect_json(r);
+            item["lat_margin_deg"] = lat_margin;
+            item["lng_margin_deg"] = lng_margin;
             item["result"] = rect_json(result);
             item["is_empty"] = result.is_empty();
             item["is_full"] = result.is_full();
@@ -345,32 +347,39 @@ int main() {
     // TEST(S2LatLngRect, ApproxEquals) with max_error
     {
         json ae2 = json::array();
-        {
-            bool result = RectFromDegrees(10, 10, 20, 20)
-                              .ApproxEquals(RectFromDegrees(11, 11, 19, 19),
-                                            S1Angle::Degrees(1.001));
-            ae2.push_back({{"label", "within_margin"}, {"result", result}});
-        }
-        {
-            bool result = RectFromDegrees(10, 10, 20, 20)
-                              .ApproxEquals(RectFromDegrees(11, 11, 19, 19),
-                                            S1Angle::Degrees(0.999));
-            ae2.push_back({{"label", "outside_margin"}, {"result", result}});
-        }
-        {
-            bool result =
-                RectFromDegrees(0, 10, 20, 30)
-                    .ApproxEquals(RectFromDegrees(-1, 8, 21, 32),
-                                  S2LatLng::FromDegrees(1.001, 2.001));
-            ae2.push_back({{"label", "latlng_within"}, {"result", result}});
-        }
-        {
-            bool result =
-                RectFromDegrees(0, 10, 20, 30)
-                    .ApproxEquals(RectFromDegrees(-1, 8, 21, 32),
-                                  S2LatLng::FromDegrees(0.999, 1.999));
-            ae2.push_back({{"label", "latlng_outside"}, {"result", result}});
-        }
+        auto emit_scalar = [&](const S2LatLngRect &a, const S2LatLngRect &b,
+                               double margin_deg, const std::string &label) {
+            bool result = a.ApproxEquals(b, S1Angle::Degrees(margin_deg));
+            ae2.push_back({{"label", label},
+                           {"variant", "scalar"},
+                           {"a", rect_json(a)},
+                           {"b", rect_json(b)},
+                           {"margin_deg", margin_deg},
+                           {"result", result}});
+        };
+        auto emit_latlng = [&](const S2LatLngRect &a, const S2LatLngRect &b,
+                               double lat_margin_deg, double lng_margin_deg,
+                               const std::string &label) {
+            bool result = a.ApproxEquals(
+                b, S2LatLng::FromDegrees(lat_margin_deg, lng_margin_deg));
+            ae2.push_back({{"label", label},
+                           {"variant", "latlng"},
+                           {"a", rect_json(a)},
+                           {"b", rect_json(b)},
+                           {"lat_margin_deg", lat_margin_deg},
+                           {"lng_margin_deg", lng_margin_deg},
+                           {"result", result}});
+        };
+        emit_scalar(RectFromDegrees(10, 10, 20, 20),
+                    RectFromDegrees(11, 11, 19, 19), 1.001, "within_margin");
+        emit_scalar(RectFromDegrees(10, 10, 20, 20),
+                    RectFromDegrees(11, 11, 19, 19), 0.999, "outside_margin");
+        emit_latlng(RectFromDegrees(0, 10, 20, 30),
+                    RectFromDegrees(-1, 8, 21, 32), 1.001, 2.001,
+                    "latlng_within");
+        emit_latlng(RectFromDegrees(0, 10, 20, 30),
+                    RectFromDegrees(-1, 8, 21, 32), 0.999, 1.999,
+                    "latlng_outside");
         out["approx_equals_margin"] = ae2;
     }
 

@@ -141,7 +141,12 @@ let test_frames fixture () =
       (name ^ " from_frame e2")
       (point_of_json (member "from_frame_e2" c))
       from_frame_e2;
-    check_float (name ^ " det") ~expected:(float_of_json_exn (member "det" c)) ~actual:1.0)
+    (* Determinant of the 3x3 frame via the scalar triple product of its
+       columns: det = col0 . (col1 x col2). An orthonormal right-handed frame
+       satisfies det = 1. *)
+    let #{ S2.S2_point.col0; col1; col2 } = frame in
+    let det = Float_u.to_float (S2.R3_vector.dot col0 (S2.R3_vector.cross col1 col2)) in
+    check_float (name ^ " det") ~expected:(float_of_json_exn (member "det" c)) ~actual:det)
 ;;
 
 let test_rotate fixture () =

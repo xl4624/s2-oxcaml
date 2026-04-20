@@ -103,7 +103,8 @@ let%test_unit "next_prev_inverse" =
     if S2.S2_cell_id.is_valid nxt
     then (
       let back = S2.S2_cell_id.prev nxt in
-      if S2.S2_cell_id.is_valid back then assert (S2.S2_cell_id.equal back t)))
+      assert (S2.S2_cell_id.is_valid back);
+      assert (S2.S2_cell_id.equal back t)))
 ;;
 
 let%test_unit "parent_level_decreases" =

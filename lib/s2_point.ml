@@ -78,9 +78,7 @@ let[@inline] [@zero_alloc] exact_cross_prod a b =
   let xc = Exact_arith.Exact_vec.cross xa xb in
   if Exact_arith.Exact_vec.is_zero xc
   then R3_vector.zero
-  else (
-    let r = Exact_arith.normalizable_from_exact xc in
-    r)
+  else Exact_arith.normalizable_from_exact xc [@nontail]
 ;;
 
 let[@inline] [@zero_alloc] robust_cross_prod a b =

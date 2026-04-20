@@ -380,26 +380,26 @@ let test_expanded () =
   let cases = to_list (get "expanded") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let result = latlng_rect_of_json (member "result" case) in
+    let input = latlng_rect_of_json (member "input" case) in
+    let expected = latlng_rect_of_json (member "result" case) in
+    let lat_margin_deg = float_u_of_json_exn (member "lat_margin_deg" case) in
+    let lng_margin_deg = float_u_of_json_exn (member "lng_margin_deg" case) in
+    let margin = S2.S2_latlng.of_degrees ~lat:lat_margin_deg ~lng:lng_margin_deg in
+    let actual = S2.S2_latlng_rect.expanded input margin in
     let is_empty = bool_of_json_exn (member "is_empty" case) in
     let is_full = bool_of_json_exn (member "is_full" case) in
-    if is_empty
-    then
-      check_bool
-        (label ^ " is_empty")
-        ~expected:true
-        ~actual:(S2.S2_latlng_rect.is_empty result)
-    else if is_full
-    then
-      check_bool
-        (label ^ " is_full")
-        ~expected:true
-        ~actual:(S2.S2_latlng_rect.is_full result)
-    else (
-      (* Just verify the fixture rect matches *)
-      let input = latlng_rect_of_json (member "input" case) in
-      ignore (input : S2.S2_latlng_rect.t);
-      ignore (result : S2.S2_latlng_rect.t)))
+    check_bool
+      (label ^ " is_empty")
+      ~expected:is_empty
+      ~actual:(S2.S2_latlng_rect.is_empty actual);
+    check_bool
+      (label ^ " is_full")
+      ~expected:is_full
+      ~actual:(S2.S2_latlng_rect.is_full actual);
+    (* Empty results can carry arbitrary interval values (e.g. [Empty] is a
+       reserved sentinel interval), so skip the interval-equality check in that
+       case; the [is_empty] bool is the meaningful signal. *)
+    if not is_empty then check_rect (label ^ " expanded") ~expected ~actual)
 ;;
 
 let test_polar_closure () =
@@ -476,8 +476,30 @@ let test_approx_equals_margin () =
   let cases = to_list (get "approx_equals_margin") in
   List.iter cases ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
-    let result = bool_of_json_exn (member "result" case) in
-    check_bool label ~expected:result ~actual:result)
+    let variant = string_of_json_exn (member "variant" case) in
+    let a = latlng_rect_of_json (member "a" case) in
+    let b = latlng_rect_of_json (member "b" case) in
+    let expected = bool_of_json_exn (member "result" case) in
+    let actual =
+      match variant with
+      | "scalar" ->
+        let margin =
+          S2.S1_angle.of_degrees (float_u_of_json_exn (member "margin_deg" case))
+        in
+        let max_error = Packed_float_option.Unboxed.some (S2.S1_angle.radians margin) in
+        S2.S2_latlng_rect.approx_equal ~max_error a b
+      | "latlng" ->
+        let max_error =
+          S2.S2_latlng.of_degrees
+            ~lat:(float_u_of_json_exn (member "lat_margin_deg" case))
+            ~lng:(float_u_of_json_exn (member "lng_margin_deg" case))
+        in
+        S2.S2_latlng_rect.approx_equal_latlng ~max_error a b
+      | v ->
+        (match failwith (Printf.sprintf "unknown variant %s" v) with
+         | (_ : Nothing.t) -> .)
+    in
+    check_bool label ~expected ~actual)
 ;;
 
 let test_cap_bound () =
