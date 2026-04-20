@@ -89,8 +89,9 @@ let%expect_test "area_metrics" =
 ;;
 
 let%expect_test "get_closest_level" =
-  let angles = [ 1.0; 0.1; 0.01; 0.001; 1e-5; 1e-8 ] in
-  List.iter angles ~f:(fun a ->
+  let angles = [ "1.0"; "0.1"; "0.01"; "0.001"; "1e-5"; "1e-8" ] in
+  List.iter angles ~f:(fun s ->
+    let a = Float.of_string s in
     let au = Float_u.of_float a in
     printf
       "angle=%.2e  closest(avg_edge)=%2d  closest(avg_diag)=%2d  closest(avg_width)=%2d\n"

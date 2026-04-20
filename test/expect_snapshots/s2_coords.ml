@@ -10,7 +10,8 @@ let%expect_test "constants" =
 ;;
 
 let%expect_test "st_uv_roundtrip" =
-  List.iter [ 0.0; 0.25; 0.5; 0.75; 1.0 ] ~f:(fun s ->
+  List.iter [ "0.0"; "0.25"; "0.5"; "0.75"; "1.0" ] ~f:(fun s_str ->
+    let s = Float.of_string s_str in
     let u = S2.S2_coords.st_to_uv (Float_u.of_float s) in
     let back = S2.S2_coords.uv_to_st u in
     printf
@@ -40,14 +41,17 @@ let%expect_test "face_uv_to_xyz_face0" =
 
 let%expect_test "get_face" =
   List.iter
-    [ 1.0, 0.0, 0.0, 0
-    ; 0.0, 1.0, 0.0, 1
-    ; 0.0, 0.0, 1.0, 2
-    ; -1.0, 0.0, 0.0, 3
-    ; 0.0, -1.0, 0.0, 4
-    ; 0.0, 0.0, -1.0, 5
+    [ "1.0", "0.0", "0.0", 0
+    ; "0.0", "1.0", "0.0", 1
+    ; "0.0", "0.0", "1.0", 2
+    ; "-1.0", "0.0", "0.0", 3
+    ; "0.0", "-1.0", "0.0", 4
+    ; "0.0", "0.0", "-1.0", 5
     ]
-    ~f:(fun (x, y, z, expected_face) ->
+    ~f:(fun (xs, ys, zs, expected_face) ->
+      let x = Float.of_string xs in
+      let y = Float.of_string ys in
+      let z = Float.of_string zs in
       let p =
         S2.R3_vector.create
           ~x:(Float_u.of_float x)
