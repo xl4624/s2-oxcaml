@@ -79,7 +79,8 @@ let none : t = #0L
 let sentinel : t = -#1L
 let[@inline] [@zero_alloc] lsb t = Int64_u.O.(t land Int64_u.neg t)
 
-(* Matches [S2CellId::is_valid]: face in range and [(lsb t & mask) <> 0]. *)
+(* Valid iff the face is in range and the low-bit tag indicates a level
+   between 0 and [max_level]. *)
 let[@inline] [@zero_alloc] is_valid t =
   let face = Int64_u.to_int_trunc Int64_u.O.(t lsr pos_bits) in
   face < num_faces

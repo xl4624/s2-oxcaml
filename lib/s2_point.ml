@@ -64,13 +64,51 @@ let[@inline] [@zero_alloc] symbolic_cross_prod a b =
   else R3_vector.(R3_vector.neg (symbolic_cross_prod_sorted b a))
 ;;
 
+(* Arbitrary-precision fallback used when the double-precision
+   [(a + b) x (b - a)] underflows to exactly zero but [a <> b]. Evaluates the
+   cross product in the [Exact_arith.Dyadic] representation (no precision
+   loss), and if the exact result is nonzero, scales it back into the
+   normal double range via [normalizable_from_exact]. If the exact result
+   is also zero (i.e. [a] and [b] are truly collinear in the real numbers),
+   returns [R3_vector.zero] as a sentinel and the caller falls through to
+   symbolic perturbations. *)
+let[@inline] [@zero_alloc] exact_cross_prod a b =
+  let xa = Exact_arith.Exact_vec.of_r3 a in
+  let xb = Exact_arith.Exact_vec.of_r3 b in
+  let xc = Exact_arith.Exact_vec.cross xa xb in
+  if Exact_arith.Exact_vec.is_zero xc
+  then R3_vector.zero
+  else (
+    let r = Exact_arith.normalizable_from_exact xc in
+    r)
+;;
+
 let[@inline] [@zero_alloc] robust_cross_prod a b =
   let sum = R3_vector.add a b in
   let diff = R3_vector.sub b a in
   let cross = R3_vector.cross sum diff in
-  if R3_vector.equal cross R3_vector.zero
-  then if R3_vector.equal a b then ortho a else symbolic_cross_prod a b
-  else cross
+  if not (R3_vector.equal cross R3_vector.zero)
+  then
+    (* Fast path: double-precision cross product is nonzero. Scale it up if
+       the magnitude is too small for safe downstream [norm2] / [atan2]
+       evaluation; magnitude is not part of this function's contract. *)
+    R3_vector.ensure_normalizable cross
+  else if R3_vector.equal a b
+  then ortho a
+  else (
+    (* Double cross is exactly zero but [a <> b]. Either the true cross
+       product has underflowed (e.g. a, b differ only by a subnormal
+       perturbation) or [a] and [b] are truly collinear. Exact arithmetic
+       tells us which. *)
+    let xc = exact_cross_prod a b in
+    if not (R3_vector.equal xc R3_vector.zero)
+    then xc
+    else if (* Truly collinear in the real numbers. Wrap the sorted symbolic
+         perturbation in [ensure_normalizable] so callers can pass the result
+         through [atan2(|cross|, dot)] without fearing underflow. *)
+            compare_lex a b < 0
+    then R3_vector.ensure_normalizable (symbolic_cross_prod_sorted a b)
+    else R3_vector.neg (R3_vector.ensure_normalizable (symbolic_cross_prod_sorted b a)))
 ;;
 
 let[@inline] [@zero_alloc] distance a b = R3_vector.angle a b

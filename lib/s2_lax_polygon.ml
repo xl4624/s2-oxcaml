@@ -42,7 +42,7 @@ let[@inline] [@zero_alloc] num_loop_vertices_raw ~loop_starts i =
 ;;
 
 (* Below this threshold a linear scan over [loop_starts] outperforms binary
-   search; matches the upstream S2 benchmark constant. *)
+   search. *)
 let k_max_linear_search_loops = 12
 
 (* Find the loop whose range of vertices contains edge/vertex [e]. [prev] is a

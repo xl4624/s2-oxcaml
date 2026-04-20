@@ -10,7 +10,7 @@ type kind =
 (* The two built-in projections have identical parameterization (a single
    scale), so we collapse them into one unboxed record with a kind tag and
    dispatch on that. This keeps the type immediate/float64-only (no heap box)
-   while still matching the upstream [Projection] abstraction. *)
+   while preserving the common [Projection] interface. *)
 type t =
   #{ kind_tag : int
    ; x_wrap : Float_u.t

@@ -14,9 +14,8 @@ let[@inline] deriv t = t.#deriv
 let[@inline] get_value t level = Float_u.ldexp t.#deriv (-t.#dim * level)
 
 (* [ilogb x] returns the integer [e] such that [1 <= |x| * 2^-e < 2] for normal non-zero
-   [x]. Implemented via the IEEE exponent field on [x]. Matches C's [ilogb] for
-   positive finite normal inputs, which is all we need: callers guard against
-   non-positive values. *)
+   [x]. Implemented via the IEEE exponent field on [x]. Only correct for positive finite
+   normal inputs, which is all we need: callers guard against non-positive values. *)
 let[@inline] ilogb x =
   let e = Float_u.ieee_exponent x in
   if e = 0

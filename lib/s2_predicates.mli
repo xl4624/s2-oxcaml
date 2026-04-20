@@ -25,8 +25,8 @@ module Direction : sig
 end
 
 (** [sign a b c] returns [true] iff [a], [b], [c] are strictly counter-clockwise on the
-    unit sphere. Computed as [(c x a) . b > 0]. This matches Go's [s2.Sign]; use
-    {!robust_sign} when you also need to distinguish clockwise from collinear. *)
+    unit sphere. Computed as [(c x a) . b > 0]. Use {!robust_sign} when you also need to
+    distinguish clockwise from collinear. *)
 val sign : S2_point.t -> S2_point.t -> S2_point.t -> bool
 
 (** [robust_sign a b c] returns the orientation of [a], [b], [c] as a {!Direction.t}. It

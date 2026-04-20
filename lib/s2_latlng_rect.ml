@@ -357,7 +357,7 @@ let[@zero_alloc] contains_cell t cell = contains t (from_cell cell)
 let[@zero_alloc] intersects_cell t cell = intersects t (from_cell cell)
 let[@zero_alloc ignore] cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
 
-(* Distance helpers -- these mirror s2edge_distances functions. *)
+(* Distance helpers used by [distance] and [hausdorff_distance] below. *)
 
 (* Minimum distance from point p to great-circle segment (a, b). *)
 let[@zero_alloc] point_to_segment_distance p a b =

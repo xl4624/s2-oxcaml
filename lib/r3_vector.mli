@@ -79,6 +79,21 @@ val norm : t -> float#
     vector, the zero vector is returned. *)
 val normalize : t -> t
 
+(** [is_normalizable t] returns true if the vector can be normalized without losing
+    precision in a subsequent [norm2] call - equivalently, its largest absolute component
+    is at least [2^(-242)]. The zero vector is also reported as normalizable (callers
+    handle it specially). *)
+val is_normalizable : t -> bool
+
+(** [ensure_normalizable t] returns a vector pointing in the same direction as [t] but
+    scaled up by a power of two if its largest absolute component is smaller than
+    [2^(-242)]. This threshold guarantees that [norm2] and downstream operations on the
+    result will not underflow, so callers can safely take cross products, squared norms,
+    or [atan2] on results of [ensure_normalizable]. Inputs whose largest component is
+    already at least [2^(-242)] are returned unchanged. The zero vector is returned
+    unchanged. *)
+val ensure_normalizable : t -> t
+
 (** [distance a b] returns the Euclidean distance between [a] and [b], i.e.
     [norm (sub a b)]. *)
 val distance : t -> t -> float#

@@ -9,9 +9,15 @@
    -  TEST(S2, GetIntersection) - selected deterministic cases
    -  TEST(S2, RobustSign / Sign) - basic cases
    -  TEST(S2, CompareEdgesOrderInvariant)
+   -  TEST(S2, RobustCrossProdCoverage) - the EXACT and SYMBOLIC cases that
+      reach our arbitrary-precision fallback; the DOUBLE-vs-LONG_DOUBLE
+      precision-selection cases are omitted since OCaml has no long double.
+   -  TEST(S2, RobustCrossProdMagnitude) - regression for the underflow fix.
+   -  TEST(S2, SymbolicCrossProdConsistentWithSign) - 27-point unit-vector
+      sweep checking that [robust_cross_prod] is CCW-consistent with [sign]
+      whenever symbolic perturbations are required.
 
    Deliberately omitted:
-   -  TEST(S2, RobustCrossProdCoverage) - internal precision levels
    -  TEST(S2, RobustCrossProdError) - statistical/randomized
    -  TEST(S2, IntersectionError) - statistical/randomized
    -  TEST(S2, GrazingIntersections) - statistical/randomized
@@ -146,17 +152,162 @@ let test_intersection () =
 let test_compare_edges () =
   let data = Lazy.force fixture in
   let cases = member "compare_edges" data in
-  let _v0 = point_of_json (member "v0" cases) in
-  let _v1 = point_of_json (member "v1" cases) in
-  (* All four permutations should be false (self-comparison). *)
+  let v0 = point_of_json (member "v0" cases) in
+  let v1 = point_of_json (member "v1" cases) in
   let expected_00 = bool_of_json_exn (member "v0_v1_v0_v1" cases) in
   let expected_10 = bool_of_json_exn (member "v1_v0_v0_v1" cases) in
   let expected_01 = bool_of_json_exn (member "v0_v1_v1_v0" cases) in
   let expected_11 = bool_of_json_exn (member "v1_v0_v1_v0" cases) in
-  check_bool "v0,v1 < v0,v1" ~expected:expected_00 ~actual:false;
-  check_bool "v1,v0 < v0,v1" ~expected:expected_10 ~actual:false;
-  check_bool "v0,v1 < v1,v0" ~expected:expected_01 ~actual:false;
-  check_bool "v1,v0 < v1,v0" ~expected:expected_11 ~actual:false
+  check_bool
+    "v0,v1 < v0,v1"
+    ~expected:expected_00
+    ~actual:(S2.S2_edge_crossings.compare_edges v0 v1 v0 v1);
+  check_bool
+    "v1,v0 < v0,v1"
+    ~expected:expected_10
+    ~actual:(S2.S2_edge_crossings.compare_edges v1 v0 v0 v1);
+  check_bool
+    "v0,v1 < v1,v0"
+    ~expected:expected_01
+    ~actual:(S2.S2_edge_crossings.compare_edges v0 v1 v1 v0);
+  check_bool
+    "v1,v0 < v1,v0"
+    ~expected:expected_11
+    ~actual:(S2.S2_edge_crossings.compare_edges v1 v0 v1 v0)
+;;
+
+(* ---------- robust_cross_prod coverage ----------------------------------- *)
+
+let p x y z =
+  S2.R3_vector.create
+    ~x:(Float_u.of_float x)
+    ~y:(Float_u.of_float y)
+    ~z:(Float_u.of_float z)
+;;
+
+(* Like EXPECT_EQ on [result.Normalize()] in C++: after [Normalize], the
+   direction is exactly what we expect. Uses [S2_point.approx_equal] with a
+   tight tolerance so ulp-level differences from rescaling pass but any
+   direction error fails loudly. *)
+let check_direction label ~expected ~actual =
+  let normalized = S2.R3_vector.normalize actual in
+  let max_error =
+    Packed_float_option.Unboxed.some Float_u.O.(#2.0 * Float_u.epsilon_float ())
+  in
+  if not (S2.S2_point.approx_equal ~max_error normalized expected)
+  then
+    Alcotest.failf
+      "%s: expected direction %s, got %s (pre-normalize %s)"
+      label
+      (S2.R3_vector.to_string expected)
+      (S2.R3_vector.to_string normalized)
+      (S2.R3_vector.to_string actual)
+;;
+
+(* Subnormal inputs that force the exact-arithmetic fallback. Mirrors the
+   EXACT-precision rows of C++ [RobustCrossProdCoverage] at
+   s2edge_crossings_test.cc:217-222. *)
+let test_robust_cross_prod_subnormal () =
+  (* Exact result is scaled up when the direct [ExactCrossProd] cast would
+     underflow. Inputs: (5e-324, 1, 0) x (0, 1, 0). *)
+  check_direction
+    "subnormal vs (0,1,0)"
+    ~expected:(p 0.0 0.0 1.0)
+    ~actual:(S2.S2_point.robust_cross_prod (p 5e-324 1.0 0.0) (p 0.0 1.0 0.0));
+  (* Even when the exact cross product underflows in double precision: the z
+     component of the real cross product is [-5e-324 * DBL_ERR ~= 2^-1127],
+     well below the smallest subnormal. *)
+  let dbl_err = Float.ldexp 1.0 (-53) in
+  check_direction
+    "subnormal vs (5e-324, 1-DBL_ERR, 0)"
+    ~expected:(p 0.0 0.0 (-1.0))
+    ~actual:
+      (S2.S2_point.robust_cross_prod (p 5e-324 1.0 0.0) (p 5e-324 (1.0 -. dbl_err) 0.0))
+;;
+
+(* Symbolic-perturbation cases: [a] and [b] are exactly collinear in the
+   reals, so the exact cross product is zero and [robust_cross_prod] falls
+   through to [SymbolicCrossProd]. Mirrors s2edge_crossings_test.cc:225-230
+   (after [Normalize]). *)
+let test_robust_cross_prod_symbolic () =
+  let dbl_epsilon = Float.ldexp 1.0 (-52) in
+  check_direction
+    "collinear x axis"
+    ~expected:(p 0.0 1.0 0.0)
+    ~actual:
+      (S2.S2_point.robust_cross_prod (p 1.0 0.0 0.0) (p (1.0 +. dbl_epsilon) 0.0 0.0));
+  check_direction
+    "collinear y axis"
+    ~expected:(p 1.0 0.0 0.0)
+    ~actual:
+      (S2.S2_point.robust_cross_prod (p 0.0 (1.0 +. dbl_epsilon) 0.0) (p 0.0 1.0 0.0));
+  check_direction
+    "antipodal z axis"
+    ~expected:(p (-1.0) 0.0 0.0)
+    ~actual:(S2.S2_point.robust_cross_prod (p 0.0 0.0 1.0) (p 0.0 0.0 (-1.0)))
+;;
+
+(* At 1e-100 scale, simply ensuring the [robust_cross_prod] result is
+   normalizable is not sufficient: [Angle] between two such results would
+   still underflow without the direction-preserving scaling that
+   [ensure_normalizable] / [normalizable_from_exact] provide. Mirrors
+   s2edge_crossings_test.cc:264-283. *)
+let test_robust_cross_prod_magnitude () =
+  let pi_2 = Float.pi /. 2.0 in
+  let angle_between u v =
+    Float_u.to_float (S2.S1_angle.radians (S2.R3_vector.angle u v))
+  in
+  let check label ~a ~b ~c ~d =
+    let ab = S2.S2_point.robust_cross_prod a b in
+    let cd = S2.S2_point.robust_cross_prod c d in
+    let got = angle_between ab cd in
+    if not (Float.equal got pi_2)
+    then Alcotest.failf "%s: expected angle pi/2 (%.17g), got %.17g" label pi_2 got
+  in
+  (* Underflow in the double cross-product magnitude. *)
+  check
+    "underflow direction preserved"
+    ~a:(p 1.0 0.0 0.0)
+    ~b:(p 1.0 1e-100 0.0)
+    ~c:(p 1.0 0.0 0.0)
+    ~d:(p 1.0 0.0 1e-100);
+  (* Same but the exact cross product itself underflows in double after the
+     cast, forcing the [normalizable_from_exact] scaling path. *)
+  check
+    "exact-underflow direction preserved"
+    ~a:(p (-1e-100) 0.0 1.0)
+    ~b:(p 1e-100 0.0 (-1.0))
+    ~c:(p 0.0 (-1e-100) 1.0)
+    ~d:(p 0.0 1e-100 (-1.0))
+;;
+
+(* Sweep over the 27 points in {-1, 0, 1}^3 (excluding the origin after
+   normalization) paired with three scalars that produce linearly-dependent
+   non-degenerate pairs; for each pair [robust_cross_prod] must land on the
+   CCW side of [a, b] per [S2_predicates.sign]. Mirrors
+   s2edge_crossings_test.cc:242-262. *)
+let test_symbolic_cross_prod_consistent_with_sign () =
+  let dbl_err = Float.ldexp 1.0 (-53) in
+  let coord_values = [ -1.0; 0.0; 1.0 ] in
+  let scale_values = [ -1.0; 1.0 -. dbl_err; 1.0 +. (2.0 *. dbl_err) ] in
+  List.iter coord_values ~f:(fun x ->
+    List.iter coord_values ~f:(fun y ->
+      List.iter coord_values ~f:(fun z ->
+        let a_raw = p x y z in
+        if not (S2.R3_vector.equal a_raw S2.R3_vector.zero)
+        then (
+          let a = S2.R3_vector.normalize a_raw in
+          List.iter scale_values ~f:(fun scale ->
+            let b = S2.R3_vector.mul a (Float_u.of_float scale) in
+            let rcp = S2.S2_point.robust_cross_prod a b in
+            let c = S2.R3_vector.normalize rcp in
+            match S2.S2_predicates.robust_sign a b c with
+            | Counter_clockwise -> ()
+            | Clockwise | Indeterminate ->
+              Alcotest.failf
+                "robust_sign a b robust_cross_prod(a,b) not CCW: a=%s scale=%g"
+                (S2.R3_vector.to_string a)
+                scale)))))
 ;;
 
 let () =
@@ -170,5 +321,14 @@ let () =
     ; "sign", [ Alcotest.test_case "sign" `Quick test_sign ]
     ; "intersection", [ Alcotest.test_case "intersection" `Quick test_intersection ]
     ; "compare_edges", [ Alcotest.test_case "compare_edges" `Quick test_compare_edges ]
+    ; ( "robust_cross_prod"
+      , [ Alcotest.test_case "subnormal" `Quick test_robust_cross_prod_subnormal
+        ; Alcotest.test_case "symbolic" `Quick test_robust_cross_prod_symbolic
+        ; Alcotest.test_case "magnitude" `Quick test_robust_cross_prod_magnitude
+        ; Alcotest.test_case
+            "consistent_with_sign"
+            `Quick
+            test_symbolic_cross_prod_consistent_with_sign
+        ] )
     ]
 ;;

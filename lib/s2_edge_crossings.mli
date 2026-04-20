@@ -68,6 +68,15 @@ val angle_contains_vertex : S2_point.t -> S2_point.t -> S2_point.t -> bool
     intersection point. *)
 val get_intersection : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t
 
+(** {1 Edge ordering} *)
+
+(** [compare_edges a0 a1 b0 b1] is a strict total order on undirected edges: it returns
+    true iff the edge [{A0, A1}] is strictly less than the edge [{B0, B1}] after
+    normalizing each endpoint pair so the smaller point comes first. The result is
+    invariant under swapping [(a0, a1)] or [(b0, b1)] -- the same undirected edge compared
+    against itself always yields false. *)
+val compare_edges : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t -> bool
+
 (** {1 Error bounds} *)
 
 (** [intersection_error] is an upper bound on the distance from the intersection point

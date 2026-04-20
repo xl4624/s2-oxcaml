@@ -225,8 +225,8 @@ let shrink_to_fit t rect =
     let j_min, j_xor =
       shrink t.#j_lo (R1_interval.lo padded_y) (R1_interval.hi padded_y)
     in
-    (* [level_msb] is positive so [Int.ceil_log2] matches [absl::bit_width].  We use the
-       explicit bit count to avoid depending on builtins we may not have. *)
+    (* [level_msb] is positive. We compute the bit width with an explicit
+       iterative count rather than a clz intrinsic. *)
     let level_msb = ((i_xor lor j_xor) lsl 1) + 1 in
     let bit_width n =
       let rec loop n acc = if n = 0 then acc else loop (n lsr 1) (acc + 1) in

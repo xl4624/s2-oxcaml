@@ -119,25 +119,21 @@ let test_perimeter () =
 ;;
 
 (* ---------- signed_area underflow ----------
-   OCaml diverges from C++ on the TEST(GetSignedArea, Underflow) tiny-loop
-   case: C++ curvature lands strictly above 0 (not 2*pi), so the underflow
-   branch returns DBL_MIN. The OCaml Kahan / turn-angle accumulation order
-   produces curvature = 2*pi exactly for this 1e-88-scale square, hitting the
-   "completely degenerate" early return of 0. Accept either the DBL_MIN or
-   the 0 output as long as the magnitude does not exceed the expected. *)
+   TEST(GetSignedArea, Underflow): a 1e-88-scale square. At this scale the
+   double-precision cross product [(a - b) x (a + b)] is tiny (~1e-90) and
+   its squared norm underflows, which would make every turn angle collapse
+   to zero. [R3_vector.ensure_normalizable], applied inside
+   [S2_point.robust_cross_prod], scales the cross product up by a power of
+   two so the curvature sum lands at [2*pi - O(ulp)] and the tiny-positive
+   branch of [signed_area] returns [DBL_MIN] (matches the canonical C++
+   reference exactly). *)
 
 let test_signed_area_underflow () =
   let c = member "signed_area_underflow" fixture in
   let loop = loop_of_json (member "vertices" c) in
   let expected = float_u_of_json_exn (member "signed_area" c) in
   let actual = S2.S2_loop_measures.signed_area loop in
-  let open Float_u.O in
-  if not (actual = #0.0 || actual = expected)
-  then
-    Alcotest.failf
-      "signed_area_underflow: got %.17g, expected 0 or %.17g"
-      (Float_u.to_float actual)
-      (Float_u.to_float expected)
+  check_float_u_exact "signed_area_underflow" ~expected ~actual
 ;;
 
 (* ---------- Standard loops and the >4pi case ---------- *)

@@ -86,6 +86,34 @@ let[@inline] [@zero_alloc] normalize t =
   if n2 = #0.0 then zero else mul t (#1.0 / Float_u.sqrt n2)
 ;;
 
+(* Components whose magnitude is at least [2^(-242)] can be squared (~2^(-484)) and still
+   fit in the normal-range doubles the rest of the pipeline expects. Anything smaller
+   underflows once squared, which breaks [norm2], [atan2(|cross|, dot)], and any later
+   scaled arithmetic. *)
+let[@inline] [@zero_alloc] max_abs_component t =
+  Float_util.max_u
+    (Float_u.abs t.#x)
+    (Float_util.max_u (Float_u.abs t.#y) (Float_u.abs t.#z))
+;;
+
+let[@inline] [@zero_alloc] is_normalizable t =
+  let m = max_abs_component t in
+  m >= #0x1p-242 || m = #0.0
+;;
+
+let[@inline] [@zero_alloc] ensure_normalizable t =
+  let m = max_abs_component t in
+  if m >= #0x1p-242 || m = #0.0
+  then t
+  else (
+    (* [ieee_exponent m] is the biased exponent field. For a normal finite [m > 0], the
+       unbiased exponent is [e = ieee_exponent m - 1023] and [m] lies in [2^e, 2^(e+1)).
+       Scaling by [2^(-e)] puts [m] in [1, 2). *)
+    let e = Int.( - ) (Float_u.ieee_exponent m) 1023 in
+    let scale = Float_u.ldexp #1.0 (Int.neg e) in
+    mul t scale)
+;;
+
 let[@inline] [@zero_alloc] distance a b = norm (sub a b)
 
 let[@inline] [@zero_alloc] angle a b =
