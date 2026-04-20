@@ -95,3 +95,63 @@ let%test_unit "parent_of_child" =
           S2.S2_cell_id.equal (S2.S2_cell_id.parent_exn (S2.S2_cell_id.child_exn t k)) t)
       done)
 ;;
+
+let%test_unit "next_prev_inverse" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let t = cid_of_int64 id in
+    let nxt = S2.S2_cell_id.next t in
+    if S2.S2_cell_id.is_valid nxt
+    then (
+      let back = S2.S2_cell_id.prev nxt in
+      if S2.S2_cell_id.is_valid back then assert (S2.S2_cell_id.equal back t)))
+;;
+
+let%test_unit "parent_level_decreases" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let t = cid_of_int64 id in
+    if S2.S2_cell_id.is_face t
+    then ()
+    else (
+      let p = S2.S2_cell_id.parent_exn t in
+      assert (S2.S2_cell_id.level p = S2.S2_cell_id.level t - 1);
+      assert (S2.S2_cell_id.contains p t)))
+;;
+
+let%test_unit "child_level_increases" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let t = cid_of_int64 id in
+    if S2.S2_cell_id.is_leaf t
+    then ()
+    else
+      for k = 0 to 3 do
+        let c = S2.S2_cell_id.child_exn t k in
+        assert (S2.S2_cell_id.level c = S2.S2_cell_id.level t + 1)
+      done)
+;;
+
+let%test_unit "range_min_max_contained" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let t = cid_of_int64 id in
+    let lo = S2.S2_cell_id.range_min t in
+    let hi = S2.S2_cell_id.range_max t in
+    assert (S2.S2_cell_id.contains t lo);
+    assert (S2.S2_cell_id.contains t hi))
+;;
+
+let%test_unit "next_wrap_prev_wrap_inverse" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let t = cid_of_int64 id in
+    let back = S2.S2_cell_id.prev_wrap (S2.S2_cell_id.next_wrap t) in
+    assert (S2.S2_cell_id.equal back t))
+;;
+
+let%test_unit "common_ancestor_with_own_child" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let a = cid_of_int64 id in
+    if S2.S2_cell_id.is_leaf a
+    then ()
+    else (
+      let b = S2.S2_cell_id.child_exn a 0 in
+      let lvl = S2.S2_cell_id.get_common_ancestor_level a b in
+      assert (lvl = S2.S2_cell_id.level a)))
+;;

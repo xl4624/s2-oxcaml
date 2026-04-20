@@ -108,3 +108,88 @@ let%test_unit "degrees_radians" =
     let diff = Float_u.abs (S2.S1_angle.radians a - S2.S1_angle.radians back) in
     assert (diff <= #1e-13))
 ;;
+
+let%test_unit "sub_add_inverse" =
+  Base_quickcheck.Test.run_exn
+    (module S1_angle_pair)
+    ~config:qc_config
+    ~f:(fun { S1_angle_pair.a; b } ->
+      let open Float_u.O in
+      let a = S2.S1_angle.of_radians (Float_u.of_float a) in
+      let b = S2.S1_angle.of_radians (Float_u.of_float b) in
+      let roundtrip = S2.S1_angle.add (S2.S1_angle.sub a b) b in
+      let diff = Float_u.abs (S2.S1_angle.radians a - S2.S1_angle.radians roundtrip) in
+      let scale = Float_u.max #1.0 (Float_u.abs (S2.S1_angle.radians a)) in
+      assert (diff <= #1e-13 * scale))
+;;
+
+let%test_unit "add_associative" =
+  Base_quickcheck.Test.run_exn
+    (module S1_angle_pair)
+    ~config:qc_config
+    ~f:(fun { S1_angle_pair.a; b } ->
+      let open Float_u.O in
+      let a = S2.S1_angle.of_radians (Float_u.of_float a) in
+      let b = S2.S1_angle.of_radians (Float_u.of_float b) in
+      let c = S2.S1_angle.of_radians #0.5 in
+      let lhs = S2.S1_angle.add (S2.S1_angle.add a b) c in
+      let rhs = S2.S1_angle.add a (S2.S1_angle.add b c) in
+      let diff = Float_u.abs (S2.S1_angle.radians lhs - S2.S1_angle.radians rhs) in
+      let scale =
+        Float_u.max
+          #1.0
+          (Float_u.abs (S2.S1_angle.radians a) + Float_u.abs (S2.S1_angle.radians b))
+      in
+      assert (diff <= #1e-13 * scale))
+;;
+
+let%test_unit "mul_distributive_over_add" =
+  Base_quickcheck.Test.run_exn
+    (module S1_angle_pair)
+    ~config:qc_config
+    ~f:(fun { S1_angle_pair.a; b } ->
+      let open Float_u.O in
+      let k = #2.5 in
+      let a = S2.S1_angle.of_radians (Float_u.of_float a) in
+      let b = S2.S1_angle.of_radians (Float_u.of_float b) in
+      let lhs = S2.S1_angle.mul (S2.S1_angle.add a b) k in
+      let rhs = S2.S1_angle.add (S2.S1_angle.mul a k) (S2.S1_angle.mul b k) in
+      let diff = Float_u.abs (S2.S1_angle.radians lhs - S2.S1_angle.radians rhs) in
+      let scale =
+        Float_u.max
+          #1.0
+          (k * (Float_u.abs (S2.S1_angle.radians a) + Float_u.abs (S2.S1_angle.radians b)))
+      in
+      assert (diff <= #1e-13 * scale))
+;;
+
+let%test_unit "sin_cos_identity" =
+  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
+    let a = S1_angle_only.to_angle t in
+    let s = S2.S1_angle.sin a in
+    let c = S2.S1_angle.cos a in
+    let sum = (s * s) + (c * c) in
+    assert (Float_u.abs (sum - #1.0) <= #1e-14))
+;;
+
+let%test_unit "sin_cos_pair_matches" =
+  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
+    let a = S1_angle_only.to_angle t in
+    let #(s_pair, c_pair) = S2.S1_angle.sin_cos a in
+    let s = S2.S1_angle.sin a in
+    let c = S2.S1_angle.cos a in
+    assert (Float_u.abs (s_pair - s) <= #1e-15);
+    assert (Float_u.abs (c_pair - c) <= #1e-15))
+;;
+
+let%test_unit "normalized_in_range" =
+  Base_quickcheck.Test.run_exn (module S1_angle_only) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
+    let a = S1_angle_only.to_angle t in
+    let n = S2.S1_angle.radians (S2.S1_angle.normalized a) in
+    let neg_pi = Float_u.neg (Float_u.pi ()) in
+    assert (n > neg_pi);
+    assert (n <= Float_u.pi ()))
+;;

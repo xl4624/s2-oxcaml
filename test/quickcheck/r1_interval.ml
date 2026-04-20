@@ -139,3 +139,72 @@ let%test_unit "union_superset" =
       assert (S2.R1_interval.contains_interval u a);
       assert (S2.R1_interval.contains_interval u b))
 ;;
+
+let%test_unit "union_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module R1_pair)
+    ~config:qc_config
+    ~f:(fun { R1_pair.a; b } ->
+      let ab = S2.R1_interval.union a b in
+      let ba = S2.R1_interval.union b a in
+      assert (S2.R1_interval.equal ab ba))
+;;
+
+let%test_unit "intersection_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module R1_pair)
+    ~config:qc_config
+    ~f:(fun { R1_pair.a; b } ->
+      let ab = S2.R1_interval.intersection a b in
+      let ba = S2.R1_interval.intersection b a in
+      assert (S2.R1_interval.equal ab ba))
+;;
+
+let%test_unit "intersects_iff_nonempty_intersection" =
+  Base_quickcheck.Test.run_exn
+    (module R1_pair)
+    ~config:qc_config
+    ~f:(fun { R1_pair.a; b } ->
+      let inter = S2.R1_interval.intersection a b in
+      let intersects = S2.R1_interval.intersects a b in
+      assert (Bool.equal intersects (not (S2.R1_interval.is_empty inter))))
+;;
+
+let%test_unit "contains_self" =
+  Base_quickcheck.Test.run_exn
+    (module Interval_gen)
+    ~config:qc_config
+    ~f:(fun { Interval_gen.interval } ->
+      assert (S2.R1_interval.contains_interval interval interval))
+;;
+
+let%test_unit "add_point_superset" =
+  Base_quickcheck.Test.run_exn
+    (module Interval_gen)
+    ~config:qc_config
+    ~f:(fun { Interval_gen.interval } ->
+      if not (S2.R1_interval.is_empty interval)
+      then (
+        let added = S2.R1_interval.add_point interval #3.14 in
+        assert (S2.R1_interval.contains_interval added interval)))
+;;
+
+let%test_unit "from_point_pair_symmetric" =
+  Base_quickcheck.Test.run_exn (module Finite_float) ~config:qc_config ~f:(fun p1_f ->
+    let p1 = Float_u.of_float p1_f in
+    let p2 = #2.71 in
+    let ab = S2.R1_interval.from_point_pair p1 p2 in
+    let ba = S2.R1_interval.from_point_pair p2 p1 in
+    assert (S2.R1_interval.equal ab ba))
+;;
+
+let%test_unit "expanded_zero_identity" =
+  Base_quickcheck.Test.run_exn
+    (module Interval_gen)
+    ~config:qc_config
+    ~f:(fun { Interval_gen.interval } ->
+      if not (S2.R1_interval.is_empty interval)
+      then (
+        let e = S2.R1_interval.expanded interval #0.0 in
+        assert (S2.R1_interval.equal e interval)))
+;;

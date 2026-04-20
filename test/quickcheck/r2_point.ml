@@ -178,3 +178,79 @@ let%test_unit "fabs_nonneg" =
       assert (S2.R2_point.x f >= #0.0);
       assert (S2.R2_point.y f >= #0.0))
 ;;
+
+let%test_unit "sub_antisymmetric" =
+  Base_quickcheck.Test.run_exn
+    (module R2_pair)
+    ~config:qc_config
+    ~f:(fun { R2_pair.a; b } ->
+      let ab = S2.R2_point.sub a b in
+      let ba = S2.R2_point.sub b a in
+      assert (S2.R2_point.equal ab (S2.R2_point.neg ba)))
+;;
+
+let%test_unit "triangle_inequality" =
+  Base_quickcheck.Test.run_exn
+    (module R2_pair)
+    ~config:qc_config
+    ~f:(fun { R2_pair.a; b } ->
+      let open Float_u.O in
+      let na = S2.R2_point.norm a in
+      let nb = S2.R2_point.norm b in
+      let nab = S2.R2_point.norm (S2.R2_point.add a b) in
+      let scale = Float_u.max #1.0 (na + nb) in
+      assert (nab <= na + nb + (#1e-12 * scale)))
+;;
+
+let%test_unit "dot_distributive" =
+  Base_quickcheck.Test.run_exn
+    (module R2_pair)
+    ~config:qc_config
+    ~f:(fun { R2_pair.a; b } ->
+      let open Float_u.O in
+      let c = S2.R2_point.create ~x:#3.14 ~y:(-#1.59) in
+      let lhs = S2.R2_point.dot a (S2.R2_point.add b c) in
+      let rhs = S2.R2_point.dot a b + S2.R2_point.dot a c in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs lhs) (Float_u.abs rhs)) in
+      assert (Float_u.abs (lhs - rhs) <= #1e-8 * scale))
+;;
+
+let%test_unit "add_associative" =
+  Base_quickcheck.Test.run_exn
+    (module R2_pair)
+    ~config:qc_config
+    ~f:(fun { R2_pair.a; b } ->
+      let c = S2.R2_point.create ~x:#0.5 ~y:(-#1.25) in
+      let lhs = S2.R2_point.add (S2.R2_point.add a b) c in
+      let rhs = S2.R2_point.add a (S2.R2_point.add b c) in
+      let d = S2.R2_point.sub lhs rhs in
+      let open Float_u.O in
+      let m =
+        Float_u.max (Float_u.abs (S2.R2_point.x d)) (Float_u.abs (S2.R2_point.y d))
+      in
+      assert (m <= #1e-9))
+;;
+
+let%test_unit "norm2_is_norm_squared" =
+  Base_quickcheck.Test.run_exn
+    (module R2_vec)
+    ~config:qc_config
+    ~f:(fun { R2_vec.v = p } ->
+      let open Float_u.O in
+      let n = S2.R2_point.norm p in
+      let n2 = S2.R2_point.norm2 p in
+      let scale = Float_u.max #1.0 n2 in
+      assert (Float_u.abs ((n * n) - n2) <= #1e-10 * scale))
+;;
+
+let%test_unit "dot_self_is_norm2" =
+  Base_quickcheck.Test.run_exn
+    (module R2_vec)
+    ~config:qc_config
+    ~f:(fun { R2_vec.v = p } ->
+      let open Float_u.O in
+      let d = S2.R2_point.dot p p in
+      let n2 = S2.R2_point.norm2 p in
+      let scale = Float_u.max #1.0 n2 in
+      assert (Float_u.abs (d - n2) <= #1e-12 * scale))
+;;

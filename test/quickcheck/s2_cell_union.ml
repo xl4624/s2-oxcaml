@@ -125,3 +125,56 @@ let%test_unit "intersects_iff_nonempty_intersection" =
       let intersects = S2.S2_cell_union.intersects_union u v in
       assert (Bool.equal intersects (not (S2.S2_cell_union.is_empty inter))))
 ;;
+
+let%test_unit "union_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module Cell_union_pair)
+    ~config:qc_config
+    ~f:(fun { Cell_union_pair.a; b } ->
+      let u = cu_of_sample a in
+      let v = cu_of_sample b in
+      let uv = S2.S2_cell_union.union u v in
+      let vu = S2.S2_cell_union.union v u in
+      assert (S2.S2_cell_union.equal uv vu))
+;;
+
+let%test_unit "intersection_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module Cell_union_pair)
+    ~config:qc_config
+    ~f:(fun { Cell_union_pair.a; b } ->
+      let u = cu_of_sample a in
+      let v = cu_of_sample b in
+      let uv = S2.S2_cell_union.intersection u v in
+      let vu = S2.S2_cell_union.intersection v u in
+      assert (S2.S2_cell_union.equal uv vu))
+;;
+
+let%test_unit "intersection_subset_of_union" =
+  Base_quickcheck.Test.run_exn
+    (module Cell_union_pair)
+    ~config:qc_config
+    ~f:(fun { Cell_union_pair.a; b } ->
+      let u = cu_of_sample a in
+      let v = cu_of_sample b in
+      let uu = S2.S2_cell_union.union u v in
+      let ii = S2.S2_cell_union.intersection u v in
+      assert (S2.S2_cell_union.contains_union uu ii))
+;;
+
+let%test_unit "difference_subset" =
+  Base_quickcheck.Test.run_exn
+    (module Cell_union_pair)
+    ~config:qc_config
+    ~f:(fun { Cell_union_pair.a; b } ->
+      let u = cu_of_sample a in
+      let v = cu_of_sample b in
+      let d = S2.S2_cell_union.difference u v in
+      assert (S2.S2_cell_union.contains_union u d))
+;;
+
+let%test_unit "union_reflexive" =
+  Base_quickcheck.Test.run_exn (module Cell_union_sample) ~config:qc_config ~f:(fun s ->
+    let u = cu_of_sample s in
+    assert (S2.S2_cell_union.contains_union u u))
+;;

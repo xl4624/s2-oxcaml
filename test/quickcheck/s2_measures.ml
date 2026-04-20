@@ -105,3 +105,72 @@ let%test_unit "signed_area_magnitude" =
           (Float_u.to_float (Float_u.abs sa))
           (Float_u.to_float ar))
 ;;
+
+let%test_unit "area_degenerate_zero" =
+  (* The area of a triangle with two equal vertices is zero. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; _ } ->
+      let ar = S2.S2_measures.area a a b in
+      assert (Float_u.O.(ar <= #1e-13)))
+;;
+
+let%test_unit "area_cyclic_symmetry" =
+  (* Area is invariant under cyclic permutation of the vertices. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; c } ->
+      let open Float_u.O in
+      let abc = S2.S2_measures.area a b c in
+      let bca = S2.S2_measures.area b c a in
+      let cab = S2.S2_measures.area c a b in
+      let diff1 = Float_u.abs (abc - bca) in
+      let diff2 = Float_u.abs (abc - cab) in
+      assert (diff1 <= #1e-13);
+      assert (diff2 <= #1e-13))
+;;
+
+let%test_unit "signed_area_swap_negates" =
+  (* Swapping two vertices of the triangle negates signed_area. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; c } ->
+      let open Float_u.O in
+      let abc = S2.S2_measures.signed_area a b c in
+      let bac = S2.S2_measures.signed_area b a c in
+      let sum = abc + bac in
+      assert (Float_u.abs sum <= #1e-13))
+;;
+
+let%test_unit "angle_range" =
+  (* angle is in [0, pi]. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; c } ->
+      let open Float_u.O in
+      let r = radians (S2.S2_measures.angle a b c) in
+      assert (r >= #0.0);
+      assert (r <= Float_u.pi () + #1e-14))
+;;
+
+let%test_unit "girard_area_vs_area_large_triangle" =
+  (* For reasonably sized triangles (neither tiny nor tiny edges),
+     girard_area agrees with area to within a few ulps. We filter out
+     degenerate near-antipodal or tiny configurations. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; c } ->
+      let open Float_u.O in
+      let ar = S2.S2_measures.area a b c in
+      if ar > #1e-4 && ar < Float_u.pi ()
+      then (
+        let g = S2.S2_measures.girard_area a b c in
+        let diff = Float_u.abs (ar - g) in
+        let scale = Float_u.max #1.0 ar in
+        assert (diff <= #1e-10 * scale)))
+;;

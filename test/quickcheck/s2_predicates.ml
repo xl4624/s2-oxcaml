@@ -144,6 +144,29 @@ let%test_unit "sign_agrees_with_robust_sign" =
         assert (Bool.( = ) boolean robust)))
 ;;
 
+let%test_unit "sign_value_in_set" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; c } ->
+      let s = sign_int a b c in
+      assert (Int.( = ) s (-1) || Int.( = ) s 0 || Int.( = ) s 1))
+;;
+
+let%test_unit "ordered_ccw_cyclic" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_quad)
+    ~config:qc_config
+    ~f:(fun { S2_point_quad.a; b; c; o } ->
+      (* ordered_ccw is cyclic in its first three arguments: the same three
+         points in a cyclic permutation yield the same answer. *)
+      let abc = S2.S2_predicates.ordered_ccw a b c o in
+      let bca = S2.S2_predicates.ordered_ccw b c a o in
+      let cab = S2.S2_predicates.ordered_ccw c a b o in
+      assert (Bool.equal abc bca);
+      assert (Bool.equal bca cab))
+;;
+
 let%test_unit "ordered_ccw_definition" =
   Base_quickcheck.Test.run_exn
     (module S2_point_quad)

@@ -121,3 +121,65 @@ let%test_unit "project_in_range" =
         let proj = S2.S1_interval.project interval p in
         assert (S2.S1_interval.contains interval proj)))
 ;;
+
+let%test_unit "union_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module S1_pair)
+    ~config:qc_config
+    ~f:(fun { S1_pair.a; b } ->
+      let ab = S2.S1_interval.union a b in
+      let ba = S2.S1_interval.union b a in
+      assert (S2.S1_interval.equal ab ba))
+;;
+
+let%test_unit "contains_self" =
+  Base_quickcheck.Test.run_exn
+    (module S1_interval_gen)
+    ~config:qc_config
+    ~f:(fun { S1_interval_gen.interval } ->
+      assert (S2.S1_interval.contains_interval interval interval))
+;;
+
+let%test_unit "complement_involution" =
+  Base_quickcheck.Test.run_exn
+    (module S1_interval_gen)
+    ~config:qc_config
+    ~f:(fun { S1_interval_gen.interval } ->
+      let c = S2.S1_interval.complement interval in
+      let cc = S2.S1_interval.complement c in
+      assert (
+        S2.S1_interval.approx_equal
+          ~max_error:(Packed_float_option.Unboxed.some #1e-14)
+          interval
+          cc))
+;;
+
+let%test_unit "intersects_iff_nonempty_intersection" =
+  Base_quickcheck.Test.run_exn
+    (module S1_pair)
+    ~config:qc_config
+    ~f:(fun { S1_pair.a; b } ->
+      let inter = S2.S1_interval.intersection a b in
+      let intersects = S2.S1_interval.intersects a b in
+      assert (Bool.equal intersects (not (S2.S1_interval.is_empty inter))))
+;;
+
+let%test_unit "from_point_pair_symmetric" =
+  Base_quickcheck.Test.run_exn
+    (module S1_interval_gen)
+    ~config:qc_config
+    ~f:(fun { S1_interval_gen.interval } ->
+      let p1 = S2.S1_interval.lo interval in
+      let p2 = S2.S1_interval.hi interval in
+      let ab = S2.S1_interval.from_point_pair p1 p2 in
+      let ba = S2.S1_interval.from_point_pair p2 p1 in
+      assert (S2.S1_interval.equal ab ba))
+;;
+
+let%test_unit "full_contains_any" =
+  Base_quickcheck.Test.run_exn
+    (module S1_interval_gen)
+    ~config:qc_config
+    ~f:(fun { S1_interval_gen.interval } ->
+      assert (S2.S1_interval.contains_interval S2.S1_interval.full interval))
+;;

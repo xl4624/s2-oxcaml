@@ -115,3 +115,66 @@ let%test_unit "compare_consistent" =
       in
       assert (Sign.equal (Sign.of_int cmp) (Sign.of_int l2_cmp)))
 ;;
+
+let%test_unit "successor_strictly_greater" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let a = Chord_angle_valid.to_chord t in
+    if not (S2.S1_chord_angle.equal a S2.S1_chord_angle.straight)
+    then (
+      let s = S2.S1_chord_angle.successor a in
+      assert (S2.S1_chord_angle.compare s a > 0)))
+;;
+
+let%test_unit "predecessor_strictly_less" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let a = Chord_angle_valid.to_chord t in
+    if not (S2.S1_chord_angle.is_zero a)
+    then (
+      let p = S2.S1_chord_angle.predecessor a in
+      assert (S2.S1_chord_angle.compare p a < 0)))
+;;
+
+let%test_unit "sub_self_zero" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let a = Chord_angle_valid.to_chord t in
+    if not (S2.S1_chord_angle.is_special a)
+    then (
+      let diff = S2.S1_chord_angle.sub a a in
+      assert (S2.S1_chord_angle.is_zero diff)))
+;;
+
+let%test_unit "add_zero_identity" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let a = Chord_angle_valid.to_chord t in
+    let sum = S2.S1_chord_angle.add a S2.S1_chord_angle.zero in
+    assert (S2.S1_chord_angle.equal sum a))
+;;
+
+let%test_unit "plus_error_zero_identity" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let a = Chord_angle_valid.to_chord t in
+    let a' = S2.S1_chord_angle.plus_error a #0.0 in
+    assert (S2.S1_chord_angle.equal a' a))
+;;
+
+let%test_unit "length2_nonneg" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let a = Chord_angle_valid.to_chord t in
+    assert (Float_u.O.(S2.S1_chord_angle.length2 a >= #0.0)))
+;;
+
+let%test_unit "tan_matches_sin_over_cos" =
+  Base_quickcheck.Test.run_exn (module Chord_angle_valid) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
+    let a = Chord_angle_valid.to_chord t in
+    if not (S2.S1_chord_angle.is_special a)
+    then (
+      let c = S2.S1_chord_angle.cos a in
+      if Float_u.abs c > #1e-6
+      then (
+        let tn = S2.S1_chord_angle.tan a in
+        let s = S2.S1_chord_angle.sin a in
+        let expect = s / c in
+        let scale = Float_u.max #1.0 (Float_u.abs expect) in
+        assert (Float_u.abs (tn - expect) <= #1e-12 * scale))))
+;;

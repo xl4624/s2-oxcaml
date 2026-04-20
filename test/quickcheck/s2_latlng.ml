@@ -169,3 +169,43 @@ let%test_unit "distance_symmetric" =
       let d2 = S2.S1_angle.radians (S2.S2_latlng.distance b a) in
       assert (Float_u.abs (d1 - d2) <= #1e-15))
 ;;
+
+let%test_unit "distance_self_zero" =
+  Base_quickcheck.Test.run_exn (module Latlng_gen) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
+    let a = Latlng_gen.to_latlng t in
+    let d = S2.S1_angle.radians (S2.S2_latlng.distance a a) in
+    assert (Float_u.abs d <= #1e-14))
+;;
+
+let%test_unit "distance_triangle_inequality" =
+  Base_quickcheck.Test.run_exn
+    (module Latlng_pair)
+    ~config:qc_config
+    ~f:(fun { Latlng_pair.a_lat; a_lng; b_lat; b_lng } ->
+      let open Float_u.O in
+      let a =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float a_lat)
+          ~lng:(Float_u.of_float a_lng)
+      in
+      let b =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float b_lat)
+          ~lng:(Float_u.of_float b_lng)
+      in
+      let c = S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#0.0 in
+      let dab = S2.S1_angle.radians (S2.S2_latlng.distance a b) in
+      let dbc = S2.S1_angle.radians (S2.S2_latlng.distance b c) in
+      let dac = S2.S1_angle.radians (S2.S2_latlng.distance a c) in
+      assert (dac <= dab + dbc + #1e-12))
+;;
+
+let%test_unit "sub_self_zero" =
+  Base_quickcheck.Test.run_exn (module Latlng_gen) ~config:qc_config ~f:(fun t ->
+    let open Float_u.O in
+    let a = Latlng_gen.to_latlng t in
+    let d = S2.S2_latlng.sub a a in
+    assert (Float_u.abs (S2.S1_angle.radians (S2.S2_latlng.lat d)) <= #1e-14);
+    assert (Float_u.abs (S2.S1_angle.radians (S2.S2_latlng.lng d)) <= #1e-14))
+;;

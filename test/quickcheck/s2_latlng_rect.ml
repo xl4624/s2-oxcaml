@@ -138,3 +138,39 @@ let%test_unit "expanded_zero_identity" =
             rect
             e)))
 ;;
+
+let%test_unit "full_contains_any" =
+  Base_quickcheck.Test.run_exn
+    (module Rect_gen)
+    ~config:qc_config
+    ~f:(fun { Rect_gen.rect } ->
+      assert (S2.S2_latlng_rect.contains S2.S2_latlng_rect.full rect))
+;;
+
+let%test_unit "intersects_iff_nonempty_intersection" =
+  Base_quickcheck.Test.run_exn
+    (module Rect_pair)
+    ~config:qc_config
+    ~f:(fun { Rect_pair.a; b } ->
+      let inter = S2.S2_latlng_rect.intersection a b in
+      let intersects = S2.S2_latlng_rect.intersects a b in
+      assert (Bool.equal intersects (not (S2.S2_latlng_rect.is_empty inter))))
+;;
+
+let%test_unit "union_is_idempotent" =
+  Base_quickcheck.Test.run_exn
+    (module Rect_gen)
+    ~config:qc_config
+    ~f:(fun { Rect_gen.rect } ->
+      let u = S2.S2_latlng_rect.union rect rect in
+      assert (S2.S2_latlng_rect.equal u rect))
+;;
+
+let%test_unit "intersection_is_idempotent" =
+  Base_quickcheck.Test.run_exn
+    (module Rect_gen)
+    ~config:qc_config
+    ~f:(fun { Rect_gen.rect } ->
+      let i = S2.S2_latlng_rect.intersection rect rect in
+      assert (S2.S2_latlng_rect.equal i rect))
+;;

@@ -131,3 +131,63 @@ let%test_unit "frame_roundtrip" =
           q
           back))
 ;;
+
+let%test_unit "distance_triangle_inequality" =
+  (* d(a,c) <= d(a,b) + d(b,c) on the unit sphere. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_pair)
+    ~config:qc_config
+    ~f:(fun { S2_point_pair.a; b } ->
+      (* Use a fixed third point to keep the generator simple. *)
+      let c = S2.S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0 in
+      let open Float_u.O in
+      let dab = S2.S1_angle.radians (S2.S2_point.distance a b) in
+      let dbc = S2.S1_angle.radians (S2.S2_point.distance b c) in
+      let dac = S2.S1_angle.radians (S2.S2_point.distance a c) in
+      assert (dac <= dab + dbc + #1e-12))
+;;
+
+let%test_unit "distance_to_antipodal_is_pi" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_gen)
+    ~config:qc_config
+    ~f:(fun { S2_point_gen.p } ->
+      let open Float_u.O in
+      if not (S2.S2_point.equal p S2.R3_vector.zero)
+      then (
+        let p_unit = S2.R3_vector.normalize p in
+        let antipode = S2.R3_vector.neg p_unit in
+        let d = S2.S1_angle.radians (S2.S2_point.distance p_unit antipode) in
+        assert (Float_u.abs (d - Float_u.pi ()) <= #1e-9)))
+;;
+
+let%test_unit "normalize_is_unit_length" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_gen)
+    ~config:qc_config
+    ~f:(fun { S2_point_gen.p } ->
+      if not (S2.S2_point.equal p S2.R3_vector.zero)
+      then (
+        let p_unit = S2.R3_vector.normalize p in
+        assert (S2.S2_point.is_unit_length p_unit)))
+;;
+
+let%test_unit "rotate_by_full_turn_identity" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_pair)
+    ~config:qc_config
+    ~f:(fun { S2_point_pair.a; b } ->
+      let open Float_u.O in
+      if not
+           (S2.S2_point.equal a S2.R3_vector.zero || S2.S2_point.equal b S2.R3_vector.zero)
+      then (
+        let a = S2.R3_vector.normalize a in
+        let axis = S2.R3_vector.normalize b in
+        let full = S2.S1_angle.of_radians (#2.0 * Float_u.pi ()) in
+        let rotated = S2.S2_point.rotate a ~axis ~angle:full in
+        assert (
+          S2.S2_point.approx_equal
+            ~max_error:(Packed_float_option.Unboxed.some #1e-10)
+            rotated
+            a)))
+;;

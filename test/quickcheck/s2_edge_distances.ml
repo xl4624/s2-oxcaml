@@ -89,3 +89,78 @@ let%test_unit "project_is_on_edge" =
         in
         if Float.( > ) d 1e-13 then Alcotest.failf "project then get_distance = %g" d))
 ;;
+
+let%test_unit "distance_to_edge_leq_distance_to_endpoints" =
+  (* dist(x, ab) <= min(dist(x, a), dist(x, b)) *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; x } ->
+      let open Float_u.O in
+      let d_edge = S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a b) in
+      let d_a = S2.S1_angle.radians (S2.S2_point.distance x a) in
+      let d_b = S2.S1_angle.radians (S2.S2_point.distance x b) in
+      assert (d_edge <= d_a + #1e-13);
+      assert (d_edge <= d_b + #1e-13))
+;;
+
+let%test_unit "get_distance_symmetric_in_endpoints" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; x } ->
+      let open Float_u.O in
+      let d_ab = S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a b) in
+      let d_ba = S2.S1_angle.radians (S2.S2_edge_distances.get_distance x b a) in
+      assert (Float_u.abs (d_ab - d_ba) <= #1e-13))
+;;
+
+let%test_unit "interpolate_half_equidistant" =
+  (* The midpoint of an edge is equidistant from both endpoints. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; _ } ->
+      let open Float_u.O in
+      if not (S2.S2_point.equal a b)
+      then (
+        let m = S2.S2_edge_distances.interpolate a b #0.5 in
+        let d_a = S2.S1_angle.radians (S2.S2_point.distance m a) in
+        let d_b = S2.S1_angle.radians (S2.S2_point.distance m b) in
+        assert (Float_u.abs (d_a - d_b) <= #1e-12)))
+;;
+
+let%test_unit "interpolate_zero_is_a" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; _ } ->
+      let p = S2.S2_edge_distances.interpolate a b #0.0 in
+      assert (
+        S2.S2_point.approx_equal ~max_error:(Packed_float_option.Unboxed.some #1e-14) p a))
+;;
+
+let%test_unit "interpolate_one_is_b" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; _ } ->
+      let p = S2.S2_edge_distances.interpolate a b #1.0 in
+      assert (
+        S2.S2_point.approx_equal ~max_error:(Packed_float_option.Unboxed.some #1e-14) p b))
+;;
+
+let%test_unit "project_is_distance_minimizer" =
+  (* The distance from x to the edge equals distance from x to project x. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; x } ->
+      let open Float_u.O in
+      if not (S2.S2_point.equal a b)
+      then (
+        let proj = S2.S2_edge_distances.project x a b in
+        let d_edge = S2.S1_angle.radians (S2.S2_edge_distances.get_distance x a b) in
+        let d_proj = S2.S1_angle.radians (S2.S2_point.distance x proj) in
+        assert (Float_u.abs (d_edge - d_proj) <= #1e-12)))
+;;

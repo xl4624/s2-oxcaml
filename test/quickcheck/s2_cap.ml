@@ -124,3 +124,57 @@ let%test_unit "any_subset_full" =
     ~config:qc_config
     ~f:(fun { Cap_gen.cap } -> assert (S2.S2_cap.contains_cap S2.S2_cap.full cap))
 ;;
+
+let%test_unit "union_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module Cap_pair)
+    ~config:qc_config
+    ~f:(fun { Cap_pair.a; b } ->
+      let ab = S2.S2_cap.union a b in
+      let ba = S2.S2_cap.union b a in
+      assert (
+        S2.S2_cap.approx_equal ~max_error:(Packed_float_option.Unboxed.some #1e-14) ab ba))
+;;
+
+let%test_unit "contains_self" =
+  Base_quickcheck.Test.run_exn
+    (module Cap_gen)
+    ~config:qc_config
+    ~f:(fun { Cap_gen.cap } -> assert (S2.S2_cap.contains_cap cap cap))
+;;
+
+let%test_unit "add_point_superset" =
+  Base_quickcheck.Test.run_exn
+    (module Cap_gen)
+    ~config:qc_config
+    ~f:(fun { Cap_gen.cap } ->
+      let p = S2.S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0 in
+      let added = S2.S2_cap.add_point cap p in
+      assert (S2.S2_cap.contains_cap added cap))
+;;
+
+let%test_unit "intersects_iff_not_disjoint" =
+  Base_quickcheck.Test.run_exn
+    (module Cap_pair)
+    ~config:qc_config
+    ~f:(fun { Cap_pair.a; b } ->
+      let i1 = S2.S2_cap.intersects a b in
+      let i2 = S2.S2_cap.intersects b a in
+      assert (Bool.equal i1 i2))
+;;
+
+let%test_unit "empty_area_zero" =
+  let open Float_u.O in
+  let a = S2.S2_cap.area S2.S2_cap.empty in
+  assert (a <= #1e-14)
+;;
+
+let%test_unit "area_nonneg" =
+  Base_quickcheck.Test.run_exn
+    (module Cap_gen)
+    ~config:qc_config
+    ~f:(fun { Cap_gen.cap } ->
+      let open Float_u.O in
+      let a = S2.S2_cap.area cap in
+      assert (a >= #0.0))
+;;

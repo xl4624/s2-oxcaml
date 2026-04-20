@@ -126,3 +126,40 @@ let%test_unit "union_superset" =
       assert (S2.R2_rect.contains_rect u a);
       assert (S2.R2_rect.contains_rect u b))
 ;;
+
+let%test_unit "union_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module R2_rect_pair)
+    ~config:qc_config
+    ~f:(fun { R2_rect_pair.a; b } ->
+      let ab = S2.R2_rect.union a b in
+      let ba = S2.R2_rect.union b a in
+      assert (S2.R2_rect.equal ab ba))
+;;
+
+let%test_unit "intersection_commutative" =
+  Base_quickcheck.Test.run_exn
+    (module R2_rect_pair)
+    ~config:qc_config
+    ~f:(fun { R2_rect_pair.a; b } ->
+      let ab = S2.R2_rect.intersection a b in
+      let ba = S2.R2_rect.intersection b a in
+      assert (S2.R2_rect.equal ab ba))
+;;
+
+let%test_unit "contains_self" =
+  Base_quickcheck.Test.run_exn
+    (module Rect_gen)
+    ~config:qc_config
+    ~f:(fun { Rect_gen.rect } -> assert (S2.R2_rect.contains_rect rect rect))
+;;
+
+let%test_unit "intersects_iff_nonempty_intersection" =
+  Base_quickcheck.Test.run_exn
+    (module R2_rect_pair)
+    ~config:qc_config
+    ~f:(fun { R2_rect_pair.a; b } ->
+      let inter = S2.R2_rect.intersection a b in
+      let intersects = S2.R2_rect.intersects a b in
+      assert (Bool.equal intersects (not (S2.R2_rect.is_empty inter))))
+;;

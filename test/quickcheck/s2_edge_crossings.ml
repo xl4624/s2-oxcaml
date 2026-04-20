@@ -97,3 +97,35 @@ let%test_unit "crossing_sign_self" =
       let s = S2.S2_edge_crossings.crossing_sign a b a b in
       assert (Int.( = ) s 0))
 ;;
+
+let%test_unit "sign_cyclic" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; c } ->
+      let s1 = S2.S2_edge_crossings.sign a b c in
+      let s2 = S2.S2_edge_crossings.sign b c a in
+      let s3 = S2.S2_edge_crossings.sign c a b in
+      assert (Int.( = ) s1 s2);
+      assert (Int.( = ) s2 s3))
+;;
+
+let%test_unit "crossing_sign_reverse_edges" =
+  (* crossing_sign should be symmetric w.r.t. reversing both edges' endpoints. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_quad)
+    ~config:qc_config
+    ~f:(fun { S2_point_quad.a; b; c; d } ->
+      let s1 = S2.S2_edge_crossings.crossing_sign a b c d in
+      let s2 = S2.S2_edge_crossings.crossing_sign b a d c in
+      assert (Int.( = ) s1 s2))
+;;
+
+let%test_unit "crossing_sign_in_range" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_quad)
+    ~config:qc_config
+    ~f:(fun { S2_point_quad.a; b; c; d } ->
+      let s = S2.S2_edge_crossings.crossing_sign a b c d in
+      assert (Int.( = ) s (-1) || Int.( = ) s 0 || Int.( = ) s 1))
+;;

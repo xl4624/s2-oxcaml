@@ -148,3 +148,27 @@ let%test_unit "edge_true_centroid_symmetry" =
       let tba = S2.S2_centroids.edge_true_centroid b a in
       check_vec_close ~eps:1e-15 "edge_true_centroid ab vs ba" tab tba)
 ;;
+
+let%test_unit "planar_centroid_degenerate_equals_point" =
+  (* Degenerate triangles (all vertices identical) have planar centroid equal
+     to that point. *)
+  Base_quickcheck.Test.run_exn
+    (module S2_point_single)
+    ~config:qc_config
+    ~f:(fun { S2_point_single.p } ->
+      let c = S2.S2_centroids.planar_centroid p p p in
+      check_vec_close ~eps:1e-15 "planar_centroid degenerate" c p)
+;;
+
+let%test_unit "edge_true_centroid_norm_bounded" =
+  Base_quickcheck.Test.run_exn
+    (module S2_point_triple)
+    ~config:qc_config
+    ~f:(fun { S2_point_triple.a; b; _ } ->
+      let t = S2.S2_centroids.edge_true_centroid a b in
+      let n = S2.R3_vector.norm t in
+      (* The edge centroid integrated over the great-circle arc has norm
+         bounded by the arc length (<= pi). *)
+      let bound = Float_u.O.(Float_u.pi () + #1e-12) in
+      assert (Float_u.O.(n <= bound)))
+;;

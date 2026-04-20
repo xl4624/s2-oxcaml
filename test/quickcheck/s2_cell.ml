@@ -66,3 +66,34 @@ let%test_unit "center_and_vertices_contained" =
       assert (S2.S2_cell.contains_point cell (S2.S2_cell.vertex_raw cell k))
     done)
 ;;
+
+let%test_unit "reflexive_containment" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let cell = S2.S2_cell.of_cell_id (cid_of_int64 id) in
+    assert (S2.S2_cell.contains_cell cell cell);
+    assert (S2.S2_cell.intersects_cell cell cell))
+;;
+
+let%test_unit "cap_bound_contains_vertices" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let cell = S2.S2_cell.of_cell_id (cid_of_int64 id) in
+    let cap = S2.S2_cell.cap_bound cell in
+    for k = 0 to 3 do
+      assert (S2.S2_cap.contains_point cap (S2.S2_cell.vertex cell k))
+    done)
+;;
+
+let%test_unit "exact_area_nonneg" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let cell = S2.S2_cell.of_cell_id (cid_of_int64 id) in
+    let a = S2.S2_cell.exact_area cell in
+    assert (Float_u.O.(a >= #0.0)))
+;;
+
+let%test_unit "distance_to_center_is_zero" =
+  Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
+    let cell = S2.S2_cell.of_cell_id (cid_of_int64 id) in
+    let center = S2.S2_cell.center cell in
+    let d = S2.S2_cell.distance_to_point cell center in
+    assert (S2.S1_chord_angle.is_zero d))
+;;

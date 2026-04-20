@@ -81,6 +81,40 @@ let%test_unit "area_steradian_roundtrip" =
       assert (Float.(diff <= 1e-14 +. (1e-15 *. s))))
 ;;
 
+let%test_unit "length_from_latlngs_symmetric" =
+  Base_quickcheck.Test.run_exn
+    (module Latlng_pair_gen)
+    ~config:qc_config
+    ~f:(fun { Latlng_pair_gen.a_lat; a_lng; b_lat; b_lng } ->
+      let a_ll =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float a_lat)
+          ~lng:(Float_u.of_float a_lng)
+      in
+      let b_ll =
+        S2.S2_latlng.of_degrees
+          ~lat:(Float_u.of_float b_lat)
+          ~lng:(Float_u.of_float b_lng)
+      in
+      let ab = S2.Earth.length_from_latlngs a_ll b_ll in
+      let ba = S2.Earth.length_from_latlngs b_ll a_ll in
+      let diff = Float_u.to_float (Float_u.abs (Float_u.sub ab ba)) in
+      assert (Float.(diff <= 1e-6)))
+;;
+
+let%test_unit "length_from_angle_nonneg_for_nonneg_angle" =
+  Base_quickcheck.Test.run_exn
+    (module Length_gen)
+    ~config:qc_config
+    ~f:(fun { Length_gen.meters } ->
+      let m = Float.abs meters in
+      let m_u = Float_u.of_float m in
+      let ang = S2.Earth.angle_from_length m_u in
+      let back = S2.Earth.length_from_angle ang in
+      let back_f = Float_u.to_float back in
+      assert (Float.(back_f >= -1e-6)))
+;;
+
 let%test_unit "points_vs_latlngs" =
   Base_quickcheck.Test.run_exn
     (module Latlng_pair_gen)

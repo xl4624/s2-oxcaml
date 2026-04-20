@@ -111,3 +111,81 @@ let%test_unit "abs_nonneg" =
       assert (S2.R3_vector.y f >= #0.0);
       assert (S2.R3_vector.z f >= #0.0))
 ;;
+
+let%test_unit "sub_antisymmetric" =
+  Base_quickcheck.Test.run_exn
+    (module R3_pair)
+    ~config:qc_config
+    ~f:(fun { R3_pair.a; b } ->
+      let ab = S2.R3_vector.sub a b in
+      let ba = S2.R3_vector.sub b a in
+      assert (S2.R3_vector.equal ab (S2.R3_vector.neg ba)))
+;;
+
+let%test_unit "cross_perpendicular_to_operands" =
+  Base_quickcheck.Test.run_exn
+    (module R3_pair)
+    ~config:qc_config
+    ~f:(fun { R3_pair.a; b } ->
+      let open Float_u.O in
+      let c = S2.R3_vector.cross a b in
+      let na = S2.R3_vector.norm a in
+      let nb = S2.R3_vector.norm b in
+      let scale = Float_u.max #1.0 (na * na * nb) in
+      let da = Float_u.abs (S2.R3_vector.dot c a) in
+      let db = Float_u.abs (S2.R3_vector.dot c b) in
+      assert (da <= #1e-10 * scale);
+      assert (db <= #1e-10 * scale))
+;;
+
+let%test_unit "lagrange_identity" =
+  (* |a x b|^2 = |a|^2 * |b|^2 - (a . b)^2. *)
+  Base_quickcheck.Test.run_exn
+    (module R3_pair)
+    ~config:qc_config
+    ~f:(fun { R3_pair.a; b } ->
+      let open Float_u.O in
+      let cr = S2.R3_vector.cross a b in
+      let lhs = S2.R3_vector.norm2 cr in
+      let dot = S2.R3_vector.dot a b in
+      let rhs = (S2.R3_vector.norm2 a * S2.R3_vector.norm2 b) - (dot * dot) in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs lhs) (Float_u.abs rhs)) in
+      assert (Float_u.abs (lhs - rhs) <= #1e-8 * scale))
+;;
+
+let%test_unit "triangle_inequality" =
+  Base_quickcheck.Test.run_exn
+    (module R3_pair)
+    ~config:qc_config
+    ~f:(fun { R3_pair.a; b } ->
+      let open Float_u.O in
+      let na = S2.R3_vector.norm a in
+      let nb = S2.R3_vector.norm b in
+      let nab = S2.R3_vector.norm (S2.R3_vector.add a b) in
+      let scale = Float_u.max #1.0 (na + nb) in
+      assert (nab <= na + nb + (#1e-12 * scale)))
+;;
+
+let%test_unit "dot_distributive" =
+  (* a . (b + c) = a . b + a . c with c fixed to a constant vector. *)
+  Base_quickcheck.Test.run_exn
+    (module R3_pair)
+    ~config:qc_config
+    ~f:(fun { R3_pair.a; b } ->
+      let open Float_u.O in
+      let c = S2.R3_vector.create ~x:#1.5 ~y:(-#2.25) ~z:#0.75 in
+      let lhs = S2.R3_vector.dot a (S2.R3_vector.add b c) in
+      let rhs = S2.R3_vector.dot a b + S2.R3_vector.dot a c in
+      let scale = Float_u.max #1.0 (Float_u.max (Float_u.abs lhs) (Float_u.abs rhs)) in
+      assert (Float_u.abs (lhs - rhs) <= #1e-8 * scale))
+;;
+
+let%test_unit "norm_squared_consistent" =
+  Base_quickcheck.Test.run_exn (module R3_vec) ~config:qc_config ~f:(fun { R3_vec.v } ->
+    let open Float_u.O in
+    let n = S2.R3_vector.norm v in
+    let n2 = S2.R3_vector.norm2 v in
+    assert (n >= #0.0);
+    let scale = Float_u.max #1.0 n2 in
+    assert (Float_u.abs ((n * n) - n2) <= #1e-10 * scale))
+;;
