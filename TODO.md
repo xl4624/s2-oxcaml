@@ -20,11 +20,12 @@ work is listed below.
 
 ## Tier 7 - Spatial index and queries
 
-- [ ] **s2_shape_index** - `S2_shape_index`
+- [x] **s2_shape_index** - `S2_shape_index` (mutable add + full rebuild; incremental absorb /
+      shape removal not ported; no encode/decode)
   - Go: `s2/shapeindex.go` | C++: `s2shape_index.h`, `mutable_s2shape_index.h`
   - Deps: `s2_shape`, `s2_cell_id`, `s2_point`
 
-- [ ] **s2_contains_point_query** - `S2_contains_point_query`
+- [x] **s2_contains_point_query** - `S2_contains_point_query` (2d shapes: Semi_open only)
   - Go: `s2/contains_point_query.go` | C++: `s2contains_point_query.h`
   - Deps: `s2_shape_index`, `s2_edge_crosser`
 

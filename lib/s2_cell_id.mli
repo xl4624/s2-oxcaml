@@ -202,5 +202,7 @@ val from_token : string -> t
 
 (* {1 Comparison }*)
 
+(** [compare] uses unsigned 64-bit ordering, matching the Hilbert-curve ordering of cells. *)
 val compare : t -> t -> int
+
 val equal : t -> t -> bool

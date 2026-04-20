@@ -16,9 +16,18 @@ type t =
   ; bound : S2_latlng_rect.t
   ; subregion_bound : S2_latlng_rect.t
   ; mutable depth : int
+  ; mutable point_query_cache : (S2_contains_point_query.t * int) option
   }
 
-let sexp_of_t { vertices; origin_inside = _; bound = _; subregion_bound = _; depth = _ } =
+let sexp_of_t
+  { vertices
+  ; origin_inside = _
+  ; bound = _
+  ; subregion_bound = _
+  ; depth = _
+  ; point_query_cache = _
+  }
+  =
   let n = Array.length vertices in
   let acc = ref [] in
   for i = n - 1 downto 0 do
@@ -68,13 +77,9 @@ let[@inline] [@zero_alloc] contains_origin t = t.origin_inside
 let[@inline] [@zero_alloc] is_empty t = is_empty_or_full t && not t.origin_inside
 let[@inline] [@zero_alloc] is_full t = is_empty_or_full t && t.origin_inside
 
-(* Brute-force point containment. Counts edge crossings of the segment from
-   [S2_pointutil.origin] to [p] against the loop boundary. The loop's
-   origin_inside flag flips the parity at the start.
-   TODO: replace with an [S2_shape_index]-backed implementation once that
-   module lands. Also port the deferred index-driven surface then: loop-vs-loop
-   Contains / Intersects, CompareBoundary, BoundaryNear, Project, GetDistance,
-   and self-intersection checks in [find_validation_error]. *)
+(* Brute-force point containment used for bound pre-checks and reference parity.
+   [contains_point] uses {!S2_shape_index} plus {!S2_contains_point_query} after the
+   bound test. *)
 let[@zero_alloc] brute_force_contains_point ~vertices ~origin_inside p =
   let n = Array.length vertices in
   if n = 0
@@ -94,12 +99,6 @@ let[@zero_alloc] brute_force_contains_point ~vertices ~origin_inside p =
       if crossing then inside <- not inside
     done;
     inside)
-;;
-
-let[@zero_alloc] contains_point t p =
-  if not (S2_latlng_rect.contains_point t.bound p)
-  then false
-  else brute_force_contains_point ~vertices:t.vertices ~origin_inside:t.origin_inside p
 ;;
 
 type init_result =
@@ -178,7 +177,7 @@ let init_origin_and_bound (vs : S2_point.t array) : init_result =
 
 let make_unchecked vertices =
   let #{ origin_inside; bound; subregion_bound } = init_origin_and_bound vertices in
-  { vertices; origin_inside; bound; subregion_bound; depth = 0 }
+  { vertices; origin_inside; bound; subregion_bound; depth = 0; point_query_cache = None }
 ;;
 
 let find_validation_error t =
@@ -275,6 +274,7 @@ let invert t =
     ; bound
     ; subregion_bound
     ; depth = t.depth
+    ; point_query_cache = None
     })
 ;;
 
@@ -370,7 +370,12 @@ let[@zero_alloc] contains_cell t cell =
     let mutable contained = true in
     let mutable k = 0 in
     while contained && k < 4 do
-      if not (contains_point t (S2_cell.vertex cell k)) then contained <- false;
+      if not
+           (brute_force_contains_point
+              ~vertices:t.vertices
+              ~origin_inside:t.origin_inside
+              (S2_cell.vertex cell k))
+      then contained <- false;
       k <- k + 1
     done;
     contained && not (any_loop_edge_crosses_cell ~vertices:t.vertices cell))
@@ -388,7 +393,11 @@ let[@zero_alloc] may_intersect_cell t cell =
     let mutable hit = false in
     let mutable k = 0 in
     while (not hit) && k < 4 do
-      if contains_point t (S2_cell.vertex cell k) then hit <- true;
+      if brute_force_contains_point
+           ~vertices:t.vertices
+           ~origin_inside:t.origin_inside
+           (S2_cell.vertex cell k)
+      then hit <- true;
       k <- k + 1
     done;
     if hit
@@ -521,6 +530,20 @@ let to_shape t : S2_shape.t =
    ; chain_edge = chain_edge t
    ; chain_position = chain_position t
    }
+;;
+
+let contains_point t p =
+  if not (S2_latlng_rect.contains_point t.bound p)
+  then false
+  else (
+    match t.point_query_cache with
+    | Some (q, sid) -> S2_contains_point_query.shape_contains q ~shape_id:sid p
+    | None ->
+      let idx = S2_shape_index.create () in
+      let sid = S2_shape_index.add idx (to_shape t) in
+      let q = S2_contains_point_query.create idx () in
+      t.point_query_cache <- Some (q, sid);
+      S2_contains_point_query.shape_contains q ~shape_id:sid p)
 ;;
 
 let to_region t : S2_region.t =

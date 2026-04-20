@@ -20,6 +20,10 @@ val face_clip_error_uv_dist : float#
 (** Same error expressed as the maximum error in a single u- or v-coordinate. *)
 val face_clip_error_uv_coord : float#
 
+(** Padding applied on each side of a cell when building a shape index. Matches the
+    doubled sum of {!face_clip_error_uv_coord} and {!edge_clip_error_uv_coord}. *)
+val shape_index_cell_padding : float#
+
 (** Maximum error in {!intersects_rect}. If some point of AB is inside the rectangle by at
     least this distance, the result is guaranteed to be true; if all points of AB are
     outside the rectangle by at least this distance, the result is guaranteed to be false. *)

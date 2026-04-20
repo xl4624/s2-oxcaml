@@ -154,9 +154,12 @@ val rect_bound : t -> S2_latlng_rect.t
 val cell_union_bound : t -> S2_cell_id.t array
 [@@zero_alloc ignore]
 
-(** [contains_point t p] reports whether the loop contains [p]. Implemented by a
-    brute-force edge-crossing count from {!S2_pointutil.origin}. *)
+(** [contains_point t p] reports whether the loop contains [p]. After the
+    bounding-rectangle quick reject, this consults a lazily-built {!S2_shape_index.t} and
+    {!S2_contains_point_query.t} (semi-open vertex model) so repeated tests reuse the same
+    index. *)
 val contains_point : t -> S2_point.t -> bool
+[@@zero_alloc ignore]
 
 (** [contains_cell t cell] reports whether the loop entirely contains [cell]. Brute-force:
     checks that every cell vertex is contained and that no loop edge crosses any cell

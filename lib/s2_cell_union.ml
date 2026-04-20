@@ -16,17 +16,12 @@ let sexp_of_t t =
 
 (* {1 Internal helpers} *)
 
-(* Unsigned comparison for S2_cell_id.t. Cell ids use the full 64-bit range and must be
-   compared as unsigned values for correct ordering on the Hilbert curve. *)
-let[@inline] unsigned_compare (a : S2_cell_id.t) (b : S2_cell_id.t) : int =
-  Stdlib_upstream_compatible.Int64_u.unsigned_compare (S2_cell_id.id a) (S2_cell_id.id b)
-;;
-
-let[@inline] unsigned_lt a b = unsigned_compare a b < 0
-let[@inline] unsigned_le a b = unsigned_compare a b <= 0
-
 (* Returns true if a lies entirely before b on the Hilbert curve. *)
-let entirely_precedes a b = unsigned_lt (S2_cell_id.range_max a) (S2_cell_id.range_min b)
+let entirely_precedes a b =
+  let b = S2_cell_id.range_min b in
+  let a = S2_cell_id.range_max a in
+  S2_cell_id.compare a b < 0
+;;
 
 (* Binary search for the first cell whose range might overlap target. *)
 let lower_bound (ids : S2_cell_id.t array) ~lo ~hi (target : S2_cell_id.t) =
@@ -69,10 +64,10 @@ let sort_unsigned (arr : S2_cell_id.t array) =
       let mutable i = lo in
       let mutable j = hi in
       while i <= j do
-        while unsigned_compare arr.(i) pivot < 0 do
+        while S2_cell_id.compare arr.(i) pivot < 0 do
           i <- i + 1
         done;
-        while unsigned_compare arr.(j) pivot > 0 do
+        while S2_cell_id.compare arr.(j) pivot > 0 do
           j <- j - 1
         done;
         if i <= j
@@ -220,9 +215,9 @@ let is_valid t =
       if not (S2_cell_id.is_valid ids.(i))
       then ok <- false
       else if not
-                (unsigned_lt
-                   (S2_cell_id.range_max ids.(i - 1))
-                   (S2_cell_id.range_min ids.(i)))
+                (let b = S2_cell_id.range_min ids.(i) in
+                 let a = S2_cell_id.range_max ids.(i - 1) in
+                 S2_cell_id.compare a b < 0)
       then ok <- false;
       i <- i + 1
     done;
@@ -370,7 +365,9 @@ let union t other =
     let mutable i = 0 in
     let mutable j = 0 in
     while i < na && j < nb do
-      if unsigned_le a.(i) b.(j)
+      if let b = b.(j) in
+         let a = a.(i) in
+         S2_cell_id.compare a b <= 0
       then (
         out_len <- push_normalized out out_len a.(i);
         i <- i + 1)
@@ -398,7 +395,12 @@ let intersection_with_cell_id t id =
     let result = cid_buf_create () in
     let id_max = S2_cell_id.range_max id in
     let mutable i = lower_bound ids ~lo:0 ~hi:n (S2_cell_id.range_min id) in
-    while i < n && unsigned_le ids.(i) id_max do
+    while
+      i < n
+      &&
+      let a = ids.(i) in
+      S2_cell_id.compare a id_max <= 0
+    do
       cid_buf_push result ids.(i);
       i <- i + 1
     done;
@@ -416,21 +418,27 @@ let intersection t other =
   while i < n && j < other_n do
     let imin = S2_cell_id.range_min ids.(i) in
     let jmin = S2_cell_id.range_min other_ids.(j) in
-    if unsigned_compare imin jmin > 0
+    if S2_cell_id.compare imin jmin > 0
     then
-      if unsigned_le ids.(i) (S2_cell_id.range_max other_ids.(j))
+      if let b = S2_cell_id.range_max other_ids.(j) in
+         let a = ids.(i) in
+         S2_cell_id.compare a b <= 0
       then (
         cid_buf_push result ids.(i);
         i <- i + 1)
       else j <- lower_bound other_ids ~lo:(j + 1) ~hi:other_n ids.(i)
-    else if unsigned_compare jmin imin > 0
+    else if S2_cell_id.compare jmin imin > 0
     then
-      if unsigned_le other_ids.(j) (S2_cell_id.range_max ids.(i))
+      if let b = S2_cell_id.range_max ids.(i) in
+         let a = other_ids.(j) in
+         S2_cell_id.compare a b <= 0
       then (
         cid_buf_push result other_ids.(j);
         j <- j + 1)
       else i <- lower_bound ids ~lo:(i + 1) ~hi:n other_ids.(j)
-    else if unsigned_lt ids.(i) other_ids.(j)
+    else if let b = other_ids.(j) in
+            let a = ids.(i) in
+            S2_cell_id.compare a b < 0
     then (
       cid_buf_push result ids.(i);
       i <- i + 1)

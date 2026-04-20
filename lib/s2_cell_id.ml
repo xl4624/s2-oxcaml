@@ -558,5 +558,8 @@ let[@zero_alloc ignore] to_string t =
     Buffer.contents out)
 ;;
 
-let[@inline] [@zero_alloc] compare a b = Int64_u.compare a b
+let[@inline] [@zero_alloc] compare a b =
+  Stdlib_upstream_compatible.Int64_u.unsigned_compare a b
+;;
+
 let[@inline] [@zero_alloc] equal a b = Int64_u.equal a b

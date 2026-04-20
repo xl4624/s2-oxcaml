@@ -15,6 +15,10 @@ let intersects_rect_error_uv_dist =
 let edge_clip_error_uv_coord = Float_u.O.(#2.25 * Float_u.epsilon_float ())
 let edge_clip_error_uv_dist = Float_u.O.(#2.25 * Float_u.epsilon_float ())
 
+let shape_index_cell_padding =
+  Float_u.O.(#2.0 * (face_clip_error_uv_coord + edge_clip_error_uv_coord))
+;;
+
 (* A face segment is an edge clipped to a single cube face. *)
 type face_segment =
   { face : int

@@ -22,13 +22,6 @@ let create
 
 (* Helpers *)
 
-let[@inline] unsigned_compare (a : S2_cell_id.t) (b : S2_cell_id.t) : int =
-  Stdlib_upstream_compatible.Int64_u.unsigned_compare (S2_cell_id.id a) (S2_cell_id.id b)
-;;
-
-let[@inline] unsigned_le a b = unsigned_compare a b <= 0
-let max_children_shift t = 2 * t.level_mod
-
 let true_max_level t =
   if t.level_mod = 1
   then t.max_level
@@ -183,7 +176,7 @@ let rec add_candidate c cand =
        buffer, then expand: new children are appended in order. *)
     cand.children_start <- c.children_len;
     let num_terminals = expand_children c cand cand.cell num_levels in
-    let mcs = max_children_shift c.opts in
+    let mcs = 2 * c.opts.level_mod in
     if cand.num_children = 0
     then ()
     else if (not c.interior_covering)
@@ -248,7 +241,7 @@ let replace_cells_with_ancestor_in_place
     let mutable hi = len in
     while lo < hi do
       let mid = lo + ((hi - lo) / 2) in
-      if unsigned_compare covering.(mid) raw_min > 0 then hi <- mid else lo <- mid + 1
+      if S2_cell_id.compare covering.(mid) raw_min > 0 then hi <- mid else lo <- mid + 1
     done;
     lo
   in
@@ -258,7 +251,7 @@ let replace_cells_with_ancestor_in_place
     let mutable hi = len in
     while lo < hi do
       let mid = lo + ((hi - lo) / 2) in
-      if unsigned_compare covering.(mid) raw_max > 0 then hi <- mid else lo <- mid + 1
+      if S2_cell_id.compare covering.(mid) raw_max > 0 then hi <- mid else lo <- mid + 1
     done;
     lo
   in
@@ -277,7 +270,7 @@ let contains_all_children opts (covering : S2_cell_id.t array) len (id : S2_cell
   let mutable hi = len in
   while lo < hi do
     let mid = lo + ((hi - lo) / 2) in
-    if unsigned_compare covering.(mid) raw_min >= 0 then hi <- mid else lo <- mid + 1
+    if S2_cell_id.compare covering.(mid) raw_min >= 0 then hi <- mid else lo <- mid + 1
   done;
   let level = S2_cell_id.level id + opts.level_mod in
   let mutable child = S2_cell_id.child_begin_at_level id level in
@@ -316,7 +309,7 @@ let is_canonical_internal opts (covering : S2_cell_id.t array) len =
         (* Check sorted and non-overlapping *)
         let prev_max = S2_cell_id.range_max prev_id in
         let curr_min = S2_cell_id.range_min id in
-        if not (unsigned_compare prev_max curr_min < 0)
+        if not (S2_cell_id.compare prev_max curr_min < 0)
         then ok <- false
         else (
           let common = S2_cell_id.get_common_ancestor_level id prev_id in
