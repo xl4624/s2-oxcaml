@@ -114,6 +114,76 @@ int main() {
         root["distance_point"] = dist_point;
     }
 
+    // TEST(S2Cell, GetDistanceToEdge) - edge distances (min and max)
+    {
+        json dist_edge = json::array();
+        // A mix of cell sizes and faces so that endpoints end up inside,
+        // outside, and crossing the cell.
+        S2CellId cell_ids[] = {
+            S2CellId::FromFace(0).child(1).child(2),
+            S2CellId::FromFace(2),
+            S2CellId::FromFace(3).child(0).child(0).child(3),
+        };
+        std::pair<S2Point, S2Point> edges[] = {
+            {S2Point(1, 0, 0), S2Point(0, 1, 0)},
+            {S2Point(1, 1, 1).Normalize(), S2Point(1, 1, -1).Normalize()},
+            {S2Point(-1, 0, 0), S2Point(0, 0, 1)},
+            {S2LatLng::FromDegrees(0, 0).ToPoint(),
+             S2LatLng::FromDegrees(0, 30).ToPoint()},
+            {S2LatLng::FromDegrees(45, 45).ToPoint(),
+             S2LatLng::FromDegrees(-45, 45).ToPoint()},
+        };
+        for (auto id : cell_ids) {
+            S2Cell cell(id);
+            for (const auto &e : edges) {
+                json d;
+                d["cell_id"] = id.ToToken();
+                d["a"] = point_to_json(e.first);
+                d["b"] = point_to_json(e.second);
+                d["distance"] = cell.GetDistance(e.first, e.second).length2();
+                d["max_distance"] =
+                    cell.GetMaxDistance(e.first, e.second).length2();
+                dist_edge.push_back(d);
+            }
+        }
+        root["distance_edge"] = dist_edge;
+    }
+
+    // TEST(S2Cell, GetDistanceToCell) - cell-to-cell distances
+    {
+        json dist_cell = json::array();
+        // Mix of same-face (triggers the FindFurthestEdge optimization) and
+        // different-face pairs; also include identical / nested cells.
+        std::pair<S2CellId, S2CellId> pairs[] = {
+            // Same face, disjoint.
+            {S2CellId::FromFace(0).child(0).child(0),
+             S2CellId::FromFace(0).child(3).child(3)},
+            // Same face, adjacent.
+            {S2CellId::FromFace(0).child(0), S2CellId::FromFace(0).child(1)},
+            // Identical cell.
+            {S2CellId::FromFace(1).child(2), S2CellId::FromFace(1).child(2)},
+            // Different faces, not antipodal.
+            {S2CellId::FromFace(0), S2CellId::FromFace(2)},
+            // Different faces, antipodal (face 0 vs face 3).
+            {S2CellId::FromFace(0).child(0).child(0),
+             S2CellId::FromFace(3).child(3).child(3)},
+            // Deep cells, same face, corner-adjacent.
+            {S2CellId::FromFace(2).child(0).child(0).child(0),
+             S2CellId::FromFace(2).child(3).child(3).child(3)},
+        };
+        for (const auto &p : pairs) {
+            json d;
+            d["a"] = p.first.ToToken();
+            d["b"] = p.second.ToToken();
+            S2Cell ca(p.first);
+            S2Cell cb(p.second);
+            d["distance"] = ca.GetDistance(cb).length2();
+            d["max_distance"] = ca.GetMaxDistance(cb).length2();
+            dist_cell.push_back(d);
+        }
+        root["distance_cell"] = dist_cell;
+    }
+
     // TEST(S2Cell, GetUVCoordOfEdge) / TEST(S2Cell, GetSizeIJAgreesWithCellId)
     // / TEST(S2Cell, GetIJCoordOfEdge) - edge coordinate accessors
     {

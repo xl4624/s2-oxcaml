@@ -123,6 +123,25 @@ val boundary_distance_to_point : t -> S2_point.t -> S1_chord_angle.t
     interior) to the given point. *)
 val max_distance_to_point : t -> S2_point.t -> S1_chord_angle.t
 
+(** [distance_to_edge t a b] returns the minimum distance from the cell (including its
+    interior) to the edge [ab]. Returns zero if the edge crosses the cell or if either
+    endpoint lies inside it. *)
+val distance_to_edge : t -> S2_point.t -> S2_point.t -> S1_chord_angle.t
+
+(** [max_distance_to_edge t a b] returns the maximum distance from any point in the cell
+    (including its interior) to any point on edge [ab]. If the antipode of [ab] crosses
+    the cell, the result is [S1_chord_angle.straight]. *)
+val max_distance_to_edge : t -> S2_point.t -> S2_point.t -> S1_chord_angle.t
+
+(** [distance_to_cell t other] returns the minimum distance between the two cells. Returns
+    zero if the cells intersect. *)
+val distance_to_cell : t -> t -> S1_chord_angle.t
+
+(** [max_distance_to_cell t other] returns the maximum distance between any point in this
+    cell and any point in [other]. If one cell intersects the antipode of the other the
+    result is [S1_chord_angle.straight]. *)
+val max_distance_to_cell : t -> t -> S1_chord_angle.t
+
 (** [uv_coord_of_edge k] returns either U or V for the given edge, whichever is constant
     along it. *)
 val uv_coord_of_edge : t -> int -> float#
@@ -131,20 +150,6 @@ val uv_coord_of_edge : t -> int -> float#
     along it. *)
 val ij_coord_of_edge : t -> int -> int
 
-(** {1 TODO *)
-
 (* The latitude-longitude bounding rectangle of an [S2_cell.t] is computed by
    {!S2_latlng_rect.from_cell}, which lives in [s2_latlng_rect] to avoid a
    dependency cycle between [s2_cell] and [s2_latlng_rect]. *)
-
-(* TODO: [distance_to_edge] returns the distance from the cell to the given edge (a, b). *)
-(* val distance_to_edge : t -> S2_point.t -> S2_point.t -> S1_chord_angle.t *)
-
-(* TODO: [max_distance_to_edge] returns the max distance from the cell to the given edge. *)
-(* val max_distance_to_edge : t -> S2_point.t -> S2_point.t -> S1_chord_angle.t *)
-
-(* TODO: [distance_to_cell] returns the distance from this cell to the other cell. *)
-(* val distance_to_cell : t -> t -> S1_chord_angle.t *)
-
-(* TODO: [max_distance_to_cell] returns the max distance from this cell to the other cell. *)
-(* val max_distance_to_cell : t -> t -> S1_chord_angle.t *)

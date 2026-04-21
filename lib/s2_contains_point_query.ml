@@ -84,3 +84,24 @@ let shape_contains t ~shape_id p =
         clipped
         p)
 ;;
+
+let visit_containing_shapes t p ~f =
+  if not (S2_shape_index.Iterator.locate_point t.iter p)
+  then true
+  else (
+    let cell = S2_shape_index.Iterator.index_cell t.iter in
+    let cid = S2_shape_index.Iterator.cell_id t.iter in
+    let n = S2_shape_index.Index_cell.num_clipped cell in
+    let continue_ = ref true in
+    let i = ref 0 in
+    while !continue_ && !i < n do
+      let clipped = S2_shape_index.Index_cell.clipped cell !i in
+      let shape_id = S2_shape_index.Clipped_shape.shape_id clipped in
+      let shape = S2_shape_index.shape t.index shape_id in
+      if shape_contains_cell ~vertex_model:t.vertex_model ~shape cid clipped p
+         && not (f shape_id)
+      then continue_ := false;
+      incr i
+    done;
+    !continue_)
+;;

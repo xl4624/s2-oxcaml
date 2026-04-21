@@ -29,11 +29,12 @@ work is listed below.
   - Go: `s2/contains_point_query.go` | C++: `s2contains_point_query.h`
   - Deps: `s2_shape_index`, `s2_edge_crosser`
 
-- [ ] **s2_crossing_edge_query** - `S2_crossing_edge_query`
+- [x] **s2_crossing_edge_query** - `S2_crossing_edge_query`
   - Go: `s2/crossing_edge_query.go` | C++: `s2crossing_edge_query.h`, `s2crossing_edge_query.cc`
   - Deps: `s2_shape_index`, `s2_edge_crosser`, `s2_padded_cell`
 
-- [ ] **s2_closest_edge_query** - `S2_closest_edge_query`
+- [x] **s2_closest_edge_query** - `S2_closest_edge_query` (all four target types:
+      Point, Edge, Cell, Shape_index; no visitor API / shape filter)
   - Go: `s2/edge_query.go` | C++: `s2closest_edge_query.h`, `s2closest_edge_query_base.h`
   - Deps: `s2_shape_index`, `s2_edge_distances`
 

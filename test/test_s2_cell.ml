@@ -17,9 +17,13 @@
    - Areas                                              - exact_area, approx_area,
       average_area against C++ golden data
 
+   -  TEST(S2Cell, GetDistanceToEdge)                  - distance_to_edge,
+      max_distance_to_edge
+   -  TEST(S2Cell, GetDistanceToCell)                   - distance_to_cell,
+      max_distance_to_cell
+
    Deliberately omitted:
-   - GetRectBound / GetCapBound / CellUnionBound / EncodeDecode
-   - distance to edge / distance to cell / max distance to edge / max distance to cell *)
+   - GetRectBound / GetCapBound / CellUnionBound / EncodeDecode *)
 
 open Core
 open Test_helpers
@@ -210,6 +214,43 @@ let test_distance_to_point fixture () =
       ~actual:(S2.S1_chord_angle.length2 (S2.S2_cell.max_distance_to_point cell target)))
 ;;
 
+let test_distance_to_edge fixture () =
+  let cases = to_list (member "distance_edge" fixture) in
+  List.iteri cases ~f:(fun i c ->
+    let label = sprintf "distance_edge case %d" i in
+    let cell = cell_of_token_json (member "cell_id" c) in
+    let a = r3_vector_of_json (member "a" c) in
+    let b = r3_vector_of_json (member "b" c) in
+    check_float_u
+      ~eps:1e-13
+      (label ^ " distance")
+      ~expected:(float_u_of_json_exn (member "distance" c))
+      ~actual:(S2.S1_chord_angle.length2 (S2.S2_cell.distance_to_edge cell a b));
+    check_float_u
+      ~eps:1e-13
+      (label ^ " max_distance")
+      ~expected:(float_u_of_json_exn (member "max_distance" c))
+      ~actual:(S2.S1_chord_angle.length2 (S2.S2_cell.max_distance_to_edge cell a b)))
+;;
+
+let test_distance_to_cell fixture () =
+  let cases = to_list (member "distance_cell" fixture) in
+  List.iteri cases ~f:(fun i c ->
+    let label = sprintf "distance_cell case %d" i in
+    let a = cell_of_token_json (member "a" c) in
+    let b = cell_of_token_json (member "b" c) in
+    check_float_u
+      ~eps:1e-13
+      (label ^ " distance")
+      ~expected:(float_u_of_json_exn (member "distance" c))
+      ~actual:(S2.S1_chord_angle.length2 (S2.S2_cell.distance_to_cell a b));
+    check_float_u
+      ~eps:1e-13
+      (label ^ " max_distance")
+      ~expected:(float_u_of_json_exn (member "max_distance" c))
+      ~actual:(S2.S1_chord_angle.length2 (S2.S2_cell.max_distance_to_cell a b)))
+;;
+
 let test_edge_coords fixture () =
   let cases = to_list (member "edge_coords" fixture) in
   List.iteri cases ~f:(fun i c ->
@@ -256,6 +297,10 @@ let () =
     ; "areas", [ test_case "Areas" `Quick (test_areas fixture) ]
     ; ( "distance_to_point"
       , [ test_case "GetDistanceToPoint" `Quick (test_distance_to_point fixture) ] )
+    ; ( "distance_to_edge"
+      , [ test_case "GetDistanceToEdge" `Quick (test_distance_to_edge fixture) ] )
+    ; ( "distance_to_cell"
+      , [ test_case "GetDistanceToCell" `Quick (test_distance_to_cell fixture) ] )
     ; ( "edge_coords"
       , [ test_case "GetUVCoordOfEdge" `Quick (test_edge_coords fixture)
         ; test_case "GetSizeIJAgreesWithCellId" `Quick (test_edge_coords fixture)

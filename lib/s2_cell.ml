@@ -309,6 +309,220 @@ let max_distance_to_point t target =
       (distance_to_point t (R3_vector.neg target))
 ;;
 
+let[@inline] [@zero_alloc] min_ca a b = if S1_chord_angle.compare a b <= 0 then a else b
+
+let[@inline] [@zero_alloc] step_min_edge cur v a b =
+  match%optional_u.S1_chord_angle.Option
+    S2_edge_distances.update_min_distance v a b cur
+  with
+  | Some d -> d
+  | None -> cur
+;;
+
+let[@inline] [@zero_alloc] step_min_interior cur v a b =
+  match%optional_u.S1_chord_angle.Option
+    S2_edge_distances.update_min_interior_distance v a b cur
+  with
+  | Some d -> d
+  | None -> cur
+;;
+
+let[@inline] [@zero_alloc] step_max_edge cur v a b =
+  match%optional_u.S1_chord_angle.Option
+    S2_edge_distances.update_max_distance v a b cur
+  with
+  | Some d -> d
+  | None -> cur
+;;
+
+let[@zero_alloc] distance_to_edge t a b =
+  (* Start with the minimum of the distances from each endpoint to the cell.
+     A zero here means the endpoint is inside the cell. *)
+  let min_dist = min_ca (distance_to_point t a) (distance_to_point t b) in
+  if S1_chord_angle.is_zero min_dist
+  then min_dist
+  else (
+    let v0 = vertex t 0 in
+    let v1 = vertex t 1 in
+    let v2 = vertex t 2 in
+    let v3 = vertex t 3 in
+    (* Check whether [ab] crosses the cell boundary.  We chain through the
+       four cell edges [v3 v0], [v0 v1], [v1 v2], [v2 v3]. *)
+    let mutable crosser = S2_edge_crosser.create_with_chain ~a ~b ~c:v3 in
+    let mutable crossed = false in
+    let mutable i = 0 in
+    while (not crossed) && i < 4 do
+      let v =
+        match i with
+        | 0 -> v0
+        | 1 -> v1
+        | 2 -> v2
+        | _ -> v3
+      in
+      let (#{ state; sign } : S2_edge_crosser.with_sign) =
+        S2_edge_crosser.chain_crossing_sign crosser v
+      in
+      crosser <- state;
+      if sign >= 0 then crossed <- true;
+      i <- i + 1
+    done;
+    if crossed
+    then S1_chord_angle.zero
+    else (
+      (* Both endpoints are outside the cell and [ab] does not cross the cell.
+         The minimum is attained between a cell vertex and an interior point
+         of [ab] (or between a cell vertex and one of [a], [b], but those are
+         already folded into [min_dist] via [distance_to_point]). *)
+      let cur = min_dist in
+      let cur = step_min_edge cur v0 a b in
+      let cur = step_min_edge cur v1 a b in
+      let cur = step_min_edge cur v2 a b in
+      let cur = step_min_edge cur v3 a b in
+      cur))
+;;
+
+let[@zero_alloc] max_distance_to_edge t a b =
+  let max_dist = max_distance_to_point t a in
+  let max_dist =
+    let d = max_distance_to_point t b in
+    if S1_chord_angle.compare d max_dist > 0 then d else max_dist
+  in
+  if S1_chord_angle.compare max_dist S1_chord_angle.right <= 0
+  then max_dist
+  else
+    S1_chord_angle.sub
+      S1_chord_angle.straight
+      (distance_to_edge t (R3_vector.neg a) (R3_vector.neg b))
+;;
+
+(* Index of the edge of [a] that is furthest from the opposite edge of [b] in
+   (u,v) space, returned in S2Cell's edge numbering
+   (0 = bottom, 1 = right, 2 = top, 3 = left).  Returns [-1] when the cells'
+   (u,v) rectangles overlap, meaning the cells intersect. *)
+let[@inline] [@zero_alloc] find_furthest_edge a_uv b_uv =
+  let open Float_u.O in
+  let ax = R2_rect.x a_uv in
+  let ay = R2_rect.y a_uv in
+  let bx = R2_rect.x b_uv in
+  let by = R2_rect.y b_uv in
+  let mutable ai = -1 in
+  let mutable max_dist = #0.0 in
+  (* Left edge of [a]: index 3. *)
+  let d = R1_interval.lo ax - R1_interval.hi bx in
+  if d > max_dist
+  then (
+    max_dist <- d;
+    ai <- 3);
+  (* Right edge of [a]: index 1. *)
+  let d = R1_interval.lo bx - R1_interval.hi ax in
+  if d > max_dist
+  then (
+    max_dist <- d;
+    ai <- 1);
+  (* Bottom edge of [a]: index 0. *)
+  let d = R1_interval.lo ay - R1_interval.hi by in
+  if d > max_dist
+  then (
+    max_dist <- d;
+    ai <- 0);
+  (* Top edge of [a]: index 2. *)
+  let d = R1_interval.lo by - R1_interval.hi ay in
+  if d > max_dist
+  then (
+    max_dist <- d;
+    ai <- 2);
+  ai
+;;
+
+let[@zero_alloc] distance_to_cell t target =
+  if t.#face = target.#face
+  then (
+    let ai = find_furthest_edge t.#uv target.#uv in
+    if ai < 0
+    then S1_chord_angle.zero
+    else (
+      let bi = ai lxor 2 in
+      let va1 = vertex t ai in
+      let va2 = vertex t (ai + 1) in
+      let vb1 = vertex target bi in
+      let vb2 = vertex target (bi + 1) in
+      let cur = S1_chord_angle.infinity in
+      let cur = step_min_edge cur va1 vb1 vb2 in
+      let cur = step_min_edge cur va2 vb1 vb2 in
+      let cur = step_min_interior cur vb1 va1 va2 in
+      let cur = step_min_interior cur vb2 va1 va2 in
+      cur))
+  else (
+    (* Different faces: check all 32 (vertex, edge) pairs. *)
+    let va0 = vertex t 0 in
+    let va1 = vertex t 1 in
+    let va2 = vertex t 2 in
+    let va3 = vertex t 3 in
+    let vb0 = vertex target 0 in
+    let vb1 = vertex target 1 in
+    let vb2 = vertex target 2 in
+    let vb3 = vertex target 3 in
+    let fold_vertex_vs_edges cur v =
+      let cur = step_min_edge cur v vb0 vb1 in
+      let cur = step_min_edge cur v vb1 vb2 in
+      let cur = step_min_edge cur v vb2 vb3 in
+      let cur = step_min_edge cur v vb3 vb0 in
+      cur
+    in
+    let fold_interior_vs_edges cur v =
+      let cur = step_min_interior cur v va0 va1 in
+      let cur = step_min_interior cur v va1 va2 in
+      let cur = step_min_interior cur v va2 va3 in
+      let cur = step_min_interior cur v va3 va0 in
+      cur
+    in
+    let cur = S1_chord_angle.infinity in
+    let cur = fold_vertex_vs_edges cur va0 in
+    let cur = fold_vertex_vs_edges cur va1 in
+    let cur = fold_vertex_vs_edges cur va2 in
+    let cur = fold_vertex_vs_edges cur va3 in
+    let cur = fold_interior_vs_edges cur vb0 in
+    let cur = fold_interior_vs_edges cur vb1 in
+    let cur = fold_interior_vs_edges cur vb2 in
+    let cur = fold_interior_vs_edges cur vb3 in
+    cur)
+;;
+
+let[@zero_alloc] max_distance_to_cell t target =
+  (* If the cell and the antipodal target intersect, the max is pi. *)
+  let opposite_face f = if f >= 3 then f - 3 else f + 3 in
+  let opposite_uv r = R2_rect.create_intervals_exn ~x:(R2_rect.y r) ~y:(R2_rect.x r) in
+  if t.#face = opposite_face target.#face
+     && R2_rect.intersects t.#uv (opposite_uv target.#uv)
+  then S1_chord_angle.straight
+  else (
+    let va0 = vertex t 0 in
+    let va1 = vertex t 1 in
+    let va2 = vertex t 2 in
+    let va3 = vertex t 3 in
+    let vb0 = vertex target 0 in
+    let vb1 = vertex target 1 in
+    let vb2 = vertex target 2 in
+    let vb3 = vertex target 3 in
+    let fold_max cur v a0 a1 a2 a3 =
+      let cur = step_max_edge cur v a0 a1 in
+      let cur = step_max_edge cur v a1 a2 in
+      let cur = step_max_edge cur v a2 a3 in
+      let cur = step_max_edge cur v a3 a0 in
+      cur
+    in
+    let cur = S1_chord_angle.negative in
+    let cur = fold_max cur va0 vb0 vb1 vb2 vb3 in
+    let cur = fold_max cur va1 vb0 vb1 vb2 vb3 in
+    let cur = fold_max cur va2 vb0 vb1 vb2 vb3 in
+    let cur = fold_max cur va3 vb0 vb1 vb2 vb3 in
+    let cur = fold_max cur vb0 va0 va1 va2 va3 in
+    let cur = fold_max cur vb1 va0 va1 va2 va3 in
+    let cur = fold_max cur vb2 va0 va1 va2 va3 in
+    let cur = fold_max cur vb3 va0 va1 va2 va3 in
+    cur)
+;;
+
 let[@inline] [@zero_alloc] uv_coord_of_edge t k =
   let k = k land 3 in
   if k % 2 = 0
