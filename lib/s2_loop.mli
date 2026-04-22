@@ -191,6 +191,56 @@ val boundary_equals : t -> t -> bool
 val boundary_approx_equals : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
 [@@zero_alloc]
 
+(** {1 Loop relations} *)
+
+(** Canonical starting index and direction for the iteration produced by
+    {!canonical_first_vertex}. *)
+type canonical_first =
+  #{ first : int
+   ; dir : int
+   }
+
+(** [canonical_first_vertex t] returns a pair [(first, dir)] with [dir] in [[-1; 1]] such
+    that iterating [vertex t (first + k * dir)] for [k = 0 .. n-1] produces a sequence
+    that is invariant under cyclic rotation of the vertices. The returned [first] is
+    chosen so that [first + k * dir] stays in [[0, 2*n-1]] for any [k] in [[0, n]]. Used
+    by nesting-related tie breakers. *)
+val canonical_first_vertex : t -> canonical_first
+[@@zero_alloc]
+
+(** [contains_nested a b] reports whether [b] is nested within [a] assuming both loops
+    satisfy the polygon contract (no shared edges and either one contains the other or
+    they are disjoint). Does not test for edge intersections. *)
+val contains_nested : t -> t -> bool
+[@@zero_alloc ignore]
+
+(** [contains a b] reports whether the region enclosed by [a] is a superset of the region
+    enclosed by [b]. Uses brute-force O(|a| * |b|) edge-pair crossing checks. *)
+val contains : t -> t -> bool
+[@@zero_alloc ignore]
+
+(** [intersects a b] reports whether the regions enclosed by [a] and [b] overlap. Uses
+    brute-force O(|a| * |b|) edge-pair crossing checks. *)
+val intersects : t -> t -> bool
+[@@zero_alloc ignore]
+
+(** [compare_boundary a b] returns [+1] if [a] contains the boundary of [b], [-1] if [a]
+    excludes the boundary of [b], and [0] if the boundaries of [a] and [b] cross. Shared
+    edges are handled as follows: if [xy] is a shared edge and
+    [reversed_in_b = xy appears reversed in b], then [a] contains [xy] iff
+    [reversed_in_b = is_hole b]. Requires that neither loop is empty, and if [b] is full
+    it must not be a hole. *)
+val compare_boundary : t -> t -> int
+[@@zero_alloc ignore]
+
+(** [contains_non_crossing_boundary a b ~reverse] reports whether [a] contains the
+    boundary of [b], assuming the boundaries do not cross (see {!compare_boundary}). When
+    [reverse] is [true], the boundary of [b] is interpreted as reversed (which only
+    affects the result at shared edges). Requires that neither loop is empty, and if [b]
+    is full [reverse] must be [false]. *)
+val contains_non_crossing_boundary : t -> t -> reverse:bool -> bool
+[@@zero_alloc ignore]
+
 (** {1 Shape interface} *)
 
 (** [num_edges t] is [0] for the empty/full loop, and [num_vertices t] otherwise. *)

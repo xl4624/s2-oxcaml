@@ -14,7 +14,11 @@ work is listed below.
 
 - [x] **s2_loop** - `S2_loop` (index-driven ops deferred until `s2_shape_index`)
 
-- [ ] **s2_polygon** - `S2_polygon`
+- [x] **s2_polygon** - `S2_polygon` (no encode/decode, no boolean ops, no
+      snap/simplify, no polyline intersect; Contains / Intersects use the
+      Go-style boundary algorithm and disagree with C++
+      `S2BooleanOperation` on shared-boundary edges, so multi-loop
+      polygons are excluded from the polygon-polygon relations fixture)
   - Go: `s2/polygon.go` | C++: `s2polygon.h`, `s2polygon.cc`
   - Deps: `s2_loop`, `s2_cell_union`, `s2_latlng_rect`, `s2_cap`
 

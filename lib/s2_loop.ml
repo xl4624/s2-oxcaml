@@ -556,3 +556,258 @@ let to_region t : S2_region.t =
      ; cell_union_bound = (fun () -> cell_union_bound t)
      }
 ;;
+
+(* Loop relations. *)
+
+(* Locate [p] among the vertices of [t] in the half-open range (0, n]. Returns
+   [-1] if not found. The returned index is chosen so that wrapping lookups
+   [vertex t (i - 1)] and [vertex t (i + 1)] stay well-defined. *)
+let[@zero_alloc] find_vertex t p =
+  let n = Array.length t.vertices in
+  let mutable result = -1 in
+  let mutable i = 1 in
+  while result < 0 && i <= n do
+    if S2_point.equal (vertex t i) p then result <- i;
+    i <- i + 1
+  done;
+  result
+;;
+
+type canonical_first =
+  #{ first : int
+   ; dir : int
+   }
+
+let[@zero_alloc] canonical_first_vertex t =
+  let n = Array.length t.vertices in
+  let mutable first = 0 in
+  for i = 1 to n - 1 do
+    if R3_vector.compare t.vertices.(i) t.vertices.(first) < 0 then first <- i
+  done;
+  (* Choose direction so that the neighbour in the forward direction is
+     lex-smaller than the neighbour in the reverse direction. Offsetting
+     [first] by [n] when dir = -1 keeps [first + k * dir] non-negative for
+     any [k] in [0, n]. *)
+  if R3_vector.compare (vertex t (first + 1)) (vertex t (first + n - 1)) < 0
+  then #{ first; dir = 1 }
+  else #{ first = first + n; dir = -1 }
+;;
+
+(* Reports whether the wedge [(a0, ab1, a2)] contains the "semiwedge" of rays
+   immediately CCW from edge [(ab1, b2)]. If [reverse] is [true], CCW is
+   replaced by CW; this is used when the other loop's orientation should be
+   flipped (holes versus shells). *)
+let[@zero_alloc] wedge_contains_semiwedge ~a0 ~ab1 ~a2 ~b2 ~reverse =
+  if S2_point.equal b2 a0 || S2_point.equal b2 a2
+  then Bool.( = ) (S2_point.equal b2 a0) reverse
+  else S2_predicates.ordered_ccw a0 a2 b2 ab1
+;;
+
+let contains_nested a b =
+  if not (S2_latlng_rect.contains a.subregion_bound b.bound)
+  then false
+  else if is_empty_or_full a || Array.length b.vertices < 2
+  then is_full a || is_empty b
+  else (
+    (* By contract, [a] and [b] either share vertex 1 of [b] or they are
+       properly nested. *)
+    let v1 = vertex b 1 in
+    let m = find_vertex a v1 in
+    if m < 0
+    then contains_point a v1
+    else
+      S2_wedge_relations.wedge_contains
+        ~a0:(vertex a (m - 1))
+        ~ab1:v1
+        ~a2:(vertex a (m + 1))
+        ~b0:(vertex b 0)
+        ~b2:(vertex b 2))
+;;
+
+let contains_non_crossing_boundary a b ~reverse =
+  if not (S2_latlng_rect.intersects a.bound b.bound)
+  then false
+  else if is_full a
+  then true
+  else if is_full b
+  then false
+  else (
+    let v0 = vertex b 0 in
+    let m = find_vertex a v0 in
+    if m < 0
+    then contains_point a v0
+    else
+      wedge_contains_semiwedge
+        ~a0:(vertex a (m - 1))
+        ~ab1:v0
+        ~a2:(vertex a (m + 1))
+        ~b2:(vertex b 1)
+        ~reverse)
+;;
+
+(* Reports whether any pair of edges from [a] and [b] cross at a point
+   interior to both. Used by {!contains}, {!intersects}, and
+   {!compare_boundary}. *)
+let any_proper_crossing a b =
+  let na = Array.length a.vertices in
+  let nb = Array.length b.vertices in
+  let mutable crossed = false in
+  let mutable i = 0 in
+  while (not crossed) && i < na do
+    let a0 = a.vertices.(i) in
+    let a1 = vertex a (i + 1) in
+    let mutable crosser =
+      S2_edge_crosser.create_with_chain ~a:a0 ~b:a1 ~c:b.vertices.(0)
+    in
+    let mutable j = 0 in
+    while (not crossed) && j < nb do
+      let b1 = vertex b (j + 1) in
+      let (#{ state; sign } : S2_edge_crosser.with_sign) =
+        S2_edge_crosser.chain_crossing_sign crosser b1
+      in
+      crosser <- state;
+      if sign > 0 then crossed <- true;
+      j <- j + 1
+    done;
+    i <- i + 1
+  done;
+  crossed
+;;
+
+let contains a b =
+  if not (S2_latlng_rect.contains a.subregion_bound b.bound)
+  then false
+  else if is_empty_or_full a || is_empty_or_full b
+  then is_full a || is_empty b
+  else if any_proper_crossing a b
+  then false
+  else (
+    (* At every shared vertex, [a]'s wedge must contain [b]'s wedge. *)
+    let na = Array.length a.vertices in
+    let nb = Array.length b.vertices in
+    let mutable found_shared = false in
+    let mutable bad = false in
+    let mutable i = 0 in
+    while (not bad) && i < na do
+      let vi = a.vertices.(i) in
+      let mutable j = 0 in
+      while (not bad) && j < nb do
+        if S2_point.equal vi b.vertices.(j)
+        then (
+          found_shared <- true;
+          if not
+               (S2_wedge_relations.wedge_contains
+                  ~a0:(vertex a (i - 1))
+                  ~ab1:vi
+                  ~a2:(vertex a (i + 1))
+                  ~b0:(vertex b (j - 1))
+                  ~b2:(vertex b (j + 1)))
+          then bad <- true);
+        j <- j + 1
+      done;
+      i <- i + 1
+    done;
+    if bad
+    then false
+    else if found_shared
+    then true
+    else if not (contains_point a (vertex b 0))
+    then false
+    else if (S2_latlng_rect.contains b.subregion_bound a.bound
+             || S2_latlng_rect.is_full (S2_latlng_rect.union b.bound a.bound))
+            && contains_point b (vertex a 0)
+    then false
+    else true)
+;;
+
+let intersects a b =
+  if is_empty a || is_empty b
+  then false
+  else if is_full a || is_full b
+  then true
+  else if not (S2_latlng_rect.intersects a.bound b.bound)
+  then false
+  else if any_proper_crossing a b
+  then true
+  else (
+    let na = Array.length a.vertices in
+    let nb = Array.length b.vertices in
+    let mutable found_shared = false in
+    let mutable hit = false in
+    let mutable i = 0 in
+    while (not hit) && i < na do
+      let vi = a.vertices.(i) in
+      let mutable j = 0 in
+      while (not hit) && j < nb do
+        if S2_point.equal vi b.vertices.(j)
+        then (
+          found_shared <- true;
+          if S2_wedge_relations.wedge_intersects
+               ~a0:(vertex a (i - 1))
+               ~ab1:vi
+               ~a2:(vertex a (i + 1))
+               ~b0:(vertex b (j - 1))
+               ~b2:(vertex b (j + 1))
+          then hit <- true);
+        j <- j + 1
+      done;
+      i <- i + 1
+    done;
+    if hit
+    then true
+    else if found_shared
+    then false
+    else if (S2_latlng_rect.contains a.subregion_bound b.bound
+             || S2_latlng_rect.is_full (S2_latlng_rect.union a.bound b.bound))
+            && contains_point a (vertex b 0)
+    then true
+    else if S2_latlng_rect.contains b.subregion_bound a.bound
+            && contains_point b (vertex a 0)
+    then true
+    else false)
+;;
+
+let compare_boundary a b =
+  if not (S2_latlng_rect.intersects a.bound b.bound)
+  then -1
+  else if is_full a
+  then 1
+  else if is_full b
+  then -1
+  else if any_proper_crossing a b
+  then 0
+  else (
+    let reverse = is_hole b in
+    let na = Array.length a.vertices in
+    let nb = Array.length b.vertices in
+    let mutable found_shared = false in
+    let mutable contains_edge = false in
+    let mutable excludes_edge = false in
+    let mutable i = 0 in
+    while ((not contains_edge) || not excludes_edge) && i < na do
+      let vi = a.vertices.(i) in
+      let mutable j = 0 in
+      while ((not contains_edge) || not excludes_edge) && j < nb do
+        if S2_point.equal vi b.vertices.(j)
+        then (
+          found_shared <- true;
+          if wedge_contains_semiwedge
+               ~a0:(vertex a (i - 1))
+               ~ab1:vi
+               ~a2:(vertex a (i + 1))
+               ~b2:(vertex b (j + 1))
+               ~reverse
+          then contains_edge <- true
+          else excludes_edge <- true);
+        j <- j + 1
+      done;
+      i <- i + 1
+    done;
+    if contains_edge && excludes_edge
+    then 0
+    else if found_shared
+    then if contains_edge then 1 else -1
+    else if contains_point a (vertex b 0)
+    then 1
+    else -1)
+;;
