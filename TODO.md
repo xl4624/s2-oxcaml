@@ -51,7 +51,19 @@ work is listed below.
 
 ## Tier 8 - Builder
 
-- [ ] **s2_builder** - `S2_builder`
+- [x] **s2_builder** - `S2_builder` (public API, `Graph`, `Options`,
+      `Snap_function.identity`, `Layer`, `AddEdge`/`AddIntersection`/`Build`,
+      `S2_polygon_layer` sibling module covering the surface required by
+      `s2_boolean_operation`; scope deferred: the full Voronoi
+      snap-rounding algorithm (s2builder.cc:727-1252 - `ChooseInitialSites`,
+      `CollectSiteEdges`, `MaybeAddExtraSites`, `SnapEdge` Voronoi loop) is
+      replaced by a simplified cluster-merge for non-zero snap radius that
+      preserves topology but is not bit-exact with C++;
+      `IntLatLngSnapFunction` / `S2CellIdSnapFunction` stubs raise; undirected
+      edges, `ForceVertex`, labels, `simplify_edge_chains`, memory tracking,
+      and lax/polyline layers are not implemented. Requires `S2PointIndex` +
+      `s2pred::GetVoronoiSiteExclusion` + `EdgeCircumcenterSign` to complete
+      the faithful algorithm.)
   - Go: `s2/builder.go` | C++: `s2builder.h`, `s2builder.cc`
   - Deps: `s2_shape_index`, `s2_polygon`, `s2_polyline`, `s2_edge_crosser`
 
