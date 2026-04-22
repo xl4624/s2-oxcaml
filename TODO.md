@@ -67,6 +67,19 @@ work is listed below.
   - Go: `s2/builder.go` | C++: `s2builder.h`, `s2builder.cc`
   - Deps: `s2_shape_index`, `s2_polygon`, `s2_polyline`, `s2_edge_crosser`
 
-- [ ] **s2_boolean_operation** - `S2_boolean_operation`
+- [x] **s2_boolean_operation** - `S2_boolean_operation` (predicate-only,
+      polygon-only: `is_empty`, `intersects`, `contains`, `equals` for two
+      polygon shapes under default `Polygon_model.Semi_open`; replaces the
+      Go-style boundary algorithm in `S2_polygon.contains` / `intersects`
+      for multi-loop cases. Implemented as a simplified per-edge
+      containment test rather than a full CrossingProcessor port - captures
+      the SEMI_OPEN shared-boundary semantics needed by
+      `S2_polygon.contains p p` and similar shared-edge predicates without
+      the ~3,400 lines of the full C++ module. Scope deferred: set-operation
+      output via an `S2_builder.Layer.t`, polyline and point inputs, `Open`
+      and `Closed` polygon models, mixed-dimension operands, and any case
+      involving invalid polygons with non-normalised loop nesting. These
+      raise or silently disagree with C++ on such inputs; `two_shells` in
+      the fixture exercises the valid multi-loop path.)
   - Go: (not in Go) | C++: `s2boolean_operation.h`, `s2boolean_operation.cc`
   - Deps: `s2_builder`, `s2_shape_index`

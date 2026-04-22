@@ -99,10 +99,18 @@ static vector<NamedPolygon> Catalog() {
         {"north_hemi", {ParseLatLngs("0:-180, 0:-90, 0:0, 0:90")}},
         {"arctic_80", {ParseLatLngs("80:-150, 80:-30, 80:90")}},
         {"antarctic_80", {ParseLatLngs("-80:120, -80:0, -80:-120")}},
-        // Polygon with a hole. Only used for property tests; excluded from
-        // polygon_relations because the Go-style boundary-based Contains
-        // algorithm this port mirrors disagrees with the C++
-        // S2BooleanOperation-based result at shared-boundary edges.
+        // Disjoint multi-shell polygon: two non-nested shells with a
+        // longitude gap. Valid input for S2BooleanOperation-based
+        // contains / intersects - exercises the multi-loop path now
+        // that S2_polygon routes through S2BooleanOperation.
+        {"two_shells",
+         {ParseLatLngs("5:-20, 5:-10, 15:-10, 15:-20"),
+          ParseLatLngs("-15:10, -15:20, -5:20, -5:10")}},
+        // Polygon with a hole. Property tests only - the CW outer-shell
+        // vertex order used here makes the polygon "invalid" per S2's
+        // nesting validation, and C++ S2BooleanOperation has special
+        // undefined-on-invalid-input behavior that this port does not
+        // mirror.
         {"square_with_hole",
          {ParseLatLngs("-20:-20, -20:20, 20:20, 20:-20"),
           ParseLatLngs("-5:-5, 5:-5, 5:5, -5:5")}},
@@ -110,13 +118,15 @@ static vector<NamedPolygon> Catalog() {
 }
 
 static vector<NamedPolygon> RelationsCatalog() {
-    // Subset of [Catalog] that excludes multi-loop polygons to stay inside
-    // the slice of S2Polygon::Contains / Intersects that this port
-    // implements (single-loop fast path plus disjoint multi-shell cases).
+    // Exercise multi-loop polygons (two_shells) while keeping out
+    // "square_with_hole", whose CW shell orientation makes the polygon
+    // formally invalid. The simplified predicate implementation assumes
+    // valid inputs and does not mirror C++ undefined-on-invalid
+    // behaviour.
     vector<NamedPolygon> all = Catalog();
     vector<NamedPolygon> out;
     for (const auto &np : all) {
-        if (np.loop_vertices.size() <= 1)
+        if (np.name != "square_with_hole")
             out.push_back(np);
     }
     return out;

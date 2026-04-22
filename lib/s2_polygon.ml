@@ -610,11 +610,21 @@ let excludes_non_crossing_complement_shells t o =
     ok)
 ;;
 
-(* TODO: mirror C++ exactly by routing through S2BooleanOperation (tier 8,
-   depends on S2_builder). The boundary-parity algorithm below uses strict
-   interior semantics, so it diverges from C++ whenever two polygons share
-   boundary edges - e.g. [p.contains p] on a multi-loop polygon returns
-   false here but true in C++. *)
+(* Contains and Intersects route through S2_boolean_operation so that
+   shared-boundary semantics match the C++ reference. The single-loop
+   fast path stays direct for speed; all other cases go through the
+   boolean-operation predicate. *)
+let boolean_input t =
+  let state = get_or_build_index t in
+  S2_boolean_operation.Polygon_input.create
+    ~shape:(to_shape t)
+    ~shape_index:state.index
+    ~shape_id:state.shape_id
+    ~area:(area t)
+    ~is_empty:(is_empty t)
+    ~is_full:(is_full t)
+;;
+
 let contains a b =
   if Array.length a.loops = 1 && Array.length b.loops = 1
   then S2_loop.contains a.loops.(0) b.loops.(0)
@@ -625,21 +635,15 @@ let contains a b =
                      (S2_latlng_rect.lng a.bound)
                      (S2_latlng_rect.lng b.bound)))
   then false
-  else if (not a.has_holes) && not b.has_holes
-  then Array.for_all b.loops ~f:(fun l -> any_loop_contains a l)
-  else contains_boundary a b && excludes_non_crossing_complement_shells b a
+  else S2_boolean_operation.contains (boolean_input a) (boolean_input b)
 ;;
 
-(* TODO: see the note on [contains]; shared-boundary multi-loop cases may
-   disagree with C++ until S2BooleanOperation is ported. *)
 let intersects a b =
   if Array.length a.loops = 1 && Array.length b.loops = 1
   then S2_loop.intersects a.loops.(0) b.loops.(0)
   else if not (S2_latlng_rect.intersects a.bound b.bound)
   then false
-  else if (not a.has_holes) && not b.has_holes
-  then Array.exists b.loops ~f:(fun l -> any_loop_intersects a l)
-  else (not (excludes_boundary a b)) || not (excludes_non_crossing_shells b a)
+  else S2_boolean_operation.intersects (boolean_input a) (boolean_input b)
 ;;
 
 let equal a b =
