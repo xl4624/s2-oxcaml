@@ -1,7 +1,9 @@
 (** Point-in-shape queries against geometry stored in an {!S2_shape_index.t}.
 
-    For two-dimensional shapes, only {!Vertex_model.Semi_open} is implemented; other
-    models raise. *)
+    All three {!Vertex_model.t} values ([Open], [Semi_open], [Closed]) are supported for
+    2D shapes: under [Open], a polygon does not contain its boundary; under [Closed], a
+    polygon contains its boundary; under [Semi_open], a canonical tiling rule ensures
+    exactly one polygon around each vertex contains it. *)
 
 open Core
 

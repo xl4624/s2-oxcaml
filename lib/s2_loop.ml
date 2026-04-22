@@ -10,13 +10,20 @@ let south_pole = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:(-#1.0)
 let empty_vertex = north_pole
 let full_vertex = south_pole
 
+type index_cache =
+  { idx : S2_shape_index.t
+  ; sid : int
+  ; point_query : S2_contains_point_query.t
+  ; mutable crossing_query : S2_crossing_edge_query.t option
+  }
+
 type t =
   { vertices : S2_point.t array
   ; origin_inside : bool
   ; bound : S2_latlng_rect.t
   ; subregion_bound : S2_latlng_rect.t
   ; mutable depth : int
-  ; mutable point_query_cache : (S2_contains_point_query.t * int) option
+  ; mutable index_cache : index_cache option
   }
 
 let sexp_of_t
@@ -25,7 +32,7 @@ let sexp_of_t
   ; bound = _
   ; subregion_bound = _
   ; depth = _
-  ; point_query_cache = _
+  ; index_cache = _
   }
   =
   let n = Array.length vertices in
@@ -177,7 +184,7 @@ let init_origin_and_bound (vs : S2_point.t array) : init_result =
 
 let make_unchecked vertices =
   let #{ origin_inside; bound; subregion_bound } = init_origin_and_bound vertices in
-  { vertices; origin_inside; bound; subregion_bound; depth = 0; point_query_cache = None }
+  { vertices; origin_inside; bound; subregion_bound; depth = 0; index_cache = None }
 ;;
 
 let find_validation_error t =
@@ -274,7 +281,7 @@ let invert t =
     ; bound
     ; subregion_bound
     ; depth = t.depth
-    ; point_query_cache = None
+    ; index_cache = None
     })
 ;;
 
@@ -357,61 +364,8 @@ let[@zero_alloc] any_loop_edge_crosses_cell ~vertices cell =
     hit)
 ;;
 
-let[@zero_alloc] contains_cell t cell =
-  if is_empty t
-  then false
-  else if is_full t
-  then true
-  else if not (S2_latlng_rect.contains_cell t.bound cell)
-  then false
-  else (
-    (* Loop contains cell iff it contains every cell vertex AND no loop edge
-       crosses any cell edge. *)
-    let mutable contained = true in
-    let mutable k = 0 in
-    while contained && k < 4 do
-      if not
-           (brute_force_contains_point
-              ~vertices:t.vertices
-              ~origin_inside:t.origin_inside
-              (S2_cell.vertex cell k))
-      then contained <- false;
-      k <- k + 1
-    done;
-    contained && not (any_loop_edge_crosses_cell ~vertices:t.vertices cell))
-;;
-
-let[@zero_alloc] may_intersect_cell t cell =
-  if is_empty t
-  then false
-  else if is_full t
-  then true
-  else if not (S2_latlng_rect.intersects_cell t.bound cell)
-  then false
-  else (
-    (* Any cell vertex inside the loop? *)
-    let mutable hit = false in
-    let mutable k = 0 in
-    while (not hit) && k < 4 do
-      if brute_force_contains_point
-           ~vertices:t.vertices
-           ~origin_inside:t.origin_inside
-           (S2_cell.vertex cell k)
-      then hit <- true;
-      k <- k + 1
-    done;
-    if hit
-    then true
-    else (
-      (* Any loop vertex inside the cell? *)
-      let n = Array.length t.vertices in
-      let mutable i = 0 in
-      while (not hit) && i < n do
-        if S2_cell.contains_point cell t.vertices.(i) then hit <- true;
-        i <- i + 1
-      done;
-      if hit then true else any_loop_edge_crosses_cell ~vertices:t.vertices cell))
-;;
+(* contains_cell and may_intersect_cell are defined after contains_point
+   (and the index cache) so they can reuse the shared shape index. *)
 
 (* Equality. *)
 
@@ -532,18 +486,112 @@ let to_shape t : S2_shape.t =
    }
 ;;
 
+(* Lazily build and cache the loop's shape index together with point and
+   crossing query objects. All index-driven predicates (contains_point,
+   contains_cell, may_intersect_cell, contains, intersects) share this
+   cache so the index is built at most once per loop. *)
+let get_index_cache t =
+  match t.index_cache with
+  | Some c -> c
+  | None ->
+    let idx = S2_shape_index.create () in
+    let sid = S2_shape_index.add idx (to_shape t) in
+    let point_query = S2_contains_point_query.create idx () in
+    let c = { idx; sid; point_query; crossing_query = None } in
+    t.index_cache <- Some c;
+    c
+;;
+
+let get_crossing_query t =
+  let c = get_index_cache t in
+  match c.crossing_query with
+  | Some q -> q
+  | None ->
+    let q = S2_crossing_edge_query.create c.idx in
+    c.crossing_query <- Some q;
+    q
+;;
+
 let contains_point t p =
   if not (S2_latlng_rect.contains_point t.bound p)
   then false
   else (
-    match t.point_query_cache with
-    | Some (q, sid) -> S2_contains_point_query.shape_contains q ~shape_id:sid p
-    | None ->
-      let idx = S2_shape_index.create () in
-      let sid = S2_shape_index.add idx (to_shape t) in
-      let q = S2_contains_point_query.create idx () in
-      t.point_query_cache <- Some (q, sid);
-      S2_contains_point_query.shape_contains q ~shape_id:sid p)
+    let c = get_index_cache t in
+    S2_contains_point_query.shape_contains c.point_query ~shape_id:c.sid p)
+;;
+
+(* Does any edge of [cell] cross any edge of the loop, using the loop's
+   shape index to prune? *)
+let any_cell_edge_crosses_loop t cell =
+  let ceq = get_crossing_query t in
+  let verts =
+    [| S2_cell.vertex cell 0
+     ; S2_cell.vertex cell 1
+     ; S2_cell.vertex cell 2
+     ; S2_cell.vertex cell 3
+    |]
+  in
+  let found = ref false in
+  let k = ref 0 in
+  while (not !found) && !k < 4 do
+    let a = verts.(!k) in
+    let b = verts.((!k + 1) land 3) in
+    let xs =
+      S2_crossing_edge_query.get_crossing_edges
+        ceq
+        ~a
+        ~b
+        ~crossing_type:S2_crossing_edge_query.Crossing_type.All
+    in
+    (match xs with
+     | [] -> ()
+     | _ :: _ -> found := true);
+    incr k
+  done;
+  !found
+;;
+
+let contains_cell t cell =
+  if is_empty t
+  then false
+  else if is_full t
+  then true
+  else if not (S2_latlng_rect.contains_cell t.bound cell)
+  then false
+  else (
+    let contained = ref true in
+    let k = ref 0 in
+    while !contained && !k < 4 do
+      if not (contains_point t (S2_cell.vertex cell !k)) then contained := false;
+      incr k
+    done;
+    !contained && not (any_cell_edge_crosses_loop t cell))
+;;
+
+let may_intersect_cell t cell =
+  if is_empty t
+  then false
+  else if is_full t
+  then true
+  else if not (S2_latlng_rect.intersects_cell t.bound cell)
+  then false
+  else (
+    let hit = ref false in
+    let k = ref 0 in
+    while (not !hit) && !k < 4 do
+      if contains_point t (S2_cell.vertex cell !k) then hit := true;
+      incr k
+    done;
+    if !hit
+    then true
+    else (
+      let n = Array.length t.vertices in
+      let i = ref 0 in
+      while (not !hit) && !i < n do
+        if S2_cell.contains_point cell t.vertices.(!i) then hit := true;
+        incr i
+      done;
+      !hit || any_cell_edge_crosses_loop t cell))
 ;;
 
 let to_region t : S2_region.t =
@@ -647,31 +695,32 @@ let contains_non_crossing_boundary a b ~reverse =
 
 (* Reports whether any pair of edges from [a] and [b] cross at a point
    interior to both. Used by {!contains}, {!intersects}, and
-   {!compare_boundary}. *)
+   {!compare_boundary}. Uses [b]'s shape index plus {!S2_crossing_edge_query}
+   to probe each edge of [a] against [b]. *)
 let any_proper_crossing a b =
   let na = Array.length a.vertices in
-  let nb = Array.length b.vertices in
-  let mutable crossed = false in
-  let mutable i = 0 in
-  while (not crossed) && i < na do
-    let a0 = a.vertices.(i) in
-    let a1 = vertex a (i + 1) in
-    let mutable crosser =
-      S2_edge_crosser.create_with_chain ~a:a0 ~b:a1 ~c:b.vertices.(0)
-    in
-    let mutable j = 0 in
-    while (not crossed) && j < nb do
-      let b1 = vertex b (j + 1) in
-      let (#{ state; sign } : S2_edge_crosser.with_sign) =
-        S2_edge_crosser.chain_crossing_sign crosser b1
+  if na = 0 || Array.length b.vertices = 0
+  then false
+  else (
+    let ceq = get_crossing_query b in
+    let found = ref false in
+    let i = ref 0 in
+    while (not !found) && !i < na do
+      let v0 = a.vertices.(!i) in
+      let v1 = vertex a (!i + 1) in
+      let xs =
+        S2_crossing_edge_query.get_crossing_edges
+          ceq
+          ~a:v0
+          ~b:v1
+          ~crossing_type:S2_crossing_edge_query.Crossing_type.Interior
       in
-      crosser <- state;
-      if sign > 0 then crossed <- true;
-      j <- j + 1
+      (match xs with
+       | [] -> ()
+       | _ :: _ -> found := true);
+      incr i
     done;
-    i <- i + 1
-  done;
-  crossed
+    !found)
 ;;
 
 let contains a b =

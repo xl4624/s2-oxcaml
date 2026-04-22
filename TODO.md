@@ -12,7 +12,10 @@ work is listed below.
 
 ## Tier 6 - Shapes and geometry types
 
-- [x] **s2_loop** - `S2_loop` (index-driven ops deferred until `s2_shape_index`)
+- [x] **s2_loop** - `S2_loop` (fully index-driven: `contains_point`,
+      `contains_cell`, `may_intersect_cell`, `contains`, `intersects` all
+      use a shared lazily-built shape index plus `S2_contains_point_query`
+      / `S2_crossing_edge_query`)
 
 - [x] **s2_polygon** - `S2_polygon` (no encode/decode, no boolean ops, no
       snap/simplify, no polyline intersect; Contains / Intersects use the
@@ -29,7 +32,9 @@ work is listed below.
   - Go: `s2/shapeindex.go` | C++: `s2shape_index.h`, `mutable_s2shape_index.h`
   - Deps: `s2_shape`, `s2_cell_id`, `s2_point`
 
-- [x] **s2_contains_point_query** - `S2_contains_point_query` (2d shapes: Semi_open only)
+- [x] **s2_contains_point_query** - `S2_contains_point_query` (all three
+      vertex models - `Open`, `Semi_open`, `Closed` - are now implemented
+      for 2D shapes)
   - Go: `s2/contains_point_query.go` | C++: `s2contains_point_query.h`
   - Deps: `s2_shape_index`, `s2_edge_crosser`
 

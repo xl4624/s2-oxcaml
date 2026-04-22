@@ -44,25 +44,41 @@ let shape_contains_cell
       !found
     | Open | Semi_open -> false)
   else (
-    match vertex_model with
-    | Open | Closed ->
-      raise_s
-        [%message
-          "S2_contains_point_query: only Vertex_model.Semi_open is supported for 2d \
-           shapes"]
-    | Semi_open ->
-      let center_pt = S2_cell_id.to_point cell_id in
-      let open S2_edge_crosser in
-      let mutable crosser = create ~a:center_pt ~b:p in
-      let mutable inside = inside in
-      for i = 0 to n - 1 do
-        let eid = S2_shape_index.Clipped_shape.edge clipped i in
-        let #{ v0; v1 } : S2_shape.Edge.t = shape.#edge eid in
-        let #{ state; crossing } = edge_or_vertex_crossing crosser v0 v1 in
-        crosser <- state;
-        if crossing then inside <- not inside
-      done;
-      inside)
+    (* 2D shape. Walk an edge crosser from the cell center to p and accumulate
+       the crossing parity. For vertex-crossing cases (crossing_sign = 0) the
+       Open and Closed models short-circuit when p is a vertex of the polygon;
+       otherwise we fall back to [vertex_crossing] as in the Semi_open path. *)
+    let center_pt = S2_cell_id.to_point cell_id in
+    let mutable crosser = S2_edge_crosser.create ~a:center_pt ~b:p in
+    let mutable inside = inside in
+    let boundary_answer = ref None in
+    let i = ref 0 in
+    while Option.is_none !boundary_answer && !i < n do
+      let eid = S2_shape_index.Clipped_shape.edge clipped !i in
+      let #{ v0; v1 } : S2_shape.Edge.t = shape.#edge eid in
+      let r : S2_edge_crosser.with_sign = S2_edge_crosser.crossing_sign crosser v0 v1 in
+      crosser <- r.#state;
+      let sign = r.#sign in
+      if sign > 0
+      then inside <- not inside
+      else if sign = 0
+      then (
+        let is_vertex_hit = S2_point.equal v0 p || S2_point.equal v1 p in
+        match vertex_model with
+        | Open when is_vertex_hit -> boundary_answer := Some false
+        | Closed when is_vertex_hit -> boundary_answer := Some true
+        | _ ->
+          if S2_edge_crossings.vertex_crossing
+               (S2_edge_crosser.a crosser)
+               (S2_edge_crosser.b crosser)
+               v0
+               v1
+          then inside <- not inside);
+      incr i
+    done;
+    match !boundary_answer with
+    | Some b -> b
+    | None -> inside)
 ;;
 
 let shape_contains t ~shape_id p =

@@ -161,15 +161,17 @@ val cell_union_bound : t -> S2_cell_id.t array
 val contains_point : t -> S2_point.t -> bool
 [@@zero_alloc ignore]
 
-(** [contains_cell t cell] reports whether the loop entirely contains [cell]. Brute-force:
-    checks that every cell vertex is contained and that no loop edge crosses any cell
-    edge. *)
+(** [contains_cell t cell] reports whether the loop entirely contains [cell]. Uses the
+    loop's lazily-built {!S2_shape_index.t} for both the per-cell-vertex point test and
+    the cell-edge / loop-edge crossing test. *)
 val contains_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
 
-(** [may_intersect_cell t cell] reports whether the loop may intersect [cell]. Brute-force
-    test that returns [true] if any cell vertex is inside, any loop vertex is inside the
-    cell, or any loop edge crosses any cell edge. *)
+(** [may_intersect_cell t cell] reports whether the loop may intersect [cell]. Uses the
+    loop's lazily-built {!S2_shape_index.t} for the point-in-loop test and the edge
+    crossing test. *)
 val may_intersect_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
 
 (** [to_region t] exposes [t] through the generic region interface. *)
 val to_region : t -> S2_region.t
