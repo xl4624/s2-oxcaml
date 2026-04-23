@@ -47,7 +47,11 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2edge_vector_shape.h` (header-only)
   - Deps: `s2_shape`
 
-- [ ] **s2_point_vector_shape** - `S2_point_vector_shape`
+- [x] **s2_point_vector_shape** - `S2_point_vector_shape` (immutable:
+      `create` / `of_points`; each point is a degenerate edge and its own
+      single-edge chain; dimension fixed at [0]; reference point is the
+      fixed "not contained" point; encoding not ported so [type_tag] is
+      [none])
   - C++: `s2point_vector_shape.h` (header-only)
   - Deps: `s2_shape`
 
