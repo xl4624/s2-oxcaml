@@ -89,12 +89,12 @@ let test_whole_sphere () =
     "cell_ids"
     ~expected:expected_ids
     ~actual:(S2.S2_cell_union.cell_ids_raw ws);
-  let expected_leaves = int64_of_json_exn (member "leaf_cells_covered" data) in
+  let expected_leaves = int64_u_of_json_exn (member "leaf_cells_covered" data) in
   check
     bool
     "leaf_cells"
     true
-    (Int64.equal expected_leaves (S2.S2_cell_union.leaf_cells_covered ws))
+    (Int64_u.equal expected_leaves (S2.S2_cell_union.leaf_cells_covered ws))
 ;;
 
 let test_is_normalized () =
@@ -267,9 +267,9 @@ let test_leaf_cells_covered () =
   List.iter data ~f:(fun case ->
     let label = string_of_json_exn (member "label" case) in
     let cu = make_union_verbatim (member "cell_ids" case) in
-    let expected = int64_of_json_exn (member "leaf_cells_covered" case) in
+    let expected = int64_u_of_json_exn (member "leaf_cells_covered" case) in
     let actual = S2.S2_cell_union.leaf_cells_covered cu in
-    check bool label true (Int64.equal expected actual))
+    check bool label true (Int64_u.equal expected actual))
 ;;
 
 let test_area () =

@@ -473,10 +473,10 @@ to the remaining types that have an obvious sentinel so callers can skip
 These wrap one value-layout field and exist only for typing. Marking them
 `[@@unboxed]` removes the record header without touching callers.
 
-- [ ] `s2_cell_union.t = { cell_ids : S2_cell_id.t array }`
-- [ ] `s2_polyline.t = { vertices : S2_point.t array }`
-- [ ] `s2_lax_polyline.t = { vertices : S2_point.t array }`
-- [ ] `s2_shape_index.Index_cell.t = { shapes : Clipped_shape.t array }`
+- [x] `s2_cell_union.t = { cell_ids : S2_cell_id.t array }`
+- [x] `s2_polyline.t = { vertices : S2_point.t array }`
+- [x] `s2_lax_polyline.t = { vertices : S2_point.t array }`
+- [x] `s2_shape_index.Index_cell.t = { shapes : Clipped_shape.t array }`
 - Note: `s2_shape_index.shape_box = { shape : S2_shape.t }` must stay boxed
   because its entire purpose is to give the unboxed record a value layout
   for `Hashtbl` storage; leave it.

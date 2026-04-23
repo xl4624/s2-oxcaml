@@ -21,7 +21,7 @@ module Clipped_shape = struct
 end
 
 module Index_cell = struct
-  type t = { shapes : Clipped_shape.t array }
+  type t = { shapes : Clipped_shape.t array } [@@unboxed]
 
   let num_clipped t = Array.length t.shapes
 

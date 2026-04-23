@@ -1,6 +1,6 @@
 open Core
 
-type t = { vertices : S2_point.t array }
+type t = { vertices : S2_point.t array } [@@unboxed]
 
 let sexp_of_t { vertices } =
   let n = Array.length vertices in

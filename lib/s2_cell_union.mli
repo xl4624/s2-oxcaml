@@ -47,7 +47,6 @@ val of_raw_owned : S2_cell_id.t array -> t
 (** [of_verbatim_owned ids] is {!from_verbatim} but stores [ids] directly. The caller
     transfers ownership and must not mutate [ids] afterwards. *)
 val of_verbatim_owned : S2_cell_id.t array -> t
-[@@zero_alloc ignore]
 
 (** [from_min_max min_id max_id] returns a normalized union covering every leaf cell with
     id in [[min_id, max_id]]. Both endpoints must be leaf cells and [min_id <= max_id]. *)
@@ -67,7 +66,6 @@ val whole_sphere : unit -> t
 
 (** [empty ()] returns a union containing no cells. *)
 val empty : unit -> t
-[@@zero_alloc ignore]
 
 (** {1 Accessors} *)
 
@@ -170,8 +168,7 @@ val difference : t -> t -> t
 (** [leaf_cells_covered t] returns the number of leaf cells (cells at
     {!S2_cell_id.max_level}) covered by [t]. Sums [4^(max_level - level id)] over stored
     ids, so the result fits in an unsigned 62-bit integer. *)
-val leaf_cells_covered : t -> int64
-[@@zero_alloc ignore]
+val leaf_cells_covered : t -> int64#
 
 (** [average_based_area t] approximates the total area by weighting each cell by the
     average area at its level. Cheap but only accurate to within a factor of 1.7. *)
@@ -191,12 +188,10 @@ val exact_area : t -> float#
     centroid of [t]'s cells as the cap center and then extending the cap to cover every
     cell's own cap bound. *)
 val cap_bound : t -> S2_cap.t
-[@@zero_alloc ignore]
 
 (** [rect_bound t] returns a bounding latitude-longitude rectangle computed by unioning
     each cell's {!S2_latlng_rect.from_cell}. *)
 val rect_bound : t -> S2_latlng_rect.t
-[@@zero_alloc ignore]
 
 (** [cell_union_bound t] returns a small cell-id covering of [t] by applying
     {!S2_cap.cell_union_bound} to [cap_bound t]. Generally at most 4 cells, up to 6 for

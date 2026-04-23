@@ -1,7 +1,7 @@
 open Core
 
 (* Internally we store S2_cell_id.t array (unboxed int64# array). *)
-type t = { cell_ids : S2_cell_id.t array }
+type t = { cell_ids : S2_cell_id.t array } [@@unboxed]
 
 let sexp_of_t t =
   let n = Array.length t.cell_ids in
@@ -471,7 +471,7 @@ let difference t other =
 
 (* {1 Measures} *)
 
-let[@inline] leaf_cells_covered_u t =
+let[@inline] leaf_cells_covered t =
   let mutable num_leaves = #0L in
   let n = Array.length t.cell_ids in
   for i = 0 to n - 1 do
@@ -483,11 +483,9 @@ let[@inline] leaf_cells_covered_u t =
   num_leaves
 ;;
 
-let leaf_cells_covered t = Int64_u.to_int64 (leaf_cells_covered_u t)
-
 let average_based_area t =
   let open Float_u.O in
-  S2_cell.average_area S2_cell_id.max_level * Int64_u.to_float (leaf_cells_covered_u t)
+  S2_cell.average_area S2_cell_id.max_level * Int64_u.to_float (leaf_cells_covered t)
 ;;
 
 let approx_area t =
