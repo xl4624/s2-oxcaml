@@ -1,10 +1,15 @@
 .PHONY: all build test fixtures clean fmt bench
 
-# Optional: run one test executable (Alcotest binary), not all suites.
+# Optional: scope tests to a single module. Picks up three flavors:
+#   - test/test_<module>.exe                (fixture-driven Alcotest binary)
+#   - test/quickcheck/<module>.ml           (inline Base_quickcheck tests)
+#   - test/expect_snapshots/<module>.ml     (ppx_expect snapshots)
+# The quickcheck and snapshot stanzas are shared libraries, so when a
+# matching file exists the whole library is re-run (still quick in practice).
 #   make test                          # all tests
-#   make test TEST=r1_interval         # -> test/test_r1_interval.exe
+#   make test TEST=r1_interval         # -> test_r1_interval.exe + QC + snapshots
 #   make test TEST=test_r1_interval    # same (test_ added once)
-#   make test TEST=test/test_r1_interval.exe   # explicit path
+#   make test TEST=test/test_r1_interval.exe   # explicit path, Alcotest only
 TEST ?=
 
 all: fixtures build test
@@ -21,14 +26,21 @@ test/dune.inc: $(wildcard test/test_*.ml)
 	./test/gen_dune.sh
 
 test: fixtures
-ifneq ($(strip $(TEST)),)
-ifneq ($(filter %.exe,$(TEST)),)
+ifeq ($(strip $(TEST)),)
+	dune runtest --root $(DUNE_ROOT)
+else ifneq ($(filter %.exe,$(TEST)),)
 	dune runtest --root $(DUNE_ROOT) --force $(TEST)
 else
-	dune runtest --root $(DUNE_ROOT) --force test/test_$(patsubst test_%,%,$(TEST)).exe
-endif
-else
-	dune runtest --root $(DUNE_ROOT)
+	@_m=$(patsubst test_%,%,$(TEST)); \
+	 dune runtest --root $(DUNE_ROOT) --force test/test_$${_m}.exe; \
+	 if [ -f test/quickcheck/$${_m}.ml ]; then \
+	   echo "+ dune runtest test/quickcheck (contains $${_m}.ml)"; \
+	   dune runtest --root $(DUNE_ROOT) test/quickcheck; \
+	 fi; \
+	 if [ -f test/expect_snapshots/$${_m}.ml ]; then \
+	   echo "+ dune runtest test/expect_snapshots (contains $${_m}.ml)"; \
+	   dune runtest --root $(DUNE_ROOT) test/expect_snapshots; \
+	 fi
 endif
 
 fixtures:
