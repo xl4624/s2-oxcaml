@@ -18,12 +18,18 @@ type t =
 
 let sexp_of_t _ = Sexp.Atom "<S2_region.t>"
 
-(* Returns true if the cap intersects any point of the cell EXCLUDING the
-   already-checked vertices.
+(* True iff the cap interior reaches some point of the cell EXCLUDING the
+   already-checked vertices. Used by [cap_contains_cell] and
+   [cap_intersects_cell] to cover the cases where an edge of the cell crosses
+   the cap boundary between vertex samples.
 
-   Uses a local recursive helper for the edge loop so we can return as soon as the
-   answer is decided - OCaml [for] has no [break]/[continue], and in a coverage hot
-   path the mutable-flag pattern wastes iterations after a rejection or acceptance. *)
+   Method: for each cell edge, compute the closest approach of the cap center
+   to the great circle supporting the edge. If the perpendicular distance
+   exceeds the cap radius the edge misses entirely. Otherwise project the
+   closest point back onto the edge segment and report a hit if it lies
+   between the two endpoints. A local recursive helper replaces a [for] loop
+   so we can return as soon as the answer is decided - in coverer hot paths
+   most edges reject on the first test. *)
 let cap_intersects_cell_interior cap cell ~v0 ~v1 ~v2 ~v3 =
   let radius = S2_cap.radius_chord cap in
   if Stdlib.( >= ) (S1_chord_angle.compare radius S1_chord_angle.right) 0

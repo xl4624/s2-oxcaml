@@ -792,25 +792,32 @@ let add_is_full_polygon_predicate t predicate =
   state.predicate <- predicate
 ;;
 
-(* Build: simplified variant of the C++ pipeline.
+(* Site selection and snapping pipeline. This is the core of [build]; it
+   replaces roughly 1500 lines of C++ Voronoi machinery with the minimum
+   needed to pass the polygon-layer tests:
 
-   For snap_radius=0 (default IdentitySnapFunction) and idempotent=true, this
-   implements ChooseAllVerticesAsSites (s2builder.cc:587-613): dedup input
-   vertices exactly, route each input edge through deduped site ids.
+   - When snap_radius = 0 and idempotent = true (the default identity snap
+     function), emit the "ChooseAllVerticesAsSites" path from
+     s2builder.cc:587-613: exact dedup of input vertices, then route each
+     input edge through the deduplicated site ids.
 
-   For snap_radius>0, we use a simple O(n^2) cluster-merge: each input vertex
-   joins the first existing site within snap_radius. This is NOT bit-exact
-   with the C++ ChooseInitialSites+AddExtraSites pipeline but preserves
-   topology for well-separated inputs.
+   - When snap_radius > 0, fall back to a simple O(n^2) cluster merge: every
+     input vertex joins the first existing site within snap_radius. The
+     result is topology-preserving for well-separated inputs but NOT
+     bit-exact with the Voronoi-based s2builder.cc pipeline
+     (ChooseInitialSites + AddExtraSites + SnapEdge). Near-degenerate
+     configurations - particularly ones where three or more sites fall
+     within [min_vertex_separation, snap_radius] of each other - can choose
+     different representative sites than the C++ reference.
 
-   For split_crossing_edges=true, we enumerate input-edge crossings and
-   append intersection points as additional input vertices before site
-   selection.
+   - When split_crossing_edges = true, enumerate all pairwise interior
+     crossings before site selection and add each intersection point as an
+     extra input vertex.
 
-   TODO(s2_builder): port the full Voronoi site selection (s2builder.cc:
-   ChooseInitialSites, CollectSiteEdges, AddExtraSites, SnapEdge) for
-   bit-exact parity. Requires S2PointIndex + GetVoronoiSiteExclusion +
-   EdgeCircumcenterSign which are not yet ported. *)
+   TODO: port the full Voronoi site selection pipeline from s2builder.cc
+   (ChooseInitialSites, CollectSiteEdges, AddExtraSites, SnapEdge) for
+   bit-exact parity. Requires S2PointIndex, GetVoronoiSiteExclusion, and
+   EdgeCircumcenterSign, which are not yet ported. *)
 
 let add_edge_crossings t =
   let n_edges = Dynarray.length t.input_edges in

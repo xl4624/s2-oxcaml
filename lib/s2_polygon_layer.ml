@@ -13,9 +13,11 @@ let result t =
 ;;
 
 let loop_of_edge_sequence (g : G.t) edge_ids =
-  (* Each directed loop is described by a list of edge ids. The S2_loop is
-     built from the [src] vertex of each edge; the final edge's [dst] equals
-     the first edge's [src] and is implicit in the closed loop. *)
+  (* Each directed loop is represented by its edge ids in traversal order.
+     The S2_loop takes the [src] vertex of each edge; the final edge's [dst]
+     equals the first edge's [src], which is implicit in the closed loop
+     representation. Validation is skipped because the graph-level simple-loop
+     assembly already guarantees a well-formed cycle. *)
   let n = Array.length edge_ids in
   if n = 0
   then S2_loop.empty ()
@@ -53,6 +55,9 @@ let build_from_graph (g : G.t) ~output : S2_builder.Error.t =
 ;;
 
 let layer output : S2_builder.Layer.t =
+  (* Graph options match s2builderutil_s2polygon_layer.cc:75-83: directed edges,
+     drop degenerate edges, keep duplicates (the assembler tolerates them), and
+     drop sibling pairs so zero-area regions do not produce spurious loops. *)
   let graph_options =
     S2_builder.Graph_options.create
       ~edge_type:S2_builder.Edge_type.Directed
@@ -65,3 +70,9 @@ let layer output : S2_builder.Layer.t =
   ; name = "s2_polygon_layer"
   }
 ;;
+
+(* TODO: port undirected-edge support from s2builderutil_s2polygon_layer.cc:85-103. *)
+(* TODO: port label-set tracking (LabelSetIds / IdSetLexicon) from
+   s2builderutil_s2polygon_layer.cc:121-174. *)
+(* TODO: wire up the [validate] option so that S2Polygon::FindValidationError is called
+   on the assembled polygon and any error is surfaced through the builder. *)

@@ -1,5 +1,10 @@
 open Core
 
+(* Hilbert curve bookkeeping used by [child] to derive a child's orientation and
+   its quadrant within the parent's UV rectangle.  [pos_to_ij.(orient).(pos)]
+   packs the [(i, j)] offset (2*i + j) of the [pos]-th Hilbert child under
+   orientation [orient]; [pos_to_orientation.(pos)] is the orientation tweak
+   applied when descending. *)
 module Internal = struct
   let pos_to_ij =
     [| [| 0; 1; 3; 2 |]; [| 0; 2; 3; 1 |]; [| 3; 2; 0; 1 |]; [| 3; 1; 0; 2 |] |]
@@ -122,6 +127,9 @@ let approx_area t =
     / (#1.0 + Float_u.sqrt (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.pi ())))
 ;;
 
+(* The [5/3 * DBL_EPSILON] UV margin cancels the worst-case rounding in the
+   XYZ -> UV projection so that a point exactly on a face boundary is classified
+   as contained by at least one adjacent cell. *)
 let contains_point t p =
   let uv = S2_coords.face_xyz_to_uv t.#face p in
   match%optional_u.R2_point.Option uv with

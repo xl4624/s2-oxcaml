@@ -1,9 +1,18 @@
-(** [S2_polygon_layer] assembles a snapped {!S2_builder.Graph.t} into an {!S2_polygon.t}.
+(** An {!S2_builder.Layer.t} that assembles the snapped edges in an {!S2_builder.Graph.t}
+    into an {!S2_polygon.t}.
 
-    The layer discards degenerate edges and sibling edge pairs before assembling loops,
-    matching the upstream C++ defaults.
+    The layer requests the following graph processing from {!S2_builder} before it sees
+    the graph:
+    - Directed edges only (input edges must be oriented with the polygon interior on their
+      left).
+    - Degenerate edges (endpoints snap to the same vertex) are discarded.
+    - Duplicate edges are kept.
+    - Sibling edge pairs (zero-area degenerate regions) are discarded.
 
-    Usage:
+    If the resulting graph has no edges, the builder's full-polygon predicate decides
+    whether the output is the {!S2_polygon.empty} or {!S2_polygon.full} polygon.
+
+    Typical usage:
     {[
       let output = S2_polygon_layer.create_output () in
       let builder = S2_builder.create (S2_builder.Options.default ()) in
@@ -14,19 +23,27 @@
       let polygon = S2_polygon_layer.result output
     ]}
 
-    Deferred features (TODO): label tracking, validation, undirected edges. *)
+    {1 Limitations}
+
+    Not yet supported:
+    - Undirected input edges (the layer always uses directed edges).
+    - Per-edge label tracking ([LabelSetIds] / [IdSetLexicon]).
+    - The [validate] option (no post-build {!S2_polygon.find_validation_error} hook). *)
 
 open Core
 
-(** Mutable output slot. [S2_builder] fills this during [build]. *)
+(** Mutable output slot. {!S2_builder.build} populates this through the layer callback. *)
 type output
 
-(** [create_output ()] returns a fresh empty output. *)
+(** [create_output ()] returns a fresh output with no polygon attached. *)
 val create_output : unit -> output
 
-(** [result output] returns the assembled polygon after [S2_builder.build] has been
-    called. Raises if the layer has not yet produced a polygon. *)
+(** [result output] returns the assembled polygon. Raises if the builder has not yet
+    filled [output] (that is, if [S2_builder.build] has not been called, or if the build
+    returned an error before reaching the layer). *)
 val result : output -> S2_polygon.t
 
-(** [layer output] returns the {!S2_builder.Layer.t} to pass to [S2_builder.start_layer]. *)
+(** [layer output] returns the {!S2_builder.Layer.t} value to pass to
+    {!S2_builder.start_layer}. The layer records its polygon into [output] when the
+    builder calls it. *)
 val layer : output -> S2_builder.Layer.t

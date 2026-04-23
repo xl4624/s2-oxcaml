@@ -1,5 +1,19 @@
-(** An S2Point represents a point on the unit sphere as a 3D vector. Points are usually
-    normalized to unit length, but some methods do not require this. *)
+(** Points on the unit sphere represented as 3D Cartesian vectors.
+
+    Internally an [S2_point.t] is an {!R3_vector.t}. Most S2 operations assume unit-length
+    inputs, and the constructors in this module (e.g. {!of_coords}, {!S2_latlng.to_point})
+    normalize accordingly. A few helpers in the {!section:Component-wise_arithmetic}
+    section treat the value as a raw 3D vector and neither require nor preserve unit
+    length; they are useful for building up intermediate values before a final
+    normalization.
+
+    Equality and ordering are lexicographic on the raw coordinates; two points that differ
+    by sub-epsilon rounding will not be {!equal}. Use {!approx_equal} for tolerance-aware
+    comparison.
+
+    Precision: {!robust_cross_prod} falls back to exact arithmetic and symbolic
+    perturbation when necessary so that the returned vector is non-zero even for nearly
+    parallel or identical inputs. *)
 
 open Core
 
@@ -13,12 +27,14 @@ val to_string : t -> string [@@zero_alloc ignore]
 
 (** {1 Constructors} *)
 
-(** [origin] is a point that is guaranteed to be different from any valid point created
-    from coordinates. It is used as a sentinel value. *)
+(** A fixed unit-length point used as the "point at infinity" for edge-crossing-based
+    point-in-polygon tests. Not equal to any point that would otherwise arise from
+    geographic construction, and deliberately not on the boundary of any low-level S2
+    cell. {b Not} the origin of the coordinate system. *)
 val origin : t
 
-(** [of_coords ~x ~y ~z] creates a new point from the given coordinates and normalizes it.
-    If all coordinates are zero, returns [origin]. *)
+(** [of_coords ~x ~y ~z] creates a unit-length point by normalizing [(x, y, z)]. If all
+    three components are zero, returns {!origin} as a sentinel. *)
 val of_coords : x:float# -> y:float# -> z:float# -> t
 
 (** {1 Accessors} *)
@@ -37,32 +53,41 @@ val to_r3 : t -> R3_vector.t
 
 (** {1 Predicates} *)
 
-(** [is_unit_length t] returns true if the point is within a small epsilon of unit length. *)
+(** [is_unit_length t] is [true] iff [norm2 t - 1] is bounded by [5 * epsilon] in absolute
+    value. Useful in assertions; non-unit inputs to distance and edge primitives violate
+    the expected error analysis. *)
 val is_unit_length : t -> bool
 
 (** {1 Geometry} *)
 
-(** [ortho t] returns a unit-length vector orthogonal to [t]. Satisfies the property that
-    [ortho (-t) = -(ortho t)]. *)
+(** [ortho t] returns a unit-length vector orthogonal to [t]. Satisfies
+    [ortho (neg t) = neg (ortho t)]. Deliberately biases away from the coordinate axes to
+    reduce degeneracies downstream. *)
 val ortho : t -> t
 
-(** [robust_cross_prod a b] returns a vector orthogonal to both [a] and [b]. Uses
-    high-precision arithmetic if necessary to ensure the result is non-zero even when [a]
-    and [b] are nearly parallel. The result is not normalized. *)
+(** [robust_cross_prod a b] returns a non-zero vector orthogonal to both [a] and [b],
+    provided the two inputs are not exactly equal. Uses the numerically stable
+    [(a + b) x (b - a)] formula and, if that underflows, falls back to exact arithmetic;
+    for truly collinear inputs it applies a symbolic perturbation that is antisymmetric in
+    its arguments. The result is {i not} normalized, but it is guaranteed to be safely
+    passable to [atan2(|cross|, dot)] without underflow. *)
 val robust_cross_prod : t -> t -> t
 
-(** [distance a b] returns the angle between [a] and [b]. *)
+(** [distance a b] returns the angle between [a] and [b] as an {!S1_angle.t}. *)
 val distance : t -> t -> S1_angle.t
 
-(** [stable_angle a b] returns the angle between [a] and [b] using a numerically stable
-    formula that is accurate even for very small angles. *)
+(** [stable_angle a b] returns the angle between [a] and [b] using
+    [2 * atan2(|a - b|, |a + b|)], which remains accurate for very small angles where
+    [acos(dot)] loses precision. *)
 val stable_angle : t -> t -> S1_angle.t
 
-(** [chord_angle_between a b] returns the chord angle between [a] and [b]. *)
+(** [chord_angle_between a b] returns the chord angle between [a] and [b]. Both inputs
+    should be unit length. *)
 val chord_angle_between : t -> t -> S1_chord_angle.t
 
-(** [rotate p ~axis ~angle] rotates the point [p] about the given [axis] by the given
-    [angle]. *)
+(** [rotate p ~axis ~angle] returns [p] rotated about [axis] by [angle] radians. Both [p]
+    and [axis] must be unit length; [angle] has no restrictions. The result is
+    re-normalized so numerical errors do not accumulate. *)
 val rotate : t -> axis:t -> angle:S1_angle.t -> t
 
 (** {1 Component-wise arithmetic}
@@ -128,18 +153,22 @@ val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
 
 (** {1 Frames} *)
 
-(** A 3x3 orthonormal matrix stored as three column vectors. *)
+(** A 3x3 right-handed orthonormal matrix, stored as three column vectors. *)
 type frame =
   #{ col0 : R3_vector.t
    ; col1 : R3_vector.t
    ; col2 : R3_vector.t
    }
 
-(** [get_frame z] returns an orthonormal frame where [col2 = z]. *)
+(** [get_frame z] returns an orthonormal frame whose third column is [z] (which must be
+    unit length). The first two columns form an orthonormal basis for the tangent space at
+    [z]. *)
 val get_frame : t -> frame
 
-(** [to_frame frame p] returns the coordinates of [p] in the given frame. *)
+(** [to_frame frame p] returns the coordinates of [p] relative to [frame]. The result [q]
+    satisfies [from_frame frame q = p]. *)
 val to_frame : frame -> t -> t
 
-(** [from_frame frame q] returns the point [p] such that [to_frame frame p = q]. *)
+(** [from_frame frame q] returns [frame * q], i.e. the point whose coordinates in [frame]
+    are [q]. *)
 val from_frame : frame -> t -> t

@@ -1,5 +1,8 @@
 open Core
 
+(* [reference_point] is materialised at construction time rather than looked up
+   lazily: [S2_shape.get_reference_point] can allocate closures internally and
+   we want every post-construction accessor to be zero-alloc. *)
 type t =
   { vertices : S2_point.t array
   ; reference_point : S2_shape.Reference_point.t
@@ -21,6 +24,9 @@ let edge_of vertices n e =
 
 let of_vertices src =
   let n = Array.length src in
+  (* Copy the caller's array so later mutations do not invalidate the
+     pre-computed reference point. The branch on [n = 0] avoids indexing
+     [src.(0)] when building the seed for [Array.create]. *)
   let vertices =
     if n = 0
     then [||]

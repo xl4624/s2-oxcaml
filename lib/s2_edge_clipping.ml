@@ -1,6 +1,7 @@
 open Core
 
-(* Error bound constants for face clipping and rectangle intersection. *)
+(* Error bound constants.  Derived from the IEEE-754 double epsilon following
+   the analysis in s2edge_clipping.h:83-153. *)
 let face_clip_error_radians = Float_u.O.(#3.0 * Float_u.epsilon_float ())
 let face_clip_error_uv_dist = Float_u.O.(#9.0 * Float_u.epsilon_float ())
 
@@ -19,7 +20,6 @@ let shape_index_cell_padding =
   Float_u.O.(#2.0 * (face_clip_error_uv_coord + edge_clip_error_uv_coord))
 ;;
 
-(* A face segment is an edge clipped to a single cube face. *)
 type face_segment =
   { face : int
   ; a : R2_point.t
@@ -33,18 +33,24 @@ type clipped_uv =
   }
 [@@deriving sexp_of]
 
-(* --- Exact sign tricks on u + v vs w --------------------------------- *)
+(* --- Exact sign tricks on u + v vs w ---------------------------------
 
-(* [sum_equals u v w] iff [u + v = w] exactly. *)
+   The three helpers below all compare a floating-point sum u + v to a
+   third value w.  By pairing the native sum with the two rearranged
+   comparisons u = w - v and v = w - u, we can detect when the rounded
+   sum differs from the exact sum and fall back to a correct answer.
+   See s2edge_clipping.cc:39-99 for the full proof sketch. *)
+
+(* [sum_equals u v w] iff u + v = w in exact arithmetic. *)
 let[@inline] sum_equals u v w =
   let open Float_u.O in
   u + v = w && u = w - v && v = w - u
 ;;
 
-(* [intersects_face n] iff the directed line with normal [n] (expressed in
-   (u,v,w) coordinates of some face) intersects the [-1,1]x[-1,1] square of
-   that face.  This is true iff |n.x| + |n.y| >= |n.z|, evaluated exactly
-   evaluated exactly using floating-point sign checks. *)
+(* [intersects_face n] iff the directed line with normal n (expressed in
+   (u, v, w) coordinates of some face) hits the [-1,1]x[-1,1] square of
+   that face.  Equivalent to |n.x| + |n.y| >= |n.z|, evaluated exactly
+   via the trick above. *)
 let[@inline] intersects_face (n : R3_vector.t) =
   let open Float_u.O in
   let u = Float_u.abs (R3_vector.x n) in
@@ -53,9 +59,10 @@ let[@inline] intersects_face (n : R3_vector.t) =
   v >= w - u && u >= w - v
 ;;
 
-(* [intersects_opposite_edges n] iff the line L with normal [n] intersects
-   two opposite edges of the face (as opposed to adjacent edges or a
-   corner), evaluated exactly. *)
+(* [intersects_opposite_edges n] iff the line with normal n enters the face
+   through one edge and leaves through the opposite edge (as opposed to
+   adjacent edges or exactly through a corner).  Equivalent to
+   ||n.x| - |n.y|| >= |n.z|, evaluated exactly. *)
 let[@inline] intersects_opposite_edges (n : R3_vector.t) =
   let open Float_u.O in
   let u = Float_u.abs (R3_vector.x n) in
@@ -68,11 +75,16 @@ let[@inline] intersects_opposite_edges (n : R3_vector.t) =
   else v - w >= u
 ;;
 
-(* Axis identifiers for exit axis: 0 means the line exits through a
-   u = +/-1 edge, 1 means it exits through a v = +/-1 edge. *)
+(* Exit-axis convention: 0 means the line leaves the face through a
+   u = +/-1 edge, 1 means it leaves through a v = +/-1 edge.  Used
+   below to pick which (u, v) coordinate is pinned to +/-1 at the exit
+   point. *)
 
-(* [exit_axis n] returns 0 if the line with normal [n] exits the face
-   through u = +/-1, and 1 if it exits through v = +/-1. *)
+(* [exit_axis n] picks the exit axis for the line with normal n.  When
+   the line crosses opposite edges we pick the axis whose coordinate of
+   n has the larger magnitude; when it crosses adjacent edges the exit
+   axis is determined by the parity of the sign bits of n's components
+   (see s2edge_clipping.cc:133-154). *)
 let[@inline] exit_axis (n : R3_vector.t) =
   if intersects_opposite_edges n
   then
@@ -80,16 +92,19 @@ let[@inline] exit_axis (n : R3_vector.t) =
     then 1
     else 0
   else (
-    (* Adjacent edges: parity of sign bits determines the exit axis.  Uses
-       signbit to avoid underflow in a direct multiplication. *)
+    (* Adjacent-edge case: inspect sign bits directly to avoid underflow
+       from a direct multiplication of very small components. *)
     let sx = if Float_u.O.(R3_vector.x n < #0.0) then 1 else 0 in
     let sy = if Float_u.O.(R3_vector.y n < #0.0) then 1 else 0 in
     let sz = if Float_u.O.(R3_vector.z n < #0.0) then 1 else 0 in
     if sx lxor sy lxor sz = 0 then 1 else 0)
 ;;
 
-(* [exit_point n axis] returns the UV coordinates of the point where the
-   line with normal [n] exits the face on the given axis. *)
+(* [exit_point n axis] computes the (u, v) coordinate at which the line
+   with normal n leaves the face through the given exit axis.  The sign
+   conventions below come from the requirement that the line, oriented
+   along its normal, exits through one of the two edges u = +/-1 or
+   v = +/-1 rather than re-entering the face. *)
 let[@inline] exit_point (n : R3_vector.t) axis : R2_point.t =
   if Int.equal axis 0
   then
@@ -108,9 +123,8 @@ let[@inline] exit_point (n : R3_vector.t) axis : R2_point.t =
     R2_point.create ~x:(((Float_u.neg v * ny) - nz) / nx) ~y:v
 ;;
 
-(* --- ClipToPaddedFace and helpers ------------------------------------ *)
+(* --- Face clipping ---------------------------------------------------- *)
 
-(* Clamp a UV coordinate to the [-1, 1] cube face rectangle. *)
 let[@inline] clamp_uv (p : R2_point.t) : R2_point.t =
   let open Float_u.O in
   let x = R2_point.x p in
@@ -120,10 +134,11 @@ let[@inline] clamp_uv (p : R2_point.t) : R2_point.t =
   R2_point.create ~x:x' ~y:y'
 ;;
 
-(* [move_origin_to_valid_face face a ab a_uv] handles the case where the
-   normal of AB, due to rounding, does not quite intersect the given face
-   containing A.  Returns the possibly-updated face and the corresponding
-   UV coordinates of A. *)
+(* When A sits very close to a face boundary, rounding in the cross
+   product AB can make the normal just barely miss the face that
+   actually contains A.  [move_origin_to_valid_face] decides whether to
+   stay on [face] or hop to the adjacent face so the subsequent walk
+   has a self-consistent starting point.  See s2edge_clipping.cc:185-239. *)
 let move_origin_to_valid_face face (a : S2_point.t) (ab : R3_vector.t) (a_uv : R2_point.t)
   =
   let open Float_u.O in
@@ -159,8 +174,11 @@ let move_origin_to_valid_face face (a : S2_point.t) (ab : R3_vector.t) (a_uv : R
       #(new_face, clamp_uv uv)))
 ;;
 
-(* [get_next_face face exit axis n target_face] returns the next face to
-   visit along the line AB when traversing the cube faces from A toward B. *)
+(* Choose the next cube face when walking AB from A toward B.  The fast
+   path checks whether the exit point lies exactly on an edge shared
+   with [target_face] (in which case we can hop straight there); the
+   slow path uses the sign of the "along" coordinate to pick one of
+   the two faces adjacent along the exit axis. *)
 let[@inline] get_next_face face (exit : R2_point.t) axis (n : R3_vector.t) target_face =
   let other = if Int.equal axis 0 then R2_point.y exit else R2_point.x exit in
   let other_pos = Float_u.O.(other > #0.0) in
@@ -179,11 +197,13 @@ let[@inline] get_next_face face (exit : R2_point.t) axis (n : R3_vector.t) targe
     S2_coords.get_uvw_face face axis (if Float_u.O.(along > #0.0) then 1 else 0))
 ;;
 
-(* [clip_destination b a scaled_n b_tangent a_tangent scale_uv] returns the
-   (u, v) coordinates of the clipped endpoint A' on the given face along
-   with a score in 0..3 used to decide whether the segment intersects the
-   face.  All arguments are expressed in the (u, v, w) coordinates of the
-   target face. *)
+(* [clip_destination] computes one endpoint of the clipped (u, v)
+   segment on the target face.  It returns that endpoint together with
+   a score in 0..3: 0 means the endpoint is a genuine crossing, 1 or 2
+   means it was pushed past the opposing endpoint's tangent plane, and
+   3 means the endpoint is on the far hemisphere and must be discarded.
+   All arguments are expressed in (u, v, w) coordinates of the target
+   face; [scale_uv] is [1 + padding].  See s2edge_clipping.cc:343-407. *)
 let clip_destination
   (a : R3_vector.t)
   (b : R3_vector.t)
@@ -231,7 +251,8 @@ let clip_destination
 let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding : float#)
   : clipped_uv option
   =
-  (* Fast path: both endpoints are on the given face. *)
+  (* Fast path: both endpoints project onto the requested face, so the
+     clipped segment is just their (u, v) projections. *)
   if Int.equal (S2_coords.get_face (S2_point.to_r3 a_xyz)) face
      && Int.equal (S2_coords.get_face (S2_point.to_r3 b_xyz)) face
   then (
@@ -240,7 +261,9 @@ let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding
     Some { a = a_uv; b = b_uv })
   else
     let open Float_u.O in
-    (* Cross product must be computed in original xyz space. *)
+    (* Compute the cross product in xyz (not uvw) to take advantage of
+       the robust cross-product primitive and avoid precision loss from
+       the face-local transform. *)
     let ab_xyz = S2_point.robust_cross_prod a_xyz b_xyz in
     let n = S2_coords.face_xyz_to_uvw face ab_xyz in
     let a = S2_coords.face_xyz_to_uvw face (S2_point.to_r3 a_xyz) in
@@ -258,7 +281,9 @@ let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding
       let n = R3_vector.normalize n in
       let a_tangent = R3_vector.cross n a in
       let b_tangent = R3_vector.cross b n in
-      (* Negating scaled_n for the a endpoint. *)
+      (* For the A-endpoint we use the negated normal: this reorients
+         the "toward B" half-plane into the "toward A" one so
+         [clip_destination] can treat the two endpoints symmetrically. *)
       let neg_scaled_n =
         R3_vector.create
           ~x:(Float_u.neg (R3_vector.x scaled_n))
@@ -276,7 +301,7 @@ let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding
 
 let[@inline] clip_to_face a b face = clip_to_padded_face a b face ~padding:#0.0
 
-(* --- GetFaceSegments -------------------------------------------------- *)
+(* --- Spherical edge to face segments --------------------------------- *)
 
 let get_face_segments (a : S2_point.t) (b : S2_point.t) : face_segment list =
   let a_r3 = S2_point.to_r3 a in
@@ -293,7 +318,10 @@ let get_face_segments (a : S2_point.t) (b : S2_point.t) : face_segment list =
     let neg_ab = R3_vector.neg ab in
     let #(b_face, seg_b) = move_origin_to_valid_face b_face_init b neg_ab seg_b_init in
     let b_saved = seg_b in
-    (* Walk the line AB face-by-face, accumulating segments. *)
+    (* Walk AB face by face.  Each iteration emits the segment on the
+       current face, crosses into the face the line exits into, and
+       rewrites the current A endpoint in the new face's (u, v)
+       coordinates. *)
     let segments = ref [] in
     let mutable face = a_face in
     let mutable cur_a = seg_a in
@@ -314,15 +342,18 @@ let get_face_segments (a : S2_point.t) (b : S2_point.t) : face_segment list =
     List.rev (final :: !segments))
 ;;
 
-(* --- Rectangle clipping ---------------------------------------------- *)
+(* --- Planar rectangle clipping --------------------------------------- *)
 
 let intersects_rect (a : R2_point.t) (b : R2_point.t) (rect : R2_rect.t) =
   let bound = R2_rect.from_point_pair a b in
   if not (R2_rect.intersects rect bound)
   then false
   else (
-    (* All four vertices of [rect] must not lie on the same side of the
-       extended line AB. *)
+    (* Separating-axis test: AB and [rect] are disjoint iff the
+       extended line AB has all four rectangle vertices strictly on one
+       side.  We only need to examine the two extreme vertices along
+       n = ortho(b - a); they are determined cheaply from the signs of
+       n. *)
     let n = R2_point.ortho (R2_point.sub b a) in
     let i = if Float_u.O.(R2_point.x n >= #0.0) then 1 else 0 in
     let j = if Float_u.O.(R2_point.y n >= #0.0) then 1 else 0 in
@@ -342,13 +373,14 @@ let interpolate_double x a b a1 b1 =
   else b1 + ((a1 - b1) * ((x - b) / (a - b)))
 ;;
 
-(* Clip one axis of the bounding rectangle to the corresponding axis of
-   the clip interval.  The new bound intervals (bound0', bound1') are
-   packed into an R2_rect.t with bound0' as the x interval and bound1' as
-   the y interval; the R2_rect layout here is merely a convenient carrier
-   for two unboxed R1 intervals.  Returns [R2_rect.Option.none] if the
-   clipped bounds are empty.  [diag] is 0 if AB has positive slope and 1
-   if it has negative slope. *)
+(* Clip one axis of the bounding rectangle against the corresponding
+   axis of the clip rectangle.  The result [bound0', bound1'] is packed
+   into an [R2_rect.t] purely as a convenient carrier for two R1
+   intervals.  [diag] records the slope sign of AB (0 for positive
+   slope, 1 for negative) and controls which corner of the rectangle is
+   updated when one endpoint is pulled in.  Returns
+   [R2_rect.Option.none] when the axis-aligned intersection is empty.
+   See s2edge_clipping.cc:633-706. *)
 let clip_bound_axis
   a0
   b0
@@ -445,8 +477,9 @@ let clip_edge_bound
      with
      | None -> R2_rect.Option.none
      | Some step2 ->
-       (* step2 carries (clipped y, clipped x): swap back so result has x/y
-          matching the original rectangle axes. *)
+       (* The second [clip_bound_axis] call operated with axes swapped,
+          so [step2.x] holds the clipped y interval and vice versa; swap
+          them back before handing the result to callers. *)
        R2_rect.Option.some
          (R2_rect.create_intervals_exn ~x:(R2_rect.y step2) ~y:(R2_rect.x step2)))
 ;;

@@ -140,6 +140,10 @@ let[@inline] [@zero_alloc] add_point t p =
     else t)
 ;;
 
+(* The required radius is [dist(center, other_center) + other_radius].  Because
+   each operand of [S1_chord_angle.add] already rounds, we pad [dist] by the
+   cumulative rounding error so that [contains_cap (add_cap t other) other]
+   holds modulo float roundoff. *)
 let[@inline] [@zero_alloc] add_cap t other =
   if is_empty t
   then other
@@ -203,6 +207,11 @@ let[@inline] [@zero_alloc] get_point_on_line a b r =
   get_point_on_ray a dir r [@nontail]
 ;;
 
+(* Ensure [t] is the larger cap so the branches below only have to consider
+   "other on or outside t".  When [other] sticks out, the minimal enclosing cap
+   sits on the great circle through the two centers; its radius is half the
+   span (dist + this_r + other_r) / 2 and its center is placed at offset
+   (dist - this_r + other_r) / 2 along the circle from [t]'s center. *)
 let[@inline] [@zero_alloc] rec union t other =
   if S1_chord_angle.compare t.#radius other.#radius < 0
   then union other t
@@ -223,8 +232,10 @@ let[@inline] [@zero_alloc] rec union t other =
       of_center_angle result_center result_r))
 ;;
 
-(* The returned ids are not sorted. Most caps yield at most 4 cells; very large caps
-   may need all 6 face cells. *)
+(* Pick the coarsest level whose min-width cell is strictly smaller than the cap
+   radius.  At that level the four (or three) cells sharing the vertex closest
+   to the cap center are guaranteed to cover the cap.  For radii so large that
+   no such level exists, fall back to the six face cells. *)
 let[@zero_alloc ignore] cell_union_bound t =
   let radius_rad = S1_angle.radians (radius_angle t) in
   let level = S2_metrics.get_level_for_min_value S2_metrics.min_width radius_rad - 1 in

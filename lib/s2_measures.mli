@@ -1,7 +1,12 @@
 (** Angle and area measures on the unit sphere.
 
-    These functions operate on triples of unit-length {!S2_point.t} values forming
-    spherical triangles. *)
+    Given a spherical triangle described by three unit-length {!S2_point.t} vertices,
+    these functions return its interior angles, exterior (turning) angles, and area. The
+    area functions combine l'Huilier's theorem with Girard's formula so that both tiny and
+    near-hemispherical triangles are computed to within about [5e-15] absolute error
+    (roughly 0.25 square meters on Earth's surface).
+
+    All inputs are assumed to be unit-length. No two inputs should be antipodal. *)
 
 open Core
 

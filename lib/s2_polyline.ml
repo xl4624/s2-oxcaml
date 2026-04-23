@@ -298,8 +298,11 @@ let intersects a b =
 ;;
 
 (* Worker for [subsample_vertices]. Returns the maximal end index such that the
-   line segment from [vertices.(start)] to [vertices.(end)] passes within
-   [tolerance] of every interior vertex, in order. *)
+   geodesic from [vertices.(start)] to [vertices.(end)] passes within [tolerance]
+   of every interior vertex, in order. The implementation tracks a shrinking
+   angular "wedge" of feasible directions around [origin]; as soon as a
+   candidate direction falls outside the wedge or the per-step distance
+   condition is violated the scan stops. See s2polyline.cc:425-492. *)
 let find_end_vertex (vertices : S2_point.t array) tolerance start =
   let n = Array.length vertices in
   let origin = vertices.(start) in
@@ -393,3 +396,9 @@ let to_region t : S2_region.t =
      ; cell_union_bound = (fun () -> cell_union_bound t)
      }
 ;;
+
+(* TODO: port GetDistance / Project (nearest point, nearest distance) from
+   s2polyline.cc:236-288. *)
+(* TODO: port NearlyCovers / ApproxEquals polyline-to-polyline comparisons from
+   s2polyline.cc:494-577. *)
+(* TODO: port Encode / Decode from s2polyline.cc:579-640. *)

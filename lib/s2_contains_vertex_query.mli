@@ -1,13 +1,20 @@
-(** Determines whether a polygon contains one of its vertices given the edges incident to
-    that vertex.
+(** Decide whether a polygon contains a given vertex, using only the edges of the polygon
+    incident to that vertex.
 
-    The result of {!contains_sign} is [+1] if the target vertex is contained, [-1] if it
-    is not contained, and [0] if the incident edges consist of matched sibling pairs (in
-    which case the result cannot be determined locally).
+    Callers describe the local topology around the vertex by supplying each incident edge
+    via {!add_edge} together with a signed direction ([+1] for outgoing, [-1] for
+    incoming, [0] for a degenerate edge). After all edges have been added,
+    {!contains_sign} returns:
 
-    Point containment is defined according to the "semi-open" boundary model, which means
-    that if several polygons tile the region around a vertex then exactly one of those
-    polygons contains that vertex.
+    - [+1] if the polygon contains the target vertex,
+    - [-1] if the polygon does not contain it,
+    - [0] if the incident edges consist entirely of matched sibling pairs. In this case
+      the answer cannot be determined from the local data alone and the caller must
+      resolve it with global information.
+
+    Point containment follows the "semi-open" boundary model: if several polygons tile the
+    region around a vertex, exactly one of those polygons contains that vertex. This
+    convention is compatible with the vertex crossing rule used throughout S2.
 
     This type is not thread-safe; each thread should construct its own instance. *)
 

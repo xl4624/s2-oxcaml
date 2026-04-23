@@ -16,6 +16,8 @@ let[@zero_alloc ignore] to_string t =
 
 let[@inline] [@zero_alloc] create ~x ~y = #{ x; y }
 let zero = #{ x = #0.0; y = #0.0 }
+
+(* TODO: port R2Edge (pair of R2Points) from r2.h if a caller needs it. *)
 let[@inline] [@zero_alloc] x t = t.#x
 let[@inline] [@zero_alloc] y t = t.#y
 

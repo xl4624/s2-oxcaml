@@ -1,11 +1,16 @@
 (** Relationships between two angular "wedges" that share a common middle vertex.
 
-    Given an edge chain [(x0, x1, x2)], the wedge at [x1] is the region to the left of the
-    edges. More precisely, it is the set of all rays from [x1 -> x0] (inclusive) to
-    [x1 -> x2] (exclusive) swept in the clockwise direction.
+    Given an edge chain [(x0, x1, x2)], the wedge at [x1] is the angular region to the
+    left of the two edges when each edge is traversed from left to right. More precisely,
+    it is the set of all rays from [x1] that lie strictly between the ray [x1 -> x0]
+    (inclusive) and the ray [x1 -> x2] (exclusive), measured in the clockwise direction.
 
     The functions in this module compare two non-empty wedges [A = (a0, ab1, a2)] and
-    [B = (b0, ab1, b2)] that share the middle vertex [ab1]. *)
+    [B = (b0, ab1, b2)] that share the middle vertex [ab1]. They are used as primitives
+    when deciding how two polygon loops relate at a shared vertex (for example in polygon
+    containment or intersection tests).
+
+    All functions are pure and thread-safe. *)
 
 open Core
 

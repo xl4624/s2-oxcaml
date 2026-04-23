@@ -1,5 +1,17 @@
 open Core
 
+(* Tables and lookup arrays used to convert between [(i, j)] cell coordinates and
+   Hilbert curve positions in chunks of [lookup_bits] bits at a time.  The tables
+   encode the four Hilbert-curve orientations: [swap_mask] swaps the [i]/[j] axes
+   when set, [invert_mask] reverses the traversal direction.
+
+   [pos_to_ij.(orient).(k)] gives the [(i, j)] offset of the [k]-th cell in Hilbert
+   order under orientation [orient] (packed as [2*i+j]).  [pos_to_orientation.(k)] is
+   the orientation tweak applied when descending into the [k]-th child.
+
+   The two lookup arrays let us convert [lookup_bits]-bit chunks of [(i, j)] to a
+   Hilbert offset (and vice versa) in a single table lookup rather than recursing
+   through four levels bit-by-bit. *)
 module Hilbert = struct
   let swap_mask = 0x01
   let invert_mask = 0x02
@@ -132,6 +144,11 @@ let[@inline] [@zero_alloc] lsb_for_level level =
   Int64_u.O.(#1L lsl n)
 ;;
 
+(* Walk the [(i, j)] coordinates from most-significant nibble to least-significant
+   in 4-bit chunks, using [Hilbert.lookup.pos] to convert each chunk plus the
+   running orientation bits into the corresponding Hilbert-position nibble.  The
+   final id has the face in the top bits and [pos | 1] in the low bits, where the
+   trailing "1" marks the leaf level. *)
 let[@inline] [@zero_alloc] from_face_ij face i j =
   let hi_shift = pos_bits - 1 in
   let mutable n = Int64_u.O.(Int64_u.of_int face lsl hi_shift) in

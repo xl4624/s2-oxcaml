@@ -1,14 +1,20 @@
 (** Centroid computations for spherical edges and triangles.
 
-    There are several notions of the "centroid" of a triangle. The planar centroid is the
-    centroid of the ordinary (non-spherical) triangle. The surface centroid is the
-    intersection of the three medians of the spherical triangle (equal to the planar
-    centroid projected onto the sphere). The true centroid (mass centroid) is the surface
-    integral of (x,y,z) over the triangle divided by area.
+    There are three different notions of the centroid of a triangle ABC on the sphere:
 
-    The true centroid is best for most purposes because it behaves linearly: if you split
-    a triangle into pieces and average their centroids (weighted by area), you get the
-    centroid of the original triangle. *)
+    - The {e planar} centroid is the arithmetic mean [(A+B+C)/3] of the three vertices,
+      treated as ordinary points in R3.
+    - The {e surface} centroid is the intersection of the three spherical medians. It
+      equals the planar centroid projected onto the sphere.
+    - The {e true} centroid (mass centroid) is the surface integral of [(x,y,z)] over the
+      triangle divided by the triangle's area; it is the point the triangle would rotate
+      around if spinning freely.
+
+    Most callers want the true centroid because it behaves linearly under area-weighted
+    averaging: splitting a triangle into pieces and averaging their centroids (weighted by
+    area) recovers the centroid of the original triangle. The planar and surface variants
+    do not. The surface centroid can also land far from the intuitive "center" of a large
+    spherical triangle, so it is rarely the right choice. *)
 
 open Core
 

@@ -2,8 +2,10 @@ open Core
 
 (* A single edge incident to the target vertex: [v] is the other endpoint and
    [direction] is the running sum of edge directions between [target] and [v]
-   (so that matched sibling pairs cancel to 0). The list length is bounded by
-   the number of distinct neighbours actually added. *)
+   (so that matched sibling pairs cancel to 0). An association list is used
+   instead of the flat hash map the C++ version keeps because S2_point.t has no
+   hash implementation available here and the number of distinct neighbours in
+   practice is small. *)
 type entry =
   { v : S2_point.t
   ; mutable direction : int

@@ -15,6 +15,10 @@ let[@zero_alloc ignore] pp ppf t =
 let[@zero_alloc ignore] to_string t = Float_u.to_string t
 let zero = #0.0
 let infinity = Float_u.infinity ()
+
+(* TODO: port the S2Point and S2LatLng two-argument constructors from s1angle.h once
+   the corresponding OCaml modules exist. *)
+(* TODO: port the S1Angle::Coder serialization interface from s1angle.h. *)
 let[@inline] [@zero_alloc] of_radians r = r
 let[@inline] [@zero_alloc] of_degrees d = Float_u.O.(Float_u.pi () / #180.0 * d)
 let[@inline] [@zero_alloc] of_e5 e = of_degrees Float_u.O.(#1e-5 * Float_u.of_int e)
@@ -63,6 +67,9 @@ module Int_option = struct
   end
 end
 
+(* [Float_u.iround_nearest] returns a boxed [int option] that would force allocation.
+   Unpacking into the unboxed [Int_option.t] (with [Int.min_value] as the none
+   sentinel) keeps [e5]/[e6]/[e7] zero-alloc. *)
 let[@inline] [@zero_alloc] iround_nearest_sentinel v =
   match Float_u.iround_nearest v with
   | None -> Int_option.none
@@ -129,6 +136,9 @@ let[@inline] [@zero_alloc] sin_cos t =
   #(Float_u.sin r, Float_u.cos r)
 ;;
 
+(* Subtracting the nearest integer multiple of [2 pi] places the result in
+   [-pi, pi]. The explicit clamp from [-pi] to [+pi] biases the boundary to match
+   the (-pi, pi] convention used by S2 lat/lng normalization. *)
 let[@inline] [@zero_alloc] normalized t =
   let open Float_u.O in
   let two_pi = #2.0 * Float_u.pi () in

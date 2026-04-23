@@ -39,6 +39,10 @@ let[@inline] [@zero_alloc] from_point p =
   #{ lo = p; hi = p }
 ;;
 
+(* Counter-clockwise distance from [a] to [b] along the unit circle. Both
+   inputs must be in (-pi, pi]. When [b >= a] this is just [b - a]; otherwise
+   we go the long way round, carefully written to avoid losing a bit of
+   precision for angles near +/- pi. *)
 let[@inline] [@zero_alloc] positive_distance a b =
   let d = b - a in
   if d >= #0.0 then d else b + Float_u.pi () - (a - Float_u.pi ())
@@ -105,6 +109,9 @@ let[@inline] [@zero_alloc] complement_center t =
   else t.#hi - Float_u.pi ()
 ;;
 
+(* Skip the -pi -> pi normalization on [p]. Used internally when callers have
+   already normalized or when [p] comes from an interval endpoint (and is
+   therefore already in (-pi, pi]). *)
 let[@inline] [@zero_alloc] fast_contains t p =
   if is_inverted t
   then (p >= t.#lo || p <= t.#hi) && not (is_empty t)

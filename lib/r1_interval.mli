@@ -1,7 +1,15 @@
 (** A closed interval on the real line.
 
-    Zero-length intervals (where [lo = hi]) represent single points. If [lo > hi], the
-    interval is empty. *)
+    An interval is the set of all real numbers between a low endpoint [lo] and a high
+    endpoint [hi], both inclusive. Zero-length intervals (where [lo = hi]) represent
+    single points. If [lo > hi] the interval is empty, and the canonical empty interval is
+    [empty]; because many arithmetic operations can produce different empty
+    representations, use [is_empty] to test for emptiness rather than structural equality.
+
+    Typical usage is to build up coordinate bounds one point at a time with [add_point],
+    combine intervals with [union] or [intersection], and query containment with
+    [contains] or [intersects]. The type is unboxed, so interval values live directly in
+    registers and incur no allocation. *)
 open Core
 
 [@@@zero_alloc all]
@@ -57,28 +65,33 @@ val contains : t -> float# -> bool
 (** [interior_contains t p] returns true if [p] is in the open interval [(lo, hi)]. *)
 val interior_contains : t -> float# -> bool
 
-(** [contains_interval t other] returns true if [t] contains [other]. *)
+(** [contains_interval t other] returns true if every point of [other] lies in [t]. An
+    empty [other] is considered to be contained in any interval. *)
 val contains_interval : t -> t -> bool
 
-(** [interior_contains_interval t other] returns true if the interior of [t] contains
-    [other], including [other]'s boundary. *)
+(** [interior_contains_interval t other] returns true if every point of [other] lies
+    strictly in the open interval [(lo, hi)]. An empty [other] is considered to be
+    contained in any interval. *)
 val interior_contains_interval : t -> t -> bool
 
 (** [intersects t other] returns true if the two intervals have any points in common. *)
 val intersects : t -> t -> bool
 
-(** [interior_intersects t other] returns true if the interior of [t] intersects any point
-    of [other], including [other]'s boundary. *)
+(** [interior_intersects t other] returns true if the open interior of [t] shares at least
+    one point with [other] (including [other]'s boundary). *)
 val interior_intersects : t -> t -> bool
 
 (** [intersection t other] returns the interval containing all points common to [t] and
-    [other]. Empty intervals do not need to be special-cased. *)
+    [other]. If the intersection is empty, the result satisfies [is_empty] but may not be
+    structurally equal to [empty]. *)
 val intersection : t -> t -> t
 
-(** [union t other] returns the smallest interval that contains both intervals. *)
+(** [union t other] returns the smallest interval containing every point of either
+    argument. *)
 val union : t -> t -> t
 
-(** [add_point t p] returns the interval expanded so that it contains [p]. *)
+(** [add_point t p] returns the smallest interval containing every point of [t] together
+    with [p]. If [t] is empty the result is the single point [p]. *)
 val add_point : t -> float# -> t
 
 (** [project t p] returns the closest point in [t] to [p], or
@@ -94,8 +107,9 @@ val project_exn : t -> float# -> float#
     an empty interval remains empty. *)
 val expanded : t -> float# -> t
 
-(** [directed_hausdorff_distance t other] returns the directed Hausdorff distance to
-    [other]: [max_{p in t} min_{q in other} d(p, q)]. *)
+(** [directed_hausdorff_distance t other] returns the directed Hausdorff distance from [t]
+    to [other], i.e. [max_{p in t} min_{q in other} d(p, q)]. Returns [0] if [t] is empty
+    and [+infinity] if [other] is empty but [t] is not. *)
 val directed_hausdorff_distance : t -> t -> float#
 
 (** [approx_equal ~max_error t other] returns true if [t] can be transformed into [other]

@@ -40,6 +40,11 @@ let[@inline] [@zero_alloc] of_degrees degrees = of_angle (S1_angle.of_degrees de
 let[@inline] [@zero_alloc] of_e5 e5 = of_angle (S1_angle.of_e5 e5)
 let[@inline] [@zero_alloc] of_e6 e6 = of_angle (S1_angle.of_e6 e6)
 let[@inline] [@zero_alloc] of_e7 e7 = of_angle (S1_angle.of_e7 e7)
+
+(* TODO: port FastUpperBoundFrom from s1chord_angle.h:181. Uses
+   surface-distance (radians^2) as an upper bound on through-sphere
+   distance; 1% accurate up to ~3100 km on Earth. *)
+
 let[@inline] [@zero_alloc] length2 t = t
 
 let[@zero_alloc] to_angle t =
@@ -82,6 +87,16 @@ let[@inline] [@zero_alloc] predecessor t =
     Float_u.next_after t (-#10.0)
 ;;
 
+(* Let a and b (non-squared) be chord lengths with half-angles A and B
+   (a = 2 sin A, etc). Starting from c = 2 sin(A + B) and the identities
+     sin(A + B) = sin A cos B + cos A sin B
+     cos X      = sqrt (1 - sin^2 X)
+   the squared sum simplifies to x + y + 2*sqrt(x*y) where x and y are the
+   two products below. This needs only one sqrt versus converting to angles.
+
+   Error analysis (u = epsilon/2 = 2^-53 is the unit roundoff): each of x and
+   y is computed with (1+u)^2 error, so the full expression bounds at
+   (1+u)^4 ~= 4.04 * u = 2.02 * epsilon. Hence [relative_sum_error]. *)
 let[@inline] [@zero_alloc] add a b =
   assert (not (is_special a || is_special b));
   let open Float_u.O in
@@ -96,6 +111,9 @@ let[@inline] [@zero_alloc] add a b =
     if result > max_length2 then straight else result)
 ;;
 
+(* Subtraction uses two sqrts (rather than the single sqrt of [add]) so that
+   [sqrt x - sqrt y] does not catastrophically cancel when a and b are nearly
+   equal. The max-with-zero guards against tiny negative results from rounding. *)
 let[@inline] [@zero_alloc] sub a b =
   assert (not (is_special a || is_special b));
   let open Float_u.O in
@@ -110,6 +128,12 @@ let[@inline] [@zero_alloc] sub a b =
     c * c)
 ;;
 
+(* With length2 = 4 sin^2 A, the identities
+     sin(2A) = 2 sin A cos A
+     cos^2 A = 1 - sin^2 A
+   give sin^2(2A) = length2 * (1 - length2/4) and
+   cos(2A) = 1 - 2 sin^2 A = 1 - length2/2.
+   Much faster than converting to an angle and taking sin/cos. *)
 let[@inline] [@zero_alloc] sin2 t =
   let open Float_u.O in
   t * (#1.0 - (#0.25 * t))
@@ -125,11 +149,18 @@ let[@inline] [@zero_alloc] plus_error t error =
   else Float_util.max_u #0.0 (Float_util.min_u max_length2 Float_u.O.(t + error))
 ;;
 
+(* 2.5 * epsilon comes from computing the squared distance; another
+   2 * epsilon from the input point lengths being off by up to 2 * epsilon
+   each (the maximum error from S2Point normalization). Absolute term
+   16 * epsilon^2 accounts for the product of the two relative errors. *)
 let[@inline] [@zero_alloc] max_point_error t =
   let eps = Float_u.epsilon_float () in
   Float_u.O.((#4.5 * eps * t) + (#16.0 * eps * eps))
 ;;
 
+(* Assuming an accurate libm, sin() and the multiplication each contribute
+   0.5 * epsilon of relative error; the sin error is squared into length2,
+   so the coefficient is 1.5 * epsilon. *)
 let[@inline] [@zero_alloc] max_angle_error t =
   let open Float_u.O in
   #1.5 * Float_u.epsilon_float () * t

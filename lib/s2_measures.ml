@@ -1,15 +1,14 @@
 open Core
 
 let[@inline] angle a b c =
-  (* [robust_cross_prod] gives good accuracy when two input points are nearly
-     (anti-)parallel, which is when the naive cross product loses precision. *)
+  (* Cross products are stable when the two input points are nearly
+     (anti-)parallel; the naive cross product loses precision there. *)
   R3_vector.angle (S2_point.robust_cross_prod a b) (S2_point.robust_cross_prod c b)
 ;;
 
 let[@inline] turn_angle a b c =
-  (* Use the robust cross product for accuracy near parallel edges and
-     [robust_sign] so the sign is correct for turns close to 180 degrees. We
-     cannot just multiply by the sign because it is legal for [a = c]. *)
+  (* Sign must come from the orientation predicate rather than [sign * angle]
+     because [a = c] is legal and produces either [-pi] or [pi]. *)
   let ang =
     R3_vector.angle (S2_point.robust_cross_prod a b) (S2_point.robust_cross_prod b c)
   in
@@ -32,11 +31,16 @@ let[@inline] girard_area a b c =
 ;;
 
 let area a b c =
-  (* Based on l'Huilier's theorem,
-     tan(E/4) = sqrt(tan(s/2) tan((s-a)/2) tan((s-b)/2) tan((s-c)/2))
-     where E is the spherical excess (area), a,b,c are the side lengths, and
-     s is the semiperimeter. Girard's formula is used instead for long thin
-     triangles where l'Huilier's cancellation error dominates. *)
+  (* l'Huilier's theorem:
+       tan(E/4) = sqrt(tan(s/2) tan((s-a)/2) tan((s-b)/2) tan((s-c)/2))
+     where E is the spherical excess (the triangle area), a/b/c are the side
+     lengths, and s is the semiperimeter. Its relative error is roughly
+     1e-16 * s / min(s-a, s-b, s-c), which is tiny for non-skinny triangles.
+     For long thin triangles the cancellation in (s-a), (s-b), (s-c) dominates
+     and we prefer Girard's formula despite its weaker accuracy on small
+     triangles. The threshold [dmin < s * 0.1 * (g + 5e-15)] keeps the choice
+     conservative by inflating the measured Girard area by its approximate
+     error bound. See s2measures.cc:87-147 for the derivation. *)
   let open Float_u.O in
   let sa = S1_angle.radians (S2_point.stable_angle b c) in
   let sb = S1_angle.radians (S2_point.stable_angle c a) in
@@ -57,8 +61,6 @@ let area a b c =
     let dmin = s - Float_util.max_u sa (Float_util.max_u sb sc) in
     if dmin < #1e-2 * s * s2 * s2
     then (
-      (* Inflate the area by the approximate Girard error to keep the test
-         conservative. *)
       let g = girard_area a b c in
       if dmin < s * #0.1 * (g + #5e-15) then g else l_huilier ())
     else l_huilier ())

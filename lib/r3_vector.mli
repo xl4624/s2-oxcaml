@@ -1,4 +1,24 @@
-(** A vector in three-dimensional Euclidean space. *)
+(** A vector in three-dimensional Euclidean space.
+
+    Values of this type are the underlying representation of 3D points used throughout S2:
+    unit-length instances are treated as points on the unit sphere, but most arithmetic
+    operations do not require or preserve unit length. Use [normalize] when you need a
+    unit vector.
+
+    All arithmetic is component-wise IEEE 754 double precision; no rounding or range
+    checks are performed. [angle] returns an [S1_angle.t] in [[0, pi]] using
+    [atan2(|cross|, dot)], which stays accurate near [0] and near [pi] unlike [acos(dot)].
+
+    Underflow-safety helpers are provided for vectors with very small components:
+    [is_normalizable] and [ensure_normalizable] scale a vector so that squaring its
+    largest component cannot underflow. See those functions for details.
+
+    The type is unboxed, so values live in registers and no allocation occurs.
+
+    {1 Limitations}
+
+    Component-wise [Sqrt], [Floor], [Ceil], and [FRound] from the C++ [Vector3_d] base
+    class are not exposed; add them if a caller needs them. *)
 
 open Core
 
@@ -50,9 +70,9 @@ val dot : t -> t -> float#
 (** [abs t] returns the vector with nonnegative components [(|x|, |y|, |z|)]. *)
 val abs : t -> t
 
-(** [cross a b] returns the cross product of [a] and [b], a vector orthogonal to both
-    inputs whose magnitude equals the area of the parallelogram they span. If the vector
-    type is an integer, high bits of the result are silently discarded. *)
+(** [cross a b] returns the cross product [a x b], a vector orthogonal to both inputs
+    whose magnitude equals the area of the parallelogram they span. Follows the right-hand
+    rule. *)
 val cross : t -> t -> t
 
 (** [mul_components a b] returns the component-wise product
@@ -76,7 +96,9 @@ val norm2 : t -> float#
 val norm : t -> float#
 
 (** [normalize t] returns a unit vector in the same direction as [t]. If [t] is the zero
-    vector, the zero vector is returned. *)
+    vector, the zero vector is returned instead of producing NaN. For vectors with
+    extremely small magnitudes, the squared norm can underflow; see [ensure_normalizable]
+    for a workaround. *)
 val normalize : t -> t
 
 (** [is_normalizable t] returns true if the vector can be normalized without losing
@@ -102,8 +124,10 @@ val distance : t -> t -> float#
     [[0, pi]]. If either vector is zero-length or nearly zero-length, the result is zero. *)
 val angle : t -> t -> S1_angle.t
 
-(** [ortho t] returns a unit vector orthogonal to [t]. The result satisfies
-    [dot t (ortho t) = 0] and [norm (ortho t) = 1]. *)
+(** [ortho t] returns a unit vector orthogonal to [t]. The axis used to construct it is
+    chosen based on [largest_abs_component t] to avoid near-degenerate cross products. The
+    result satisfies [dot t (ortho t) = 0] and [norm (ortho t) = 1] (up to floating-point
+    rounding). *)
 val ortho : t -> t
 
 (** {1 Component analysis} *)

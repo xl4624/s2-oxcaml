@@ -162,6 +162,11 @@ let[@inline] [@zero_alloc] get_distance_fraction x a b =
   da / (da + db)
 ;;
 
+(* TODO: port the S1ChordAngle-argument overloads of GetPointOnRay,
+   GetPointOnLine, GetPointToLeft, and GetPointToRight from
+   s2edge_distances.h:155-177,201-203.  They are faster because
+   S1ChordAngle sin/cos are cheaper than S1Angle's, but lose accuracy
+   near 180 degrees. *)
 let[@inline] [@zero_alloc] get_point_on_ray origin dir r =
   let cos_r = Float_u.cos (S1_angle.radians r) in
   let sin_r = Float_u.sin (S1_angle.radians r) in
@@ -202,7 +207,10 @@ type closest_points =
    ; b : S2_point.t
    }
 
-(* Project that takes a precomputed a_cross_b (not necessarily normalized). *)
+(* Project that takes a precomputed a_cross_b (not necessarily normalized).
+   TODO: expose as a public API mirroring the C++ overload in
+   s2edge_distances.h:119-120 and its error bound
+   kProjectPerpendicularError in s2edge_distances.h:125-126. *)
 let[@inline] [@zero_alloc] project_with_cross x a b a_cross_b =
   if S2_point.equal x a || S2_point.equal x b
   then x

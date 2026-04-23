@@ -1,20 +1,30 @@
 (** A two-dimensional region on the unit sphere.
 
-    The purpose of this interface is to allow complex regions to be approximated as
-    simpler regions. The interface is restricted to methods that are useful for computing
-    approximations.
+    This is a small polymorphic wrapper over the built-in S2 region types ({!S2_cap.t},
+    {!S2_latlng_rect.t}, {!S2_cell.t}, {!S2_cell_union.t}) plus a generic {!Custom}
+    constructor that takes a record of callbacks. The goal of the interface is not to
+    describe the region exactly but to expose just enough operations for another algorithm
+    (typically {!S2_region_coverer}) to approximate it as a union of cells:
 
-    An OCaml [S2_region.t] is a variant whose constructors wrap each concrete S2 type.
+    - bounding operations ({!cap_bound}, {!rect_bound}, {!cell_union_bound});
+    - cell containment tests ({!contains_cell}, {!intersects_cell});
+    - point containment ({!contains_point}).
 
-    User-defined regions (polygons, polylines, custom shapes) go through {!custom}, which
-    takes a {!methods} record of callbacks. *)
+    Each accessor dispatches on the variant tag. If you already know the concrete type of
+    your region it is fine, and often faster, to call the type-specific function directly.
+
+    Wrap polygons, polylines, custom shapes, or other types with {!custom} by supplying a
+    {!methods} record. *)
 
 open Core
 
 [@@@zero_alloc all]
 
-(** Callbacks used by {!custom} to implement a user-defined region. The fields mirror the
-    methods exposed at module level. *)
+(** Callbacks used by {!custom} to implement a user-defined region. Each field corresponds
+    to the module-level function of the same name, and must satisfy the same contract:
+    bounds may be loose but must actually contain the region, [contains_cell] must be
+    conservative (returning [false] if containment cannot be proven), and [contains_point]
+    assumes unit-length inputs. *)
 type methods =
   #{ cap_bound : unit -> S2_cap.t
    ; rect_bound : unit -> S2_latlng_rect.t
@@ -58,28 +68,37 @@ val custom : methods -> t
 (** {1 Region methods}
 
     Each accessor dispatches on the variant tag. Pattern-matching [t] directly is also
-    fine, and can let the compiler eliminate the dispatch at known-tag call sites. *)
+    fine, and lets the compiler eliminate the dispatch at known-tag call sites. *)
 
-(** [cap_bound t] returns a bounding {!S2_cap.t} that contains [t]. *)
+(** [cap_bound t] returns a spherical cap that contains [t]. The bound is not required to
+    be tight. *)
 val cap_bound : t -> S2_cap.t
 [@@zero_alloc ignore]
 
-(** [rect_bound t] returns a bounding {!S2_latlng_rect.t} that contains [t]. *)
+(** [rect_bound t] returns a lat/lng rectangle that contains [t]. The bound is not
+    required to be tight. *)
 val rect_bound : t -> S2_latlng_rect.t
 [@@zero_alloc ignore]
 
-(** [contains_cell t cell] returns [true] if [cell] is fully contained in [t]. *)
+(** [contains_cell t cell] returns [true] if [cell] is completely contained in [t]. If the
+    relationship cannot be determined, returns [false]. *)
 val contains_cell : t -> S2_cell.t -> bool
 [@@zero_alloc ignore]
 
-(** [intersects_cell t cell] returns [true] if [cell] intersects [t]. *)
+(** [intersects_cell t cell] returns [false] only when [t] provably does not intersect
+    [cell]. If [true], [t] either intersects [cell] or intersection could not be
+    determined - callers treating it as "may intersect" remain correct. *)
 val intersects_cell : t -> S2_cell.t -> bool
 [@@zero_alloc ignore]
 
-(** [contains_point t p] returns [true] if the unit-length point [p] lies in [t]. *)
+(** [contains_point t p] returns [true] iff the unit-length point [p] lies in [t]. *)
 val contains_point : t -> S2_point.t -> bool
 [@@zero_alloc ignore]
 
-(** [cell_union_bound t] returns a small cell-union cover of [t]. *)
+(** [cell_union_bound t] returns a small, fast-to-compute collection of {!S2_cell_id.t}
+    whose union covers [t]. The output is not normalized: it may be unsorted, may contain
+    redundant cells, and may cover substantially more area than necessary. Feed it to
+    {!S2_region_coverer.fast_covering} or {!S2_region_coverer.canonicalize_covering}
+    before use if you need a clean covering. *)
 val cell_union_bound : t -> S2_cell_id.t array
 [@@zero_alloc ignore]

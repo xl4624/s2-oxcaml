@@ -5,6 +5,11 @@ type t = R3_vector.t [@@deriving sexp_of, unboxed_option]
 let[@zero_alloc ignore] pp ppf t = R3_vector.pp ppf t
 let[@zero_alloc ignore] to_string t = R3_vector.to_string t
 
+(* A unit-length point far from the north/south poles and not on the boundary
+   of any low-level S2 cell, so it rarely collides with real edges during
+   point-in-polygon tests. The literal coordinates are written out explicitly
+   because the optimizer will not evaluate R3_vector.normalize at compile
+   time. *)
 let origin =
   R3_vector.create
     ~x:(-#0.0099994664350250197)
@@ -29,6 +34,11 @@ let[@inline] [@zero_alloc] is_unit_length t =
   Float_u.abs (R3_vector.norm2 t - #1.0) <= #5.0 * Float_u.epsilon_float ()
 ;;
 
+(* Cross [a] with a scratch vector whose dominant component is set to 1 on
+   the axis opposite the largest absolute component of [a]. The small but
+   distinct perturbations in the other two components ensure the result
+   coordinates are unlikely to be exactly zero, which reduces downstream
+   degeneracies in predicates like S2::Sign. *)
 let[@inline] [@zero_alloc] ortho a =
   let k = R3_vector.largest_abs_component a - 1 in
   let k = if k < 0 then 2 else k in

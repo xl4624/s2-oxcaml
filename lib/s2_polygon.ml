@@ -16,8 +16,9 @@ type t =
   ; num_vertices : int
   ; num_edges : int
   ; cumulative_edges : int array
-      (* [cumulative_edges.(i)] is the total number of edges in loops before [i]. Only
-           populated when [num_loops > 12]; otherwise empty. *)
+      (* [cumulative_edges.(i)] is the running sum of edge counts for loops [0..i-1].
+         Populated only when [num_loops > max_linear_search_loops]; for small polygons
+         a linear scan over the loops is faster than a prefix-sum lookup. *)
   ; bound : S2_latlng_rect.t
   ; subregion_bound : S2_latlng_rect.t
   ; mutable index_state : index_state
@@ -610,10 +611,11 @@ let excludes_non_crossing_complement_shells t o =
     ok)
 ;;
 
-(* Contains and Intersects route through S2_boolean_operation so that
-   shared-boundary semantics match the C++ reference. The single-loop
-   fast path stays direct for speed; all other cases go through the
-   boolean-operation predicate. *)
+(* Contains / Intersects route through S2_boolean_operation so that the
+   shared-boundary semantics (shells touch but do not cross each other,
+   holes handled as inverted shells) match the canonical implementation
+   in s2polygon.cc:1003-1126. The single-loop fast path stays direct for
+   speed; all other cases go through the boolean-operation predicate. *)
 let boolean_input t =
   let state = get_or_build_index t in
   S2_boolean_operation.Polygon_input.create
@@ -717,3 +719,14 @@ let find_validation_error t =
 ;;
 
 let is_valid t = Option.is_none (find_validation_error t)
+
+(* TODO: port set operations (InitToUnion, InitToIntersection, InitToDifference,
+   InitToSymmetricDifference, InitToSnapped, InitToSimplified) from
+   s2polygon.cc:2195-2360. *)
+(* TODO: port polyline operations (IntersectWithPolyline, SubtractFromPolyline,
+   ApproxIntersectWithPolyline) from s2polygon.cc:2362-2454. *)
+(* TODO: port distance queries (GetDistance, GetDistanceToBoundary, Project) from
+   s2polygon.cc:1543-1606. *)
+(* TODO: port ApproxContains / ApproxDisjoint / BoundaryNear from
+   s2polygon.cc:1128-1180. *)
+(* TODO: port Encode / Decode from s2polygon.cc:1608-1804. *)

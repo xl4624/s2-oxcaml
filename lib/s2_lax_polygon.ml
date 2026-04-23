@@ -1,17 +1,26 @@
 open Core
 
+(* Vertices from every loop are concatenated into a single flat array. This
+   matches s2lax_polygon_shape.h:184-188 and keeps per-loop access cheap while
+   letting us materialise the whole polygon with only two allocations plus the
+   reference-point computation. *)
 type t =
   { num_loops : int
   ; num_vertices : int
   ; vertices : S2_point.t array
-      (* loop_starts has size [num_loops + 1] when [num_loops > 0]. Entry [i] is the
-       starting offset of loop [i] within [vertices]; entry [num_loops] is the total
-       number of vertices. Empty when [num_loops = 0]. *)
+      (* [loop_starts] has size [num_loops + 1] when [num_loops > 0]: entry
+         [i] is the offset of loop [i] in [vertices], and entry [num_loops]
+         is the total vertex count (used as a sentinel so the wrap-around
+         logic in [edge_at] has no special case). Empty when
+         [num_loops = 0]. *)
   ; loop_starts : int array
   ; reference_point : S2_shape.Reference_point.t
       (* Spatial-locality cache for [edge] / [chain_position]: the last loop
-         index returned by a lookup. Consecutive queries tend to land in the
-         same loop, so checking this first avoids a scan. *)
+         index returned by a lookup. Consecutive shape-interface queries tend
+         to land in the same loop, so a one-slot check avoids an O(k) scan
+         (see s2lax_polygon_shape.h:270-295 for the upstream reasoning). This
+         field is mutated on every hot-path lookup, so [t] values must not be
+         shared across threads. *)
   ; mutable prev_loop : int
   }
 
@@ -42,13 +51,15 @@ let[@inline] [@zero_alloc] num_loop_vertices_raw ~loop_starts i =
 ;;
 
 (* Below this threshold a linear scan over [loop_starts] outperforms binary
-   search. *)
+   search. Chosen empirically in the C++ reference
+   (s2lax_polygon_shape.h:284) and kept here for parity. *)
 let k_max_linear_search_loops = 12
 
 (* Find the loop whose range of vertices contains edge/vertex [e]. [prev] is a
-   spatial-locality hint: most consecutive queries land in the same loop or the
-   loop immediately following it. The returned index is what the caller should
-   store as the next hint. Requires [num_loops >= 1] and
+   spatial-locality hint: most consecutive queries land in the same loop or
+   the loop immediately following it. The three cases below correspond to
+   s2lax_polygon_shape.h:271-293. The returned index is what the caller
+   should store as the next hint. Requires [num_loops >= 1] and
    [0 <= e < loop_starts.(num_loops)]. *)
 let[@inline] [@zero_alloc] find_loop_containing ~loop_starts ~num_loops ~prev e =
   if e >= loop_starts.(prev) && e < loop_starts.(prev + 1)
@@ -108,6 +119,9 @@ let of_loops src_loops =
   let num_loops = Array.length src_loops in
   if num_loops = 0
   then (
+    (* An empty polygon has no interior, so any reference point is
+       trivially outside. Skipping [S2_shape.get_reference_point] also
+       avoids constructing the [edge] / [chain] closures below. *)
     let reference_point = S2_shape.Reference_point.contained false in
     { num_loops = 0
     ; num_vertices = 0
@@ -139,6 +153,10 @@ let of_loops src_loops =
         done;
         dst)
     in
+    (* Use a local ref for [prev_loop] during construction so the closure
+       passed to [get_reference_point] can thread the cache without needing
+       the final record, which does not exist yet. We copy the final value
+       into [t.prev_loop] below. *)
     let cache = ref 0 in
     let edge e =
       if num_loops = 1

@@ -111,9 +111,21 @@ let[@inline] [@zero_alloc] of_e7_exn ~lat ~lng =
   create ~lat:lat_a ~lng:lng_a
 ;;
 
+(* TODO: port FromUnsignedE6 / FromUnsignedE7 from s2latlng.h:220-227.
+   Intended for values that have been round-tripped through unsigned proto
+   fixed32 fields. *)
+
+(* TODO: port ToStringInDegrees from s2latlng.cc:111-114. Formats the
+   normalized latlng as "lat_deg,lng_deg". *)
+
 let[@inline] [@zero_alloc] lat t = S1_angle.of_radians t.#lat
 let[@inline] [@zero_alloc] lng t = S1_angle.of_radians t.#lng
 
+(* Use atan2 rather than asin: the input vector is not required to be unit
+   length and atan2 is markedly more accurate near the poles. The [+ #0.0]
+   coerces -0.0 to +0.0 so that lat/lng of points that differ only by sign
+   of zero compare equal (they already do under float equality but format
+   differently, and downstream code relies on textual equality). *)
 let[@inline] [@zero_alloc] latitude p =
   let z = Float_u.O.(S2_point.z p + #0.0) in
   let x = S2_point.x p in
@@ -168,6 +180,10 @@ let[@inline] [@zero_alloc] to_point t =
     ~z:(Float_u.sin phi)
 ;;
 
+(* Haversine formula. Numerically stable for small angular separations but
+   loses precision near antipodal pairs (about 8 digits versus 15 for the
+   S2Point-based computation). The min-with-1 guard absorbs roundoff that
+   might push [x] slightly above 1 before the asin. *)
 let[@inline] [@zero_alloc] distance a b =
   let lat1 = a.#lat in
   let lat2 = b.#lat in

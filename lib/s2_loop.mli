@@ -1,22 +1,30 @@
-(** [S2_loop] represents a simple spherical polygon. It consists of a single chain of
-    vertices where the first vertex is implicitly connected to the last. All loops are
-    defined to have a CCW orientation, i.e. the interior of the loop is on the left side
-    of the edges. A clockwise loop enclosing a small area therefore represents the
-    complementary region (a CCW loop enclosing a very large area).
+(** A simple spherical polygon: a single closed chain of vertices on the unit sphere.
 
-    Loops are not allowed to have any duplicate vertices (whether adjacent or not).
-    Non-adjacent edges are not allowed to intersect, and edges of length 180 degrees are
-    not allowed (i.e., adjacent vertices cannot be antipodal). Loops must have at least
-    three vertices, except for the special {!empty} and {!full} loops which have exactly
-    one vertex each.
+    The first vertex is implicitly connected to the last. All loops are oriented CCW, i.e.
+    the interior is on the left of each edge. A clockwise loop around a small area
+    therefore represents the complementary region - a CCW loop around a very large area.
 
-    Point containment is defined such that if the sphere is subdivided into faces, every
-    point is contained by exactly one face. This implies that loops do not necessarily
-    contain their vertices.
+    Loop invariants (violations yield unspecified behaviour):
+    - No duplicate vertices (adjacent or non-adjacent).
+    - No edge of length 180 degrees (adjacent vertices cannot be antipodal).
+    - No self-intersection of non-adjacent edges.
+    - At least three vertices, except for the {!empty} and {!full} loops which are
+      represented by exactly one sentinel vertex.
 
-    This port currently exposes the index-free subset of the API: containment and
-    intersection tests against cells use brute-force enumeration of edges and vertices
-    rather than a precomputed shape index. *)
+    Point containment uses a semi-open vertex model so that if the sphere is partitioned
+    into a set of loops whose boundaries meet, every point is contained by exactly one
+    loop. A consequence is that a loop does not necessarily contain its own vertices.
+
+    Most containment queries use an internal shape index that is built on first use and
+    reused by subsequent queries on the same loop.
+
+    {1 Limitations}
+
+    The following operations are not yet ported:
+    - [GetDistance] / [GetDistanceToBoundary] - distance from a point to the loop.
+    - [Project] / [ProjectToBoundary] - closest point on the loop.
+    - [BoundaryNear] - distance-based approximate boundary equality.
+    - [Encode] / [Decode] - binary serialisation, including compressed form. *)
 
 open Core
 
@@ -100,10 +108,9 @@ val sign : t -> int
 
 (** {1 Validation} *)
 
-(** [is_valid t] is true when the no-index validation checks pass: every vertex is unit
-    length, the loop has at least three vertices (or is the empty/full loop), and no
-    adjacent vertices are identical or antipodal. Self-intersection is {e not} checked
-    until a shape index is available. *)
+(** [is_valid t] is true when every vertex is unit length, the loop has at least three
+    vertices (or is the empty/full loop), and no adjacent vertices are identical or
+    antipodal. Self-intersection is {e not} checked. *)
 val is_valid : t -> bool
 [@@zero_alloc ignore]
 
@@ -154,22 +161,18 @@ val rect_bound : t -> S2_latlng_rect.t
 val cell_union_bound : t -> S2_cell_id.t array
 [@@zero_alloc ignore]
 
-(** [contains_point t p] reports whether the loop contains [p]. After the
-    bounding-rectangle quick reject, this consults a lazily-built {!S2_shape_index.t} and
-    {!S2_contains_point_query.t} (semi-open vertex model) so repeated tests reuse the same
-    index. *)
+(** [contains_point t p] reports whether the loop contains [p] under the semi-open vertex
+    model. Uses the internal shape index after a cheap bounding-rectangle rejection test,
+    so repeated calls on the same loop amortise the index build. *)
 val contains_point : t -> S2_point.t -> bool
 [@@zero_alloc ignore]
 
-(** [contains_cell t cell] reports whether the loop entirely contains [cell]. Uses the
-    loop's lazily-built {!S2_shape_index.t} for both the per-cell-vertex point test and
-    the cell-edge / loop-edge crossing test. *)
+(** [contains_cell t cell] reports whether the loop entirely contains [cell]. *)
 val contains_cell : t -> S2_cell.t -> bool
 [@@zero_alloc ignore]
 
-(** [may_intersect_cell t cell] reports whether the loop may intersect [cell]. Uses the
-    loop's lazily-built {!S2_shape_index.t} for the point-in-loop test and the edge
-    crossing test. *)
+(** [may_intersect_cell t cell] is a conservative test: returns [true] when the loop and
+    [cell] may share a point, [false] only when they are guaranteed disjoint. *)
 val may_intersect_cell : t -> S2_cell.t -> bool
 [@@zero_alloc ignore]
 
@@ -217,12 +220,11 @@ val contains_nested : t -> t -> bool
 [@@zero_alloc ignore]
 
 (** [contains a b] reports whether the region enclosed by [a] is a superset of the region
-    enclosed by [b]. Uses brute-force O(|a| * |b|) edge-pair crossing checks. *)
+    enclosed by [b]. *)
 val contains : t -> t -> bool
 [@@zero_alloc ignore]
 
-(** [intersects a b] reports whether the regions enclosed by [a] and [b] overlap. Uses
-    brute-force O(|a| * |b|) edge-pair crossing checks. *)
+(** [intersects a b] reports whether the regions enclosed by [a] and [b] overlap. *)
 val intersects : t -> t -> bool
 [@@zero_alloc ignore]
 

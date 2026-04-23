@@ -1,25 +1,28 @@
-(** Low-level measures for polylines on the sphere.
+(** Low-level length and centroid measures for polylines on the unit sphere.
 
-    These helpers work directly on an array of {!S2_point.t} vertices so that they can be
-    reused by higher-level types (polylines, shapes, shape indices) once those are ported. *)
+    Each function takes an {!S2_point.t} array [v] and treats it as an open polyline whose
+    edges are [(v.(0), v.(1)), ..., (v.(n-2), v.(n-1))]. No per-polyline object is
+    constructed, which is why these helpers are convenient building blocks for the
+    higher-level {!S2_polyline} / {!S2_lax_polyline} types or any custom carrier that
+    exposes a vertex sequence. *)
 
 open Core
 
 [@@@zero_alloc all]
 
-(** [length polyline] returns the total geodesic length of the polyline, i.e. the sum of
-    the distances between consecutive vertices. Returns {!S1_angle.zero} for polylines
-    with fewer than two vertices. *)
+(** [length polyline] returns the total geodesic length of the polyline: the sum of the
+    great-circle distances between consecutive vertices. Polylines with fewer than two
+    vertices return {!S1_angle.zero}. *)
 val length : S2_point.t array -> S1_angle.t
 
-(** [centroid polyline] returns the true centroid of the polyline multiplied by the length
-    of the polyline (see {!S2_centroids} for details on centroids). The result is not unit
-    length, so you may want to normalize it.
+(** [centroid polyline] returns the true centroid of the polyline scaled by its length
+    (see {!S2_centroids} for the definition). The result is not unit length, so callers
+    that want the centroid's direction must normalise it.
 
-    Scaling by the polyline length makes it easy to compute the centroid of several
-    polylines (by simply adding up their centroids).
+    Scaling by length makes it easy to combine the centroids of several polylines: add
+    their centroid vectors and divide by the total length at the end.
 
-    Returns the zero vector for degenerate polylines (e.g. fewer than two vertices, or all
-    vertices equal). The result of this function is a line integral over the polyline,
-    whose value is always zero in the degenerate case. *)
+    Degenerate polylines (fewer than two vertices or every vertex equal to the first)
+    return the zero vector. This is the correct value: the centroid is defined as a line
+    integral over the polyline, which vanishes in the degenerate case. *)
 val centroid : S2_point.t array -> S2_point.t

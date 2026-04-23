@@ -18,6 +18,10 @@ let[@zero_alloc ignore] to_string t =
   sprintf "{x=%s, y=%s}" (R1_interval.to_string t.#x) (R1_interval.to_string t.#y)
 ;;
 
+(* A rectangle is valid when both intervals agree on emptiness: either the rectangle
+   covers a non-degenerate 2D region, or it is globally empty. The mixed state
+   (one axis empty, the other not) would represent a "flat empty" region that is
+   rejected by all constructors. *)
 let[@inline] [@zero_alloc] is_valid t =
   Bool.equal (R1_interval.is_empty t.#x) (R1_interval.is_empty t.#y)
 ;;
@@ -106,6 +110,8 @@ let[@inline] [@zero_alloc] hi t =
 
 let[@inline] [@zero_alloc] is_empty t = R1_interval.is_empty t.#x
 
+(* Vertices go counterclockwise starting from the lower-left corner:
+   0 = (lo.x, lo.y), 1 = (hi.x, lo.y), 2 = (hi.x, hi.y), 3 = (lo.x, hi.y). *)
 let[@inline] [@zero_alloc] get_vertex t k =
   let k = k % 4 in
   match k with
@@ -189,6 +195,8 @@ let[@inline] [@zero_alloc] project_exn t (p : R2_point.t) =
       ~y:(R1_interval.project_exn t.#y (R2_point.y p))
 ;;
 
+(* If shrinking makes either axis empty the whole rectangle is empty; renormalizing to
+   [empty] here guarantees the result is valid (both axes empty) rather than mixed. *)
 let[@inline] [@zero_alloc] expanded t (margin : R2_point.t) =
   let xx = R1_interval.expanded t.#x (R2_point.x margin) in
   let yy = R1_interval.expanded t.#y (R2_point.y margin) in

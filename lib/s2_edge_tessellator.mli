@@ -1,16 +1,28 @@
 (** Convert between spherical geodesic edges and planar edges in a 2D projection.
 
-    Given an edge in some 2D projection (e.g. Mercator), an {!t} converts the edge into a
-    chain of spherical geodesic edges such that the maximum distance between the original
-    edge and the geodesic edge chain is at most [tolerance]. Similarly, it can convert a
-    spherical geodesic edge into a chain of edges in a given 2D projection such that the
-    maximum distance between the geodesic edge and the chain of projected edges is at most
-    [tolerance]. *)
+    A geodesic on the sphere and its straight-line image in a projection (Mercator, Plate
+    Carree, ...) generally disagree. A tessellator subdivides one side of the pair until
+    the maximum distance between the curve and its approximating polyline drops below a
+    user-supplied [tolerance].
+
+    Given a {!t} and a polyline you can either
+
+    - {!project} a spherical polyline (interpreted as a chain of geodesics) into a planar
+      polyline in the projection's coordinate system, or
+    - {!unproject} a planar polyline in the projection into a spherical polyline of
+      geodesics.
+
+    Wrapping projections (for example anything built on longitude) keep every successive
+    output vertex as close as possible to the previous one, which can yield coordinates
+    outside the canonical range - for example [(0:170)] then [(0:-170)] tessellates to
+    vertices whose longitudes pass through [190] rather than jumping back across the
+    dateline. *)
 
 open Core
 
 [@@@zero_alloc all]
 
+(** An immutable tessellator bound to a specific projection and tolerance. *)
 type t : (immediate & float64 & float64 & float64) & float64
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]

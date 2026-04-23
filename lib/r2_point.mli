@@ -1,9 +1,28 @@
 (** A point in the two-dimensional Cartesian plane.
 
-    Represents a vector in R^2 with [x] and [y] coordinates.
+    Values of this type are used interchangeably as points and as 2D displacement vectors
+    with [x] and [y] coordinates; which interpretation is intended depends on the calling
+    context. Arithmetic operators treat the value as a vector, so [add] gives you a
+    translation and [sub] gives you the displacement between two points.
 
-    All operations are component-wise unless otherwise noted. The [angle] function
-    computes the signed angle from one vector to another using [atan2(cross, dot)]. *)
+    All operations are component-wise unless otherwise noted. [angle a b] returns the
+    signed angle from [a] to [b] measured counterclockwise, computed as
+    [atan2(cross, dot)] and thus numerically stable for both near-parallel and
+    near-antiparallel inputs.
+
+    The type is unboxed and value-copyable. The nested [Option] module provides an unboxed
+    option variant (via the [unboxed_option] deriver) for APIs that need to return an
+    optional point without allocating.
+
+    {1 Limitations}
+
+    The underlying [Vector2_d] in C++ offers many additional component-wise operations
+    ([Min], [Max], [Sqrt], [Floor], [Ceil], lexicographic comparison, casts to other
+    element types). Only the subset used elsewhere in the port is exposed here; see
+    {!R3_vector} for examples of what a fuller interface looks like.
+
+    The [R2Edge] struct from the same C++ header is not represented in this module.
+    Callers that need a pair of endpoints pass them separately. *)
 open Core
 
 [@@@zero_alloc all]
@@ -42,7 +61,8 @@ val sub : t -> t -> t
 (** [mul t k] returns the scalar product [t * k]. *)
 val mul : t -> float# -> t
 
-(** [div t k] returns the component-wise division [t / k]. *)
+(** [div t k] returns the scalar quotient [(x/k, y/k)]. If [k] is zero each component
+    becomes an IEEE infinity or NaN; no exception is raised. *)
 val div : t -> float# -> t
 
 (** [neg t] returns the negated vector [(-x, -y)]. *)
@@ -62,7 +82,9 @@ val dot : t -> t -> float#
 val cross : t -> t -> float#
 
 (** [angle a b] returns the signed angle from [a] to [b] in radians, measured
-    counterclockwise. If either vector is zero, the result is zero. *)
+    counterclockwise and in the range [(-pi, pi]]. Computed as [atan2(cross, dot)],
+    which is accurate across the full range. If either vector is zero, the result is
+    zero. *)
 val angle : t -> t -> float#
 
 (** [fabs t] returns the component-wise absolute value [(|x|, |y|)]. *)
@@ -75,7 +97,7 @@ val norm2 : t -> float#
 val norm : t -> float#
 
 (** [normalize t] returns a unit vector in the same direction as [t]. If [t] is the zero
-    vector, the zero vector is returned (no division by zero). *)
+    vector, the zero vector is returned instead of producing NaN from division by zero. *)
 val normalize : t -> t
 
 (** [equal a b] returns true iff both coordinates are exactly equal. *)

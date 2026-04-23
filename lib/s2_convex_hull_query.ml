@@ -144,10 +144,13 @@ let reverse_points t =
   done
 ;;
 
-(* Andrew's monotone-chain inner loop: walks [t.points.[0 .. t.n - 1]] and
-   keeps the maximal subsequence that makes only CCW turns. Writes the
-   result into a caller-provided [output] buffer; returns the number of
-   points written. *)
+(* Andrew's monotone-chain inner loop: walk the current point array and
+   maintain a stack of points that make only CCW turns. Each new point pops
+   the stack until the top two stack entries plus the new point form a
+   left turn. Producing one chain of the hull takes O(n) after the O(n log
+   n) sort; [convex_hull] runs it twice (once forward, once reversed) and
+   glues the results. Writes into a caller-provided [output] buffer and
+   returns the number of points written. *)
 let monotone_chain t ~output =
   let mutable out_n = 0 in
   for i = 0 to t.n - 1 do

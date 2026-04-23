@@ -1,24 +1,26 @@
 open Core
 module V = R3_vector
 
-(* Arbitrary-precision arithmetic used for the exact fallback of the
-   geometric predicates below lives in [Exact_arith] so it can be shared
-   with [S2_point.robust_cross_prod]. The aliases below keep the 49 existing
-   call sites in this file unchanged. *)
+(* Shared with [S2_point.robust_cross_prod]; factored into [Exact_arith] so
+   the big-integer and dyadic-rational scaffolding is not duplicated. *)
 module Bigint = Exact_arith.Bigint
 module Dyadic = Exact_arith.Dyadic
 module Exact_vec = Exact_arith.Exact_vec
 
-(* roundingEpsilon for float64 = 2^-53. *)
+(* Rounding epsilon for IEEE float64: 2^-53. *)
 let[@inline] [@zero_alloc] dbl_error () = Float_u.O.(Float_u.epsilon_float () / #2.0)
 
-(* Maximum error in triageSign's determinant. *)
+(* Conservative upper bound on the error in evaluating [(A x B) . C] in
+   floating point for unit-length inputs. Derivation: see s2predicates.h
+   lines 376-392; for vectors of magnitude <= sqrt(2) the bound doubles. *)
 let[@inline] [@zero_alloc] max_determinant_error () =
   let open Float_u.O in
   #1.8274 * Float_u.epsilon_float ()
 ;;
 
-(* Scaling factor for stableSign. *)
+(* Stable-sign error scaling: [det_error_multiplier * sqrt(|e1|^2 * |e2|^2)]
+   bounds the determinant error when the two shortest edges of the triangle
+   are used for the cross product. See s2predicates.cc::StableSign. *)
 let[@inline] [@zero_alloc] det_error_multiplier () =
   let open Float_u.O in
   #3.2321 * Float_u.epsilon_float ()
@@ -47,7 +49,8 @@ let[@inline] [@zero_alloc] sign a b c =
   V.dot (V.cross c a) b > #0.0
 ;;
 
-(* triageSign: compute det = (A x B) . C and compare to error bound. *)
+(* Fast floating-point triage: compute det = (A x B) . C and compare to the
+   conservative error bound. Resolves most callsites without any fallback. *)
 let[@inline] [@zero_alloc] triage_sign a b c =
   let open Float_u.O in
   let det = V.dot (V.cross a b) c in
@@ -68,7 +71,10 @@ let[@inline] [@zero_alloc] min_no_underflow_error () =
   det_error_multiplier () * Float_u.sqrt (Float_u.min_positive_normal_value ())
 ;;
 
-(* stableSign: numerically stable formula that handles near-collinear points. *)
+(* Second-level stable formula. Uses the two shortest edges of the triangle
+   instead of [A x B] so the rounding error scales with the shortest
+   magnitudes rather than with [|A x B|]. Handles near-collinear points that
+   triage cannot decide. *)
 let[@inline] [@zero_alloc] stable_sign a b c =
   let open Float_u.O in
   let ab = V.sub b a in
@@ -97,10 +103,13 @@ let[@inline] [@zero_alloc] stable_sign a b c =
   else Direction.Indeterminate
 ;;
 
-(* Symbolic perturbation for exact_sign: assumes xa < xb < xc in lex order and
-   the exact determinant is zero. Enumerates perturbation coefficients in order
-   of decreasing magnitude (Simulation of Simplicity, Edelsbrunner and Muecke
-   1990). *)
+(* Final tiebreak when the exact determinant is zero. Assigns each coordinate
+   a distinct infinitesimal perturbation and enumerates the resulting
+   polynomial coefficients in order of decreasing magnitude (Simulation of
+   Simplicity, Edelsbrunner and Muecke 1990). Assumes the arguments have been
+   sorted into lex order xa < xb < xc. The cascade of [if s <> 0 then s] tests
+   is inlined rather than expressed as a higher-order combinator to stay
+   zero-alloc. *)
 let[@zero_alloc] symbolically_perturbed_sign
   (a : Exact_vec.t @ local)
   (b : Exact_vec.t @ local)
@@ -170,8 +179,10 @@ let[@zero_alloc] symbolically_perturbed_sign
                         if s <> 0 then s else 1 (* dc.Z * db.Y * da.X *))))))))))))
 ;;
 
-(* exactSign: arbitrary-precision determinant evaluation plus symbolic perturbation.
-   Requires pairwise-distinct inputs. *)
+(* Arbitrary-precision determinant evaluation plus symbolic perturbation.
+   Requires pairwise-distinct inputs. Permutation sign tracking is needed
+   because the symbolic perturbation step below requires its inputs in lex
+   order. *)
 let[@zero_alloc] exact_sign a b c ~perturb =
   (* Sort (a, b, c) lexicographically, tracking the sign of the permutation.
      R3_vector.t has an unboxed layout, so we can't stash it in an ordinary
@@ -380,8 +391,9 @@ let[@zero_alloc] compare_distance x y r =
     if s <> 0 then s else exact_compare_distance x y r2)
 ;;
 
-(* sign_dot_prod: triageSignDotProd with exact fallback. Error bound =
-   3.046875 * dblEpsilon. *)
+(* Triage with error bound [3.046875 * DBL_EPSILON]; exact dyadic fallback
+   when the magnitude is below that bound. The bound accommodates inputs up
+   to [|a|^2 <= 2] and [|b|^2 <= 2]. *)
 let[@zero_alloc] sign_dot_prod a b =
   let open Float_u.O in
   let max_error = #3.046875 * Float_u.epsilon_float () in
@@ -389,8 +401,17 @@ let[@zero_alloc] sign_dot_prod a b =
   if Float_u.abs dp > max_error
   then if dp > #0.0 then 1 else -1
   else (
-    (* Exact dot product in dyadic arithmetic. *)
     let av = Exact_vec.of_r3 a in
     let bv = Exact_vec.of_r3 b in
     Dyadic.sign (Exact_vec.dot av bv) [@nontail])
 ;;
+
+(* TODO: port CompareEdgeDistance, CompareEdgePairDistance, and
+   CompareEdgeDirections from s2predicates.h:134-165 / s2predicates.cc. *)
+(* TODO: port CircleEdgeIntersectionSign and CircleEdgeIntersectionOrdering
+   from s2predicates.h:205-264 / s2predicates.cc. *)
+(* TODO: port EdgeCircumcenterSign and GetVoronoiSiteExclusion from
+   s2predicates.h:279-316 / s2predicates.cc. *)
+(* TODO: port the low-level TriageSign / ExpensiveSign / UnperturbedSign
+   entry points from s2predicates.h:318-420 for callers that want to supply
+   their own precomputed cross products. *)

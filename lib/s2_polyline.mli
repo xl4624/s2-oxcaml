@@ -1,9 +1,25 @@
-(** [S2_polyline] represents a sequence of zero or more vertices connected by straight
-    edges (geodesics). Edges of length 0 and 180 degrees are not allowed: adjacent
-    vertices should not be identical or antipodal. Use {!S2_lax_polyline} for the more
-    permissive variant.
+(** A polyline on the unit sphere: a sequence of zero or more vertices connected by
+    straight edges (geodesic arcs).
 
-    The type is structurally the array of vertices; constructors take a copy. *)
+    Polyline invariants (violations may give unexpected results):
+    - Every vertex is unit length.
+    - No edge has length 0 or 180 degrees (adjacent vertices are neither identical nor
+      antipodal).
+
+    Because polylines are not closed, {!contains_point} and {!contains_cell} always return
+    false; callers needing containment semantics should use a polygon instead.
+
+    For a more permissive variant that allows degenerate edges and duplicate or antipodal
+    adjacent vertices, use {!S2_lax_polyline}.
+
+    {1 Limitations}
+
+    The following operations are not yet ported:
+    - [GetDistance] / [Project] - nearest distance and closest point to an arbitrary point
+      (note that {!project} here returns the {e projection} on the polyline).
+    - [GetLengthAndCentroid] batched variant.
+    - [NearlyCovers] / [ApproxContains] polyline-to-polyline comparisons.
+    - [Encode] / [Decode] binary serialisation. *)
 
 open Core
 
@@ -56,12 +72,13 @@ type suffix =
    ; next_vertex : int
    }
 
-(** [get_suffix t fraction] returns the point whose distance from vertex 0 along the
-    polyline is the given fraction of the polyline's total length. Fractions outside
-    [[0, 1]] are clamped. The returned [next_vertex] is in [[1, num_vertices t]] and is
-    such that the suffix of the polyline after the interpolated point is given by [point]
-    followed by [vertex t next_vertex, ..., vertex t (num_vertices t - 1)]. The polyline
-    must be non-empty. *)
+(** [get_suffix t fraction] returns the point reached by walking [fraction] of the
+    polyline's total length from vertex 0, together with the index of the next polyline
+    vertex after that point. [fraction] outside [[0, 1]] is clamped. The returned
+    [next_vertex] is in [[1, num_vertices t]]; the suffix of [t] starting at the returned
+    point is [point] followed by
+    [vertex t next_vertex, ..., vertex t (num_vertices t - 1)]. Raises if the polyline is
+    empty. *)
 val get_suffix : t -> float# -> suffix
 
 (** [interpolate t fraction] is [(get_suffix t fraction).#point]. *)
@@ -82,12 +99,13 @@ type projection =
 
 (** [project t point] returns the point on the polyline closest to [point], together with
     the index of the next vertex after the projection (always in [[1, num_vertices t]]).
-    The polyline must be non-empty. *)
+    Raises if the polyline is empty. Linear in [num_vertices]. *)
 val project : t -> S2_point.t -> projection
 
-(** [is_on_right t point] returns true when [point] is on the right-hand side of the
-    polyline. Uses a naive definition based on which polyline edge the point is closest
-    to. The polyline must have at least two vertices. *)
+(** [is_on_right t point] returns true when [point] lies to the right of the polyline, as
+    seen when walking along it from vertex 0 to the last vertex. The decision is made
+    relative to the closest polyline edge; for points near a vertex between two edges the
+    result depends on the local wedge orientation. Raises if [num_vertices t < 2]. *)
 val is_on_right : t -> S2_point.t -> bool
 
 (** {1 Operations} *)
@@ -109,11 +127,12 @@ val equal : t -> t -> bool
     {!Packed_float_option.Unboxed.none} to use the default tolerance of [1e-15] radians. *)
 val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
 
-(** [subsample_vertices t tolerance] returns a subsequence of vertex indices such that the
-    polyline connecting them stays within [tolerance] of the original. Provided the first
-    and last vertices are distinct, they are always preserved; if they are not, the result
-    may contain only a single index. Negative tolerances behave like zero (every vertex is
-    preserved up to floating-point coincidence). *)
+(** [subsample_vertices t tolerance] returns a strictly increasing array of vertex indices
+    such that the polyline connecting them stays within [tolerance] of the original. When
+    the first and last vertices differ they are both preserved; otherwise the result may
+    contain only a single index. Negative tolerances are treated as zero (every vertex
+    that is not a floating-point duplicate of its neighbour is preserved). Uses the
+    Douglas-Peucker-style linear-time algorithm of the reference library. *)
 val subsample_vertices : t -> S1_angle.t -> int array
 [@@zero_alloc ignore]
 

@@ -1,5 +1,37 @@
 open Core
 
+(* Implementation note: this port replaces the C++ CrossingProcessor state
+   machine (s2boolean_operation.cc:1095-2009, ~1,500 lines) with a much
+   simpler per-edge containment test that works for the polygon-polygon
+   SEMI_OPEN predicate case only. Completing parity with the reference
+   library means porting CrossingProcessor; the features that would unlock
+   and their C++ entry points are:
+
+   - Set-operation output via an S2Builder layer: BuildOpType (cc:2282),
+     AddBoundary (cc:2028), ProcessEdge / ProcessEdge{0,1,2} dispatching on
+     a_dimension_ (cc:1416, 1449, 1546, 1678), EdgeClippingLayer (cc:730),
+     AddEdge / AddPointEdge (cc:1215-1264).
+   - Polyline inputs: ProcessEdge1 (cc:1546), IsPolylineVertexInside /
+     IsPolylineEdgeInside (cc:1616, 1636).
+   - Point inputs: ProcessEdge0 (cc:1449), ProcessPointCrossings (cc:1485).
+   - Open / Closed polygon boundary models: the per-branch model checks in
+     ProcessEdge2 (cc:1771-1823) and the degenerate-point paths in
+     ProcessEdge0 (cc:1461).
+   - Open / SEMI_OPEN / Closed polyline boundary models: PolylineModel
+     plumbing in StartBoundary (cc:1383) and ProcessEdge1.
+   - Mixed-dimension operands: the dimension dispatch in ProcessEdge plus
+     IsPolylineEdgeInside for polyline-in-polygon tests.
+   - Two-pass sibling-pair handling for shared-edge degeneracies:
+     emit_shared (cc:1712) and is_degenerate_hole_ (cc:1741).
+   - Early-exit optimisation via ProcessIncidentEdges (cc:2143).
+   - AreRegionsIdentical fast path (cc:2509) for DIFFERENCE and
+     SYMMETRIC_DIFFERENCE.
+
+   Separately, is_full_polygon_result below uses a coarse face-mask + area
+   heuristic; the symmetric-difference branch's hemisphere tolerance
+   (cc:2476-2505) is approximated conservatively. Porting that heuristic
+   accurately requires the snap-radius plumbing tracked in s2_builder. *)
+
 module Op_type = struct
   type t =
     | Union

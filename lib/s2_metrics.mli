@@ -1,15 +1,22 @@
-(** Various constants describing the shapes and sizes of S2 cells. They are useful for
-    deciding which cell level to use in order to satisfy a given condition (e.g. that cell
-    vertices must be no further than [x] apart).
+(** Shape and size constants for S2 cells.
 
-    All of the raw constants are differential quantities; use {!get_value} to compute the
-    corresponding length or area on the unit sphere for cells at a given level.
+    S2 cells are arranged in a hierarchy of 30 levels: face cells at level 0 cover the
+    sphere, and every cell at level [k] splits into four children at level [k+1]. This
+    module exposes derivative constants (e.g. minimum cell width, maximum cell area) that
+    callers typically use to pick a cell level satisfying a condition - for example, "the
+    smallest level where every cell diagonal is at most 0.1 radians".
 
-    The minimum and maximum bounds are valid for cells at all levels, but they may be
-    somewhat conservative for very large cells (e.g. face cells).
+    Each metric is represented as a {!t} carrying a dimension ([1] for lengths, [2] for
+    areas) and a derivative. Use {!get_value} to evaluate the metric at a particular
+    level, and {!get_level_for_max_value} / {!get_level_for_min_value} /
+    {!get_closest_level} to invert.
 
-    The constants here are for the quadratic projection (the only projection currently
-    supported by the S2 library). *)
+    The minimum and maximum bounds are valid at every level but may be conservative for
+    very large cells (face cells in particular).
+
+    Limitations:
+    - The constants assume the quadratic cell projection. The S2 library supports only
+      this projection at runtime, so there is no way to select another. *)
 
 open Core
 

@@ -1,15 +1,19 @@
 (** A closed latitude-longitude rectangle on the unit sphere.
 
-    The rectangle is capable of representing the empty and full rectangles as well as
-    single points. The latitude-longitude space has cylindrical topology: longitudes wrap
-    around at +/-180 degrees, while latitudes are clamped to [-90, 90] degrees.
+    Latitude-longitude space is treated as a cylinder rather than a sphere: longitudes
+    wrap around at +/-180 degrees, while latitudes are clamped to [-90, 90] degrees. The
+    rectangle is the product of a latitude interval (in radians) and a longitude interval
+    (in radians); when the longitude interval is inverted, the rectangle crosses the
+    antimeridian. The empty and full rectangles, as well as single points, all have
+    canonical representations.
 
-    An S2LatLngRect may be defined so that it includes some representations of a pole but
-    not others. Use {!polar_closure} to expand a rectangle so that it contains all
-    possible representations of any contained poles.
+    Because the poles have infinitely many longitude representatives, a rectangle can
+    include some representations of a pole but not others. Use {!polar_closure} to expand
+    a rectangle so that it contains every representation of any pole it touches.
 
-    The rectangle is stored as an [R1_interval] (latitude in radians) and an [S1_interval]
-    (longitude in radians). *)
+    Typical use is as a conservative bounding box for geometry: construct a rectangle from
+    points, cells, or caps, and then test containment/intersection against other regions.
+    Most operations are O(1). *)
 open Core
 
 [@@@zero_alloc all]
@@ -49,38 +53,57 @@ val of_center_size : center:S2_latlng.t -> size:S2_latlng.t -> t
 
 (** {1 Accessors} *)
 
+(** [lat t] returns the latitude interval of [t] (radians). *)
 val lat : t -> R1_interval.t
+
+(** [lng t] returns the longitude interval of [t] (radians). *)
 val lng : t -> S1_interval.t
 
-(** Lower-left corner. *)
+(** [lo t] returns the lower-left corner ([lat_lo], [lng_lo]). *)
 val lo : t -> S2_latlng.t
 
-(** Upper-right corner. *)
+(** [hi t] returns the upper-right corner ([lat_hi], [lng_hi]). *)
 val hi : t -> S2_latlng.t
 
-(** Center point in latitude-longitude space (not generally the center on the sphere). *)
+(** [center t] returns the center in latitude-longitude space. This is generally not the
+    centroid of the region on the sphere. *)
 val center : t -> S2_latlng.t
 
-(** Width and height in latitude-longitude space. Empty rectangles have negative width and
-    height. *)
+(** [size t] returns the (lat, lng) extent in radians. Empty rectangles have negative
+    width and height. *)
 val size : t -> S2_latlng.t
 
-(** [vertex k] returns the k-th vertex (k = 0,1,2,3) in CCW order: lower-left,
-    lower-right, upper-right, upper-left. [k] is reduced modulo 4. *)
+(** [vertex t k] returns the [k]-th vertex in CCW order: lower-left, lower-right,
+    upper-right, upper-left. [k] is reduced modulo 4. *)
 val vertex : t -> int -> S2_latlng.t
 
-(** Surface area on the unit sphere. *)
+(** [area t] returns the surface area of the rectangle on the unit sphere, in steradians. *)
 val area : t -> float#
 
-(** Area-weighted centroid (not unit length). *)
+(** [centroid t] returns the true centroid of the rectangle multiplied by its surface
+    area. The result is not unit length, and in general does not lie inside the rectangle.
+    Multiplying by the area makes centroids of disjoint regions additive. *)
 val centroid : t -> S2_point.t
 
 (** {1 Predicates} *)
 
+(** [is_valid t] is true when latitude bounds stay within [-pi/2, pi/2], the longitude
+    interval is valid (as per {!S1_interval}), and latitude/longitude are either both
+    empty or both non-empty. *)
 val is_valid : t -> bool
+
+(** [is_empty t] is true when the rectangle contains no points. *)
 val is_empty : t -> bool
+
+(** [is_full t] is true when the rectangle contains every point on the sphere. *)
 val is_full : t -> bool
+
+(** [is_point t] is true when the latitude and longitude intervals each consist of a
+    single value. *)
 val is_point : t -> bool
+
+(** [is_inverted t] is true when [lng_lo > lng_hi], i.e. the rectangle crosses the
+    antimeridian. *)
 val is_inverted : t -> bool
 
 (** {1 Containment and intersection} *)
@@ -113,38 +136,46 @@ val interior_intersects : t -> t -> bool
 
 (** {1 Set operations} *)
 
-(** Smallest rectangle containing the union of both rectangles. *)
+(** [union t other] returns the smallest rectangle containing both inputs. *)
 val union : t -> t -> t
 
-(** Smallest rectangle containing the intersection. The intersection may be two disjoint
-    rectangles; in that case a single rectangle spanning both is returned. *)
+(** [intersection t other] returns the smallest rectangle containing the intersection of
+    the two inputs. The intersection may actually consist of two disjoint rectangles (when
+    the longitude intervals split); in that case a single spanning rectangle is returned. *)
 val intersection : t -> t -> t
 
-(** Expand the rectangle to include the given point. [ll] must be normalized. *)
+(** [add_point t ll] returns the smallest rectangle that contains [t] together with [ll].
+    [ll] must be normalized. *)
 val add_point : t -> S2_latlng.t -> t
 
-(** Expand by [margin.lat] on each side in latitude and [margin.lng] on each side in
-    longitude. Negative margins shrink the rectangle; if either interval becomes empty
-    after shrinking the result is the canonical empty rectangle. *)
+(** [expanded t margin] expands the rectangle by [margin.lat] on each latitude side and
+    [margin.lng] on each longitude side. Negative margins shrink the rectangle; if either
+    interval becomes empty the result is the canonical empty rectangle. Latitude is
+    clamped to [-pi/2, pi/2]. See also {!polar_closure} if the result should include every
+    representation of a pole it contains. *)
 val expanded : t -> S2_latlng.t -> t
 
-(** If the rectangle includes a pole, expand longitude to full. Otherwise return
-    unchanged. *)
+(** [polar_closure t] expands the longitude interval to full whenever [t] touches a pole,
+    and returns [t] unchanged otherwise. Use this when an expanded rectangle must contain
+    every longitude at a contained pole. *)
 val polar_closure : t -> t
 
 (** {1 Bounding} *)
 
-(** A bounding cap (the smaller of center-cap and pole-cap). *)
+(** [cap_bound t] returns a bounding {!S2_cap} for the rectangle, chosen as the smaller of
+    a cap centered at the latitude-longitude center and a cap centered at the appropriate
+    pole. *)
 val cap_bound : t -> S2_cap.t
 
-(** [from_cap c] returns a bounding latitude-longitude rectangle for [c]. *)
+(** [from_cap c] returns a latitude-longitude rectangle that bounds the given cap. Returns
+    the empty rectangle if [c] is empty. *)
 val from_cap : S2_cap.t -> t
 
-(** [from_cell c] returns a bounding latitude-longitude rectangle for [c]. The bounds are
-    tight. *)
+(** [from_cell c] returns a tight latitude-longitude rectangle bounding the given cell.
+    Accounts for numerical error in the (u, v) to lat/lng projection. *)
 val from_cell : S2_cell.t -> t
 
-(** Returns itself. *)
+(** [rect_bound t] returns [t] itself; provided for uniformity with other region types. *)
 val rect_bound : t -> t
 
 (** [contains_cell t c] reports whether the rectangle contains the given cell. *)
@@ -159,27 +190,42 @@ val cell_union_bound : t -> S2_cell_id.t array
 
 (** {1 Distance} *)
 
-(** Minimum distance on the sphere from the rectangle to the given point. The rectangle
-    must be non-empty and [ll] must be valid. *)
+(** [distance_to_latlng t ll] returns the minimum distance along the sphere from the
+    rectangle (boundary and interior) to the point [ll]. Requires [t] non-empty and [ll]
+    valid. *)
 val distance_to_latlng : t -> S2_latlng.t -> S1_angle.t
 
-(** Minimum distance on the sphere between two non-empty rectangles. *)
+(** [distance t other] returns the minimum distance along the sphere between the two
+    rectangles. Both must be non-empty. *)
 val distance : t -> t -> S1_angle.t
 
-(** Directed Hausdorff distance: [max_{p in t} min_{q in other} d(p,q)]. *)
+(** [directed_hausdorff_distance t other] returns [max_{p in t} min_{q in other} d(p, q)],
+    measured along the sphere. *)
 val directed_hausdorff_distance : t -> t -> S1_angle.t
 
-(** Undirected Hausdorff distance: [max(h(t,other), h(other,t))]. *)
+(** [hausdorff_distance t other] returns
+    [max (directed_hausdorff_distance t other) (directed_hausdorff_distance other t)]. *)
 val hausdorff_distance : t -> t -> S1_angle.t
 
 (** {1 Comparison} *)
 
+(** [equal t other] is structural equality on the latitude and longitude intervals. *)
 val equal : t -> t -> bool
 
-(** Approximate equality. Default tolerance is [1e-15] radians when [max_error] is [none]. *)
+(** [approx_equal ~max_error t other] is approximate equality on both intervals. When
+    [max_error] is [none] the tolerance defaults to [1e-15] radians. *)
 val approx_equal : max_error:Packed_float_option.Unboxed.t -> t -> t -> bool
 [@@zero_alloc]
 
-(** Approximate equality with separate latitude and longitude tolerances. *)
+(** [approx_equal_latlng ~max_error t other] is like {!approx_equal} but allows separate
+    tolerances for latitude and longitude. *)
 val approx_equal_latlng : max_error:S2_latlng.t -> t -> t -> bool
 [@@zero_alloc ignore]
+
+(** {1 Limitations}
+
+    The following C++ features are not exposed:
+    - [ExpandedByDistance]: expansion by a spherical distance rather than by lat/lng.
+    - [BoundaryIntersects]: test whether a geodesic edge crosses the rectangle boundary.
+    - [IntersectsLngEdge] / [IntersectsLatEdge]: lower-level edge-vs-boundary helpers.
+    - [Encode] / [Decode]: binary serialization. *)

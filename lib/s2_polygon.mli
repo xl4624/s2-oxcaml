@@ -1,22 +1,38 @@
-(** [S2_polygon] represents a region defined by a collection of zero or more {!S2_loop}s.
-    When the polygon is initialized, the given loops are reordered so that they correspond
-    to a pre-order traversal of the nesting hierarchy, and their depths are updated in
-    place. Shells have even depth, and holes have odd depth.
+(** A polygonal region on the unit sphere, defined by zero or more {!S2_loop} boundaries.
 
-    Polygons may represent any region of the sphere with a polygonal boundary, including
-    the entire sphere (the "full" polygon, consisting of a single full loop). The zero
-    value (no loops) is treated as the empty polygon.
+    The polygon's interior is the set of points contained by an odd number of its loops.
+    During construction the input loops are reordered into a canonical "shells and holes"
+    form: outer shells have even nesting depth (0, 2, ...) and holes have odd depth (1, 3,
+    ...), and a loop's descendants in the nesting hierarchy occupy the array slots
+    immediately after it.
 
-    Polygons have the following restrictions:
-    - Loops may not cross, i.e. the boundary of a loop may not intersect both the interior
-      and exterior of any other loop.
+    A polygon may represent any region with a polygonal boundary, including:
+    - the {!empty} polygon (no loops)
+    - the {!full} polygon (a single full loop covering the entire sphere)
+
+    Polygon invariants:
+    - Loops may not cross: one loop's boundary may not intersect both the interior and
+      exterior of another loop.
     - Loops may not share edges.
-    - Loops may share vertices, but no vertex may appear twice in a single loop.
-    - No loop may be empty. The full loop may appear only in the full polygon.
+    - Loops may share isolated vertices, but no vertex may appear twice in a single loop.
+    - No loop may be empty. The full loop may appear only in the {!full} polygon.
 
-    This port covers containment and intersection tests, area/centroid, invert, and the
-    shape/region interfaces. Encode/decode, boolean set operations, snap/simplify, and
-    polyline intersection are not ported. *)
+    Boolean predicates ({!contains}, {!intersects}) match the reference library's
+    shared-boundary semantics by routing through {!S2_boolean_operation} for non-trivial
+    cases.
+
+    {1 Limitations}
+
+    The following operations are not yet ported:
+    - Set operations with {!t} output: [InitToUnion], [InitToIntersection],
+      [InitToDifference], [InitToSymmetricDifference], [InitToSnapped],
+      [InitToSimplified].
+    - [IntersectWithPolyline] / [SubtractFromPolyline] and related polyline operations.
+    - [ApproxContains] / [ApproxDisjoint] and other distance-tolerant predicates.
+    - [GetDistance] / [Project] and nearest-point queries.
+    - [Encode] / [Decode] binary serialisation.
+    - [BoundaryNear] and [Clone].
+    - Index-driven validation (the index-free subset is implemented). *)
 
 open Core
 
@@ -104,12 +120,29 @@ val is_valid : t -> bool
 
 (** {1 Region interface} *)
 
+(** [cap_bound t] returns a bounding cap derived from {!rect_bound}. *)
 val cap_bound : t -> S2_cap.t
+
+(** [rect_bound t] returns a bounding latitude-longitude rectangle. The bound is the union
+    of the shell loops' bounds; holes do not contribute. *)
 val rect_bound : t -> S2_latlng_rect.t
+
+(** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. *)
 val cell_union_bound : t -> S2_cell_id.t array
+
+(** [contains_point t p] reports whether [p] lies in the polygon's interior under the
+    semi-open vertex model. For small polygons (fewer than 32 vertices) this is a
+    brute-force scan over loops; larger polygons use the internal shape index. *)
 val contains_point : t -> S2_point.t -> bool
+
+(** [contains_cell t cell] reports whether the polygon entirely contains [cell]. *)
 val contains_cell : t -> S2_cell.t -> bool
+
+(** [may_intersect_cell t cell] is a conservative test: returns [true] when [cell] may
+    intersect the polygon, [false] only when they are guaranteed disjoint. *)
 val may_intersect_cell : t -> S2_cell.t -> bool
+
+(** [to_region t] exposes [t] through the generic region interface. *)
 val to_region : t -> S2_region.t
 
 (** {1 Polygon relations} *)
@@ -128,13 +161,37 @@ val equal : t -> t -> bool
 
 (** {1 Shape interface} *)
 
+(** [num_edges t] is the total number of boundary edges (sum over all loops). The full
+    polygon has zero edges. *)
 val num_edges : t -> int
+
+(** [edge t e] returns the [e]-th edge in flattened order, oriented so that the polygon
+    interior is on the left. Requires [0 <= e < num_edges t]. *)
 val edge : t -> int -> S2_shape.Edge.t
+
+(** [dimension t] is [2]. *)
 val dimension : t -> int
+
+(** [num_chains t] equals [num_loops t]. *)
 val num_chains : t -> int
+
+(** [chain t i] returns the chain corresponding to loop [i]. The full loop contributes a
+    chain of length zero. *)
 val chain : t -> int -> S2_shape.Chain.t
+
+(** [chain_edge t i j] returns the [j]-th edge of loop [i], oriented so the interior is on
+    the left. *)
 val chain_edge : t -> int -> int -> S2_shape.Edge.t
+
+(** [chain_position t e] decomposes a flat edge index [e] into [{ chain_id; offset }]. *)
 val chain_position : t -> int -> S2_shape.Chain_position.t
+
+(** [reference_point t] returns {!S2_pointutil.origin} paired with whether the polygon
+    contains it (computed by XOR-ing the per-loop [contains_origin] bits). *)
 val reference_point : t -> S2_shape.Reference_point.t
+
+(** [type_tag] is the encoded shape tag for polygons ([1]). *)
 val type_tag : S2_shape.Type_tag.t
+
+(** [to_shape t] exposes [t] through the generic shape interface. *)
 val to_shape : t -> S2_shape.t

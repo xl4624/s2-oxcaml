@@ -15,8 +15,13 @@ module Crossing_type = struct
 end
 
 (* Brute-force threshold: if the relevant number of edges is at most this many,
-   scan all of them instead of descending through the index. *)
+   scan all of them instead of descending through the index. The constant is
+   lifted from the upstream benchmarks in s2crossing_edge_query.cc:44. *)
 let max_brute_force_edges = 27
+
+(* TODO: port VisitCells / VisitRawCandidates / GetCells low-level cell-visitor
+   entry points from s2crossing_edge_query.h:163-194. The current implementation
+   only exposes the high-level GetCandidates / GetCrossingEdges APIs. *)
 
 type t =
   { index : S2_shape_index.t
@@ -66,8 +71,13 @@ type child_bounds =
    }
 
 (* Split the 2D rectangle [edge_bound] into two child rectangles at the point
-   (u, v). [u_end] and [v_end] specify which endpoints of the first child to
-   update: 0 means the low endpoint, 1 means the high endpoint. *)
+   (u, v). [u_end] and [v_end] specify which endpoint of the *second* child is
+   updated; the *first* child has the complementary endpoint updated. This
+   matches the endpoint-update convention in s2crossing_edge_query.cc:365-379
+   (SplitBound), but the record layout inverts the order: we write the
+   complementary-endpoint child as [lo] and the [u_end]/[v_end] child as [hi],
+   so downstream callers always read [lo] as "u below the split" and [hi] as
+   "u above the split" regardless of [u_end]. *)
 let split_bound edge_bound ~u_end ~u ~v_end ~v =
   let x = R2_rect.x edge_bound in
   let y = R2_rect.y edge_bound in
@@ -137,7 +147,11 @@ let split_v_bound edge_bound v ~a ~b =
 ;;
 
 (* Recursive cell descent. [visit] is called with each candidate cell; return
-   [false] from [visit] to terminate early. Returns [false] iff the visitor did. *)
+   [false] from [visit] to terminate early. Returns [false] iff the visitor did.
+
+   Maximum recursion depth is 30 (one per S2 cell level). Each frame holds two
+   R2_rect values plus the split children, so stack usage is modest. Logic
+   mirrors s2crossing_edge_query.cc:273-314. *)
 let rec visit_cells_pcell t pcell edge_bound ~a ~b ~visit =
   S2_shape_index.Iterator.seek t.iter (S2_cell_id.range_min (S2_padded_cell.id pcell));
   if S2_shape_index.Iterator.is_done t.iter
@@ -199,10 +213,15 @@ and clip_v_axis t edge_bound ~center ~i pcell ~a ~b ~visit =
     && visit_cells_pcell t child1 upper_bound ~a ~b ~visit)
 ;;
 
-(* Walk all index cells that may contain edges intersecting [a]->[b]. For each
-   face segment, either the edge root cell is already an index cell (or is
-   contained by one, so we visit that cell), or we descend from the edge root
-   cell using [visit_cells_pcell]. *)
+(* Walk all index cells that may contain edges intersecting [a]->[b]. The edge
+   is first clipped to the six cube faces (get_face_segments). For each face
+   segment we find the smallest face-descendant ("edge root") that contains the
+   segment's UV bound, then relate it to the index:
+
+   - Disjoint: nothing to do.
+   - Indexed: the edge root is already (or is contained by) an index cell, so
+     we visit that one cell.
+   - Subdivided: the edge root splits across several index cells; recurse. *)
 let visit_cells t ~a ~b ~visit =
   let segments = S2_edge_clipping.get_face_segments a b in
   let continue_ = ref true in

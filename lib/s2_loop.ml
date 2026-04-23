@@ -3,8 +3,9 @@ open Core
 (* The two distinguished single-vertex chains. A loop with a single vertex is
    interpreted as the empty loop when the vertex is in the northern hemisphere
    (so the origin lies outside) and as the full loop otherwise. The sentinel
-   vertices happen to coincide with the poles, which we also need during bound
-   computation, so we expose both names for readability. *)
+   vertices coincide with the poles, which we also need during bound
+   computation, so both names are exposed for readability.
+   See s2loop.h:212-229 for the empty/full loop encoding convention. *)
 let north_pole = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0
 let south_pole = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:(-#1.0)
 let empty_vertex = north_pole
@@ -296,9 +297,10 @@ let is_normalized t =
 
 let normalize t = if is_normalized t then t else invert t
 
-(* For empty/full loops, [S2_loop_measures] would treat the single sentinel
-   vertex as a degenerate triangle and report area 0 / curvature +2pi.
-   full = 4pi / -2pi, empty = 0 / +2pi. *)
+(* For empty/full loops [S2_loop_measures] would treat the single sentinel
+   vertex as a degenerate triangle and report area 0 / curvature +2pi for
+   both. Short-circuit here so the caller gets the correct values:
+   full = 4pi area, -2pi curvature; empty = 0 area, +2pi curvature. *)
 
 let area t =
   if is_full t
@@ -860,3 +862,9 @@ let compare_boundary a b =
     then 1
     else -1)
 ;;
+
+(* TODO: port GetDistance / GetDistanceToBoundary from s2loop.cc:298-306. *)
+(* TODO: port Project / ProjectToBoundary from s2loop.cc:309-314. *)
+(* TODO: port BoundaryNear from s2loop.cc:349. *)
+(* TODO: port Encode / Decode, including compressed form, from
+   s2loop.cc:424-441, 572-587. *)

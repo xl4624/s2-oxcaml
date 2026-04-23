@@ -1,12 +1,23 @@
-(** [S2_crossing_edge_query] finds edges or shapes that are crossed by a query edge.
+(** Find edges of indexed geometry that are crossed by a given query edge.
 
-    Given a query edge [a]->[b] and an {!S2_shape_index.t}, the query returns the set of
-    (shape_id, edge_id) pairs whose edges intersect [a]->[b]. A faster "candidates" API
-    returns a superset of the actual crossings, which is useful when the caller wants to
-    apply a different crossing test.
+    Given an {!S2_shape_index.t} and a query edge [a]->[b], the query returns the set of
+    (shape_id, edge_id) pairs whose edges intersect [a]->[b]. A lower-level "candidates"
+    API returns a superset of the actual crossings; it is useful when the caller wants to
+    apply a custom crossing test (for example {!S2_edge_crossings.edge_or_vertex_crossing}
+    instead of the strict edge crosser).
 
-    For indices with few edges (27 or fewer) the query falls back to a brute-force scan;
-    otherwise it walks the minimal subset of index cells that intersect the query edge. *)
+    Typical usage is to build one query object per index and reuse it across many query
+    edges, which avoids re-allocating the temporary storage and iterator on each call.
+
+    This type is not thread-safe. Each thread should construct its own instance.
+
+    Limitations:
+
+    - The general cell-visitor API from the C++ library ([VisitCells],
+      [VisitRawCandidates], [GetCells]) is not exposed; only the high-level crossing and
+      candidate lists are available.
+    - There is no in-place variant that writes into a caller-provided buffer; every query
+      allocates a fresh result list. *)
 
 open Core
 
@@ -28,9 +39,9 @@ end
 
 type t
 
-(** [create index] builds (or re-builds) the underlying index and returns a reusable query
-    object. Repeated queries against the same index should reuse this value to avoid
-    reallocating temporary storage. *)
+(** [create index] ensures [index] is built and returns a reusable query object. The index
+    must not be modified for the lifetime of the returned value. Reuse the same query
+    across many calls to amortize internal storage. *)
 val create : S2_shape_index.t -> t
 
 (** [index t] returns the index this query was built against. *)
@@ -39,7 +50,10 @@ val index : t -> S2_shape_index.t
 (** {1 High-level crossing queries} *)
 
 (** [get_crossing_edges t ~a ~b ~crossing_type] returns the edges in the index that
-    intersect [a]->[b]. The result is sorted and deduplicated. *)
+    intersect [a]->[b]. With [crossing_type = Interior] only crossings that lie strictly
+    interior to both edges are reported; with [crossing_type = All] edges that share a
+    vertex with [a]->[b] are included as well. Results are sorted by [(shape_id, edge_id)]
+    and deduplicated. *)
 val get_crossing_edges
   :  t
   -> a:S2_point.t
@@ -48,7 +62,9 @@ val get_crossing_edges
   -> Shape_edge_id.t list
 
 (** [get_crossing_edges_for_shape t ~a ~b ~shape_id ~shape ~crossing_type] is like
-    {!get_crossing_edges} but only considers edges from the given shape. *)
+    {!get_crossing_edges} but restricted to edges of the given [shape]. The [shape] must
+    be the shape at index [shape_id] in the underlying index; [shape_id] is used to look
+    up the clipped shape in each visited index cell. *)
 val get_crossing_edges_for_shape
   :  t
   -> a:S2_point.t
@@ -60,12 +76,17 @@ val get_crossing_edges_for_shape
 
 (** {1 Low-level candidate queries}
 
-    These return a superset of the edges that may intersect the query edge. They are
-    useful when the caller wants to apply their own crossing test. Results are sorted and
-    deduplicated. *)
+    These return a superset of the edges that may intersect the query edge - enough to
+    guarantee no crossing is missed, but without running the final edge-crossing test.
+    They are intended for callers that want to apply their own crossing predicate. Results
+    are sorted by [(shape_id, edge_id)] and deduplicated. *)
 
+(** [get_candidates t ~a ~b] returns every indexed edge that {i may} cross [a]->[b]. The
+    result is a superset of the true crossings. *)
 val get_candidates : t -> a:S2_point.t -> b:S2_point.t -> Shape_edge_id.t list
 
+(** [get_candidates_for_shape t ~a ~b ~shape_id ~shape] is like {!get_candidates} but
+    restricted to one shape, as in {!get_crossing_edges_for_shape}. *)
 val get_candidates_for_shape
   :  t
   -> a:S2_point.t
