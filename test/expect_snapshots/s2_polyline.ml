@@ -4,8 +4,7 @@ let p x y z = S2.S2_point.of_coords ~x ~y ~z
 
 let%expect_test "empty_sexp" =
   Stdlib.print_endline
-    (Sexp.to_string
-       ([%sexp_of: S2.S2_polyline.t] (S2.S2_polyline.of_vertices ~validate:false [||])));
+    (Sexp.to_string ([%sexp_of: S2.S2_polyline.t] (S2.S2_polyline.of_vertices [||])));
   [%expect {| (S2_polyline()) |}]
 ;;
 
@@ -43,21 +42,21 @@ let%expect_test "antipodal_adjacent_raises" =
 ;;
 
 let%expect_test "get_suffix_empty_raises" =
-  let empty = S2.S2_polyline.of_vertices ~validate:false [||] in
+  let empty = S2.S2_polyline.of_vertices [||] in
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.S2_polyline.get_suffix empty #0.5 : S2.S2_polyline.suffix));
   [%expect {| (raised "S2_polyline.get_suffix: empty polyline") |}]
 ;;
 
 let%expect_test "un_interpolate_empty_raises" =
-  let empty = S2.S2_polyline.of_vertices ~validate:false [||] in
+  let empty = S2.S2_polyline.of_vertices [||] in
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.S2_polyline.un_interpolate empty (p #1.0 #0.0 #0.0) 1 : float#));
   [%expect {| (raised "S2_polyline.un_interpolate: empty polyline") |}]
 ;;
 
 let%expect_test "project_empty_raises" =
-  let empty = S2.S2_polyline.of_vertices ~validate:false [||] in
+  let empty = S2.S2_polyline.of_vertices [||] in
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.S2_polyline.project empty (p #1.0 #0.0 #0.0) : S2.S2_polyline.projection));
   [%expect {| (raised "S2_polyline.project: empty polyline") |}]

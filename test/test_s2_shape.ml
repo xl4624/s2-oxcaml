@@ -20,12 +20,7 @@ open Alcotest
 
 let fixture = lazy (load_fixture "s2shape.json")
 let get key = member key (Lazy.force fixture)
-
-let s2_point_of_json j =
-  let v = r3_vector_of_json j in
-  v
-;;
-
+let s2_point_of_json j = r3_vector_of_json j
 let check_point msg ~expected ~actual = check_r3_vector_exact msg ~expected ~actual
 
 let edge_of_json j =

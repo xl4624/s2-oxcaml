@@ -11,7 +11,7 @@ let make_square_polygon () =
   let v1 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#1.0) in
   let v2 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#1.0 ~lng:#1.0) in
   let v3 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#1.0 ~lng:#0.0) in
-  S2.S2_polygon.of_loops [| S2.S2_loop.of_vertices ~validate:false [| v0; v1; v2; v3 |] |]
+  S2.S2_polygon.of_loops [| S2.S2_loop.of_vertices [| v0; v1; v2; v3 |] |]
 ;;
 
 let probe ~vertex_model ~point_lat ~point_lng =

@@ -385,8 +385,7 @@ let[@zero_alloc] distance_to_edge t a b =
       let cur = step_min_edge cur v0 a b in
       let cur = step_min_edge cur v1 a b in
       let cur = step_min_edge cur v2 a b in
-      let cur = step_min_edge cur v3 a b in
-      cur))
+      step_min_edge cur v3 a b [@nontail]))
 ;;
 
 let[@zero_alloc] max_distance_to_edge t a b =
@@ -458,8 +457,7 @@ let[@zero_alloc] distance_to_cell t target =
       let cur = step_min_edge cur va1 vb1 vb2 in
       let cur = step_min_edge cur va2 vb1 vb2 in
       let cur = step_min_interior cur vb1 va1 va2 in
-      let cur = step_min_interior cur vb2 va1 va2 in
-      cur))
+      step_min_interior cur vb2 va1 va2 [@nontail]))
   else (
     (* Different faces: check all 32 (vertex, edge) pairs. *)
     let va0 = vertex t 0 in
@@ -474,15 +472,13 @@ let[@zero_alloc] distance_to_cell t target =
       let cur = step_min_edge cur v vb0 vb1 in
       let cur = step_min_edge cur v vb1 vb2 in
       let cur = step_min_edge cur v vb2 vb3 in
-      let cur = step_min_edge cur v vb3 vb0 in
-      cur
+      step_min_edge cur v vb3 vb0 [@nontail]
     in
     let fold_interior_vs_edges cur v =
       let cur = step_min_interior cur v va0 va1 in
       let cur = step_min_interior cur v va1 va2 in
       let cur = step_min_interior cur v va2 va3 in
-      let cur = step_min_interior cur v va3 va0 in
-      cur
+      step_min_interior cur v va3 va0 [@nontail]
     in
     let cur = S1_chord_angle.infinity in
     let cur = fold_vertex_vs_edges cur va0 in
@@ -492,8 +488,7 @@ let[@zero_alloc] distance_to_cell t target =
     let cur = fold_interior_vs_edges cur vb0 in
     let cur = fold_interior_vs_edges cur vb1 in
     let cur = fold_interior_vs_edges cur vb2 in
-    let cur = fold_interior_vs_edges cur vb3 in
-    cur)
+    fold_interior_vs_edges cur vb3 [@nontail])
 ;;
 
 let[@zero_alloc] max_distance_to_cell t target =
@@ -516,8 +511,7 @@ let[@zero_alloc] max_distance_to_cell t target =
       let cur = step_max_edge cur v a0 a1 in
       let cur = step_max_edge cur v a1 a2 in
       let cur = step_max_edge cur v a2 a3 in
-      let cur = step_max_edge cur v a3 a0 in
-      cur
+      step_max_edge cur v a3 a0 [@nontail]
     in
     let cur = S1_chord_angle.negative in
     let cur = fold_max cur va0 vb0 vb1 vb2 vb3 in
@@ -527,8 +521,7 @@ let[@zero_alloc] max_distance_to_cell t target =
     let cur = fold_max cur vb0 va0 va1 va2 va3 in
     let cur = fold_max cur vb1 va0 va1 va2 va3 in
     let cur = fold_max cur vb2 va0 va1 va2 va3 in
-    let cur = fold_max cur vb3 va0 va1 va2 va3 in
-    cur)
+    fold_max cur vb3 va0 va1 va2 va3 [@nontail])
 ;;
 
 let[@inline] [@zero_alloc] uv_coord_of_edge t k =
