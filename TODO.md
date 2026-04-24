@@ -69,7 +69,10 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_count_edges.h` (header-only)
   - Deps: `s2_shape`, `s2_shape_index`
 
-- [ ] **s2_shapeutil_count_vertices** - `S2_shapeutil.count_vertices`
+- [x] **s2_shapeutil_count_vertices** - `S2_shapeutil_count_vertices`
+      (`of_shape` dispatches on dimension: 0 -> `num_chains`, 1 ->
+      `num_edges + num_chains`, 2 -> `num_edges`; `of_index` sums over every
+      shape. Raises on invalid dimensions.)
   - C++: `s2shapeutil_count_vertices.h`, `.cc`
   - Deps: `s2_shape`, `s2_shape_index`
 
