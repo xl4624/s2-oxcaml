@@ -62,7 +62,10 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2wrapped_shape.h` (header-only, 54 lines)
   - Deps: `s2_shape`
 
-- [ ] **s2_shapeutil_count_edges** - `S2_shapeutil.count_edges` (free functions)
+- [x] **s2_shapeutil_count_edges** - `S2_shapeutil_count_edges` (two free
+      functions: `count_edges` and `count_edges_up_to`; the bound is checked
+      after each shape is added, mirroring C++ so a non-empty index always
+      contributes at least its first shape's edge count)
   - C++: `s2shapeutil_count_edges.h` (header-only)
   - Deps: `s2_shape`, `s2_shape_index`
 
