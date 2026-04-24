@@ -55,7 +55,10 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2point_vector_shape.h` (header-only)
   - Deps: `s2_shape`
 
-- [ ] **s2_wrapped_shape** - `S2_wrapped_shape` (borrows an existing shape without owning it)
+- [x] **s2_wrapped_shape** - `S2_wrapped_shape` (borrows an existing shape
+      without owning it; every accessor delegates to the wrapped shape;
+      `type_tag` is fixed to `Type_tag.none` so the wrapper is treated as
+      uncoded regardless of the backing shape's tag)
   - C++: `s2wrapped_shape.h` (header-only, 54 lines)
   - Deps: `s2_shape`
 
