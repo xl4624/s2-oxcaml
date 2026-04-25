@@ -100,7 +100,11 @@ pulls them out as first-class ports so callers can use them directly.
   - Go: `s2/shapeutil_edge_iterator.go` | C++: `s2shapeutil_edge_iterator.h`, `.cc`
   - Deps: `s2_shape_index`
 
-- [ ] **s2_shapeutil_contains_brute_force** - `S2_shapeutil.contains_brute_force`
+- [x] **s2_shapeutil_contains_brute_force** -
+      `S2_shapeutil_contains_brute_force.contains_brute_force` (linear-time
+      point-in-shape test: walks edges from the shape's reference point and
+      flips containment on each edge-or-vertex crossing, matching C++ exactly.
+      Always [false] for shapes with dimension < 2.)
   - C++: `s2shapeutil_contains_brute_force.h`, `.cc`
   - Deps: `s2_shape`, `s2_edge_crosser`
 
