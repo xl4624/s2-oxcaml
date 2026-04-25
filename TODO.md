@@ -91,7 +91,12 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_shape_edge.h` (header-only)
   - Deps: `s2_shapeutil_shape_edge_id`, `s2_point`
 
-- [ ] **s2_shapeutil_edge_iterator** - `S2_shapeutil.Edge_iterator`
+- [x] **s2_shapeutil_edge_iterator** - `S2_shapeutil_edge_iterator` (mutable
+      iterator over every edge in an `S2_shape_index.t` in
+      [(shape_id, edge_id)] order; exposes `create`, `is_done`, `next`,
+      `shape_id`, `edge_id`, `shape_edge_id`, `edge`, and `equal` (compares by
+      physical-equal index plus matching ids). The upstream `Remove` test is
+      skipped pending the deferred `S2_shape_index.release` work.)
   - Go: `s2/shapeutil_edge_iterator.go` | C++: `s2shapeutil_edge_iterator.h`, `.cc`
   - Deps: `s2_shape_index`
 
