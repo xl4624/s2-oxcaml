@@ -83,7 +83,11 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_shape_edge_id.h` (header-only)
   - Deps: none
 
-- [ ] **s2_shapeutil_shape_edge** - `S2_shapeutil.Shape_edge` (Shape_edge_id + two endpoints)
+- [x] **s2_shapeutil_shape_edge** - `S2_shapeutil_shape_edge` (boxed record
+      `{ id; edge }` pairing an `S2_shapeutil_shape_edge_id.t` with the
+      `S2_shape.Edge.t` endpoints; exposes `create`, `v0`, `v1` matching the
+      C++ struct's accessors. No upstream test exists; the OCaml test pins
+      constructor + accessor round-trip via fixture.)
   - C++: `s2shapeutil_shape_edge.h` (header-only)
   - Deps: `s2_shapeutil_shape_edge_id`, `s2_point`
 
