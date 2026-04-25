@@ -545,9 +545,7 @@ let any_cell_edge_crosses_loop t cell =
         ~b
         ~crossing_type:S2_crossing_edge_query.Crossing_type.All
     in
-    (match xs with
-     | [] -> ()
-     | _ :: _ -> found := true);
+    if Array.length xs > 0 then found := true;
     incr k
   done;
   !found
@@ -717,9 +715,7 @@ let any_proper_crossing a b =
           ~b:v1
           ~crossing_type:S2_crossing_edge_query.Crossing_type.Interior
       in
-      (match xs with
-       | [] -> ()
-       | _ :: _ -> found := true);
+      if Array.length xs > 0 then found := true;
       incr i
     done;
     !found)

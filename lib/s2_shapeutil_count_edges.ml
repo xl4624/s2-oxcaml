@@ -1,6 +1,6 @@
 open Core
 
-let count_edges_up_to idx ~max_edges =
+let[@zero_alloc] count_edges_up_to idx ~max_edges =
   let n = S2_shape_index.num_shape_ids idx in
   let mutable total = 0 in
   let mutable i = 0 in
@@ -14,4 +14,4 @@ let count_edges_up_to idx ~max_edges =
   total
 ;;
 
-let count_edges idx = count_edges_up_to idx ~max_edges:Int.max_value
+let[@zero_alloc] count_edges idx = count_edges_up_to idx ~max_edges:Int.max_value

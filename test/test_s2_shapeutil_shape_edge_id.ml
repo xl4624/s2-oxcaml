@@ -25,14 +25,16 @@ let id_of_json j : Shape_edge_id.t =
   match to_list j with
   | [ s; e ] ->
     Shape_edge_id.create ~shape_id:(int_of_json_exn s) ~edge_id:(int_of_json_exn e)
-  | _ -> failwith "expected [shape_id, edge_id] pair"
+  | _ ->
+    (match failwith "expected [shape_id, edge_id] pair" with
+     | (_ : Nothing.t) -> .)
 ;;
 
 let test_default () =
   let j = member "default" (Lazy.force fixture) in
   let expected = id_of_json j in
-  check int "default shape_id" expected.shape_id Shape_edge_id.none.shape_id;
-  check int "default edge_id" expected.edge_id Shape_edge_id.none.edge_id
+  check int "default shape_id" expected.#shape_id Shape_edge_id.none.#shape_id;
+  check int "default edge_id" expected.#edge_id Shape_edge_id.none.#edge_id
 ;;
 
 let test_relations () =

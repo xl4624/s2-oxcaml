@@ -20,27 +20,37 @@
 open Core
 open Alcotest
 open Test_helpers
+module Shape_edge_id = S2.S2_crossing_edge_query.Shape_edge_id
 
 let fixture = lazy (load_fixture "s2crossing_edge_query.json")
 let point_of_json = r3_vector_of_json
 
-let shape_edge_id_of_json j : S2.S2_crossing_edge_query.Shape_edge_id.t =
-  { shape_id = int_of_json_exn (member "shape_id" j)
-  ; edge_id = int_of_json_exn (member "edge_id" j)
-  }
+let shape_edge_id_of_json j : Shape_edge_id.t =
+  Shape_edge_id.create
+    ~shape_id:(int_of_json_exn (member "shape_id" j))
+    ~edge_id:(int_of_json_exn (member "edge_id" j))
 ;;
 
-let ids_of_json j = to_list j |> List.map ~f:shape_edge_id_of_json
-
-let shape_edge_id_pp ppf (id : S2.S2_crossing_edge_query.Shape_edge_id.t) =
-  Stdlib.Format.fprintf ppf "(%d,%d)" id.shape_id id.edge_id
+let ids_of_json j =
+  let xs = to_list j in
+  let n = List.length xs in
+  let arr = Array.create ~len:n Shape_edge_id.none in
+  List.iteri xs ~f:(fun i v -> arr.(i) <- shape_edge_id_of_json v);
+  arr
 ;;
 
-let shape_edge_id_t : S2.S2_crossing_edge_query.Shape_edge_id.t testable =
-  Alcotest.testable shape_edge_id_pp S2.S2_crossing_edge_query.Shape_edge_id.equal
+let check_ids msg ~expected ~actual =
+  let n_exp = Array.length expected in
+  let n_act = Array.length actual in
+  check int (msg ^ " length") n_exp n_act;
+  let n = Int.min n_exp n_act in
+  for i = 0 to n - 1 do
+    let #{ shape_id = es; edge_id = ee } : Shape_edge_id.t = expected.(i) in
+    let #{ shape_id = as_; edge_id = ae } : Shape_edge_id.t = actual.(i) in
+    check int (sprintf "%s[%d] shape_id" msg i) es as_;
+    check int (sprintf "%s[%d] edge_id" msg i) ee ae
+  done
 ;;
-
-let check_ids msg ~expected ~actual = check (list shape_edge_id_t) msg expected actual
 
 let build_shape j : S2.S2_shape.t =
   let kind = string_of_json_exn (member "kind" j) in

@@ -46,12 +46,12 @@ let test_cases () =
       int
       (sprintf "case[%d] id.shape_id" i)
       (int_of_json_exn (member "id_shape_id" case))
-      se.id.shape_id;
+      se.#id.#shape_id;
     check
       int
       (sprintf "case[%d] id.edge_id" i)
       (int_of_json_exn (member "id_edge_id" case))
-      se.id.edge_id;
+      se.#id.#edge_id;
     check_point
       (sprintf "case[%d] v0" i)
       ~expected:(point_of_json (member "v0_out" case))

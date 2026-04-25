@@ -42,19 +42,92 @@ let count_edges_up_to index ~limit =
   !total
 ;;
 
-(* Sort + dedup a list of [Shape_edge_id.t] values. *)
-let sort_and_dedup ids =
-  let arr = Array.of_list ids in
-  Array.sort arr ~compare:Shape_edge_id.compare;
-  let n = Array.length arr in
-  if n <= 1
-  then Array.to_list arr
-  else (
-    let acc = ref [ arr.(n - 1) ] in
-    for i = n - 2 downto 0 do
-      if not (Shape_edge_id.equal arr.(i) arr.(i + 1)) then acc := arr.(i) :: !acc
+(* Growable buffer for unboxed [Shape_edge_id.t] values: lists cannot hold
+   non-value-layout elements, so accumulating candidates needs a small array
+   that doubles when full. *)
+type id_buf =
+  { mutable data : Shape_edge_id.t array
+  ; mutable len : int
+  }
+
+let id_buf_create () = { data = Array.create ~len:8 Shape_edge_id.none; len = 0 }
+
+let[@inline] id_buf_push buf id =
+  let cap = Array.length buf.data in
+  if buf.len >= cap
+  then (
+    let new_data = Array.create ~len:(cap * 2) Shape_edge_id.none in
+    for i = 0 to buf.len - 1 do
+      new_data.(i) <- buf.data.(i)
     done;
-    !acc)
+    buf.data <- new_data);
+  buf.data.(buf.len) <- id;
+  buf.len <- buf.len + 1
+;;
+
+let id_buf_to_array buf =
+  let arr = Array.create ~len:buf.len Shape_edge_id.none in
+  for i = 0 to buf.len - 1 do
+    arr.(i) <- buf.data.(i)
+  done;
+  arr
+;;
+
+(* Quicksort over [Shape_edge_id.t array]: [Array.sort] requires a value-layout
+   element, but our element is an unboxed product. *)
+let sort_ids (arr : Shape_edge_id.t array) =
+  let rec qsort lo hi =
+    if lo >= hi
+    then ()
+    else (
+      let pivot = arr.(lo + ((hi - lo) / 2)) in
+      let mutable i = lo in
+      let mutable j = hi in
+      while i <= j do
+        while Shape_edge_id.compare arr.(i) pivot < 0 do
+          i <- i + 1
+        done;
+        while Shape_edge_id.compare arr.(j) pivot > 0 do
+          j <- j - 1
+        done;
+        if i <= j
+        then (
+          let tmp = arr.(i) in
+          arr.(i) <- arr.(j);
+          arr.(j) <- tmp;
+          i <- i + 1;
+          j <- j - 1)
+      done;
+      qsort lo j;
+      qsort i hi)
+  in
+  let n = Array.length arr in
+  if n > 1 then qsort 0 (n - 1)
+;;
+
+(* Sort the buffer in place and copy out the deduplicated prefix. *)
+let sort_and_dedup buf =
+  let raw = id_buf_to_array buf in
+  sort_ids raw;
+  let n = Array.length raw in
+  if n <= 1
+  then raw
+  else (
+    let mutable write = 1 in
+    for read = 1 to n - 1 do
+      if not (Shape_edge_id.equal raw.(read) raw.(write - 1))
+      then (
+        raw.(write) <- raw.(read);
+        write <- write + 1)
+    done;
+    if write = n
+    then raw
+    else (
+      let out = Array.create ~len:write Shape_edge_id.none in
+      for i = 0 to write - 1 do
+        out.(i) <- raw.(i)
+      done;
+      out))
 ;;
 
 (* A pair of R2_rect.t values returned by the bound-splitting routines. *)
@@ -246,16 +319,21 @@ let get_candidates t ~a ~b =
   let num_edges = count_edges_up_to t.index ~limit:(max_brute_force_edges + 1) in
   if num_edges <= max_brute_force_edges
   then (
-    let acc = ref [] in
-    for s = S2_shape_index.num_shape_ids t.index - 1 downto 0 do
+    (* Brute force visits shapes and edges in ascending order, so the result
+       is already sorted and deduplicated; build the array directly. *)
+    let n = num_edges in
+    let out = Array.create ~len:n Shape_edge_id.none in
+    let mutable k = 0 in
+    for s = 0 to S2_shape_index.num_shape_ids t.index - 1 do
       let shape = S2_shape_index.shape t.index s in
-      for e = shape.#num_edges - 1 downto 0 do
-        acc := { Shape_edge_id.shape_id = s; edge_id = e } :: !acc
+      for e = 0 to shape.#num_edges - 1 do
+        out.(k) <- Shape_edge_id.create ~shape_id:s ~edge_id:e;
+        k <- k + 1
       done
     done;
-    !acc)
+    out)
   else (
-    let acc = ref [] in
+    let buf = id_buf_create () in
     visit_cells t ~a ~b ~visit:(fun cell ->
       let num_clipped = S2_shape_index.Index_cell.num_clipped cell in
       for s = 0 to num_clipped - 1 do
@@ -264,11 +342,11 @@ let get_candidates t ~a ~b =
         let ne = S2_shape_index.Clipped_shape.num_edges clipped in
         for j = 0 to ne - 1 do
           let eid = S2_shape_index.Clipped_shape.edge clipped j in
-          acc := { Shape_edge_id.shape_id = sid; edge_id = eid } :: !acc
+          id_buf_push buf (Shape_edge_id.create ~shape_id:sid ~edge_id:eid)
         done
       done;
       true);
-    sort_and_dedup !acc)
+    sort_and_dedup buf)
 ;;
 
 (* Candidate collection limited to one shape. *)
@@ -276,13 +354,13 @@ let get_candidates_for_shape t ~a ~b ~shape_id ~(shape : S2_shape.t) =
   let num_edges = shape.#num_edges in
   if num_edges <= max_brute_force_edges
   then (
-    let acc = ref [] in
-    for e = num_edges - 1 downto 0 do
-      acc := { Shape_edge_id.shape_id; edge_id = e } :: !acc
+    let out = Array.create ~len:num_edges Shape_edge_id.none in
+    for e = 0 to num_edges - 1 do
+      out.(e) <- Shape_edge_id.create ~shape_id ~edge_id:e
     done;
-    !acc)
+    out)
   else (
-    let acc = ref [] in
+    let buf = id_buf_create () in
     visit_cells t ~a ~b ~visit:(fun cell ->
       match S2_shape_index.Index_cell.find_clipped cell ~shape_id with
       | None -> true
@@ -290,10 +368,10 @@ let get_candidates_for_shape t ~a ~b ~shape_id ~(shape : S2_shape.t) =
         let ne = S2_shape_index.Clipped_shape.num_edges clipped in
         for j = 0 to ne - 1 do
           let eid = S2_shape_index.Clipped_shape.edge clipped j in
-          acc := { Shape_edge_id.shape_id; edge_id = eid } :: !acc
+          id_buf_push buf (Shape_edge_id.create ~shape_id ~edge_id:eid)
         done;
         true);
-    sort_and_dedup !acc)
+    sort_and_dedup buf)
 ;;
 
 let filter_crossings ~a ~b ~crossing_type candidates ~shape_of =
@@ -302,21 +380,32 @@ let filter_crossings ~a ~b ~crossing_type candidates ~shape_of =
     | All -> 0
     | Interior -> 1
   in
-  let arr = Array.of_list candidates in
-  let n = Array.length arr in
+  let n = Array.length candidates in
   let mutable crosser = S2_edge_crosser.create ~a ~b in
-  let acc = ref [] in
+  let keep = Array.create ~len:n false in
+  let mutable kept = 0 in
   for i = 0 to n - 1 do
-    let id = arr.(i) in
-    let shape : S2_shape.t = shape_of id.Shape_edge_id.shape_id in
-    let #{ v0; v1 } : S2_shape.Edge.t = shape.#edge id.Shape_edge_id.edge_id in
+    let #{ shape_id; edge_id } : Shape_edge_id.t = candidates.(i) in
+    let shape : S2_shape.t = shape_of shape_id in
+    let #{ v0; v1 } : S2_shape.Edge.t = shape.#edge edge_id in
     let #{ state; sign } : S2_edge_crosser.with_sign =
       S2_edge_crosser.crossing_sign crosser v0 v1
     in
     crosser <- state;
-    if sign >= min_sign then acc := id :: !acc
+    if sign >= min_sign
+    then (
+      keep.(i) <- true;
+      kept <- kept + 1)
   done;
-  List.rev !acc
+  let out = Array.create ~len:kept Shape_edge_id.none in
+  let mutable w = 0 in
+  for i = 0 to n - 1 do
+    if keep.(i)
+    then (
+      out.(w) <- candidates.(i);
+      w <- w + 1)
+  done;
+  out
 ;;
 
 let get_crossing_edges t ~a ~b ~crossing_type =

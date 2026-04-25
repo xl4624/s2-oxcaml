@@ -21,11 +21,14 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t
 
 (** [create idx] returns a fresh iterator already positioned at the first edge of [idx],
-    or already [is_done] if [idx] has no edges. *)
+    or already [is_done] if [idx] has no edges. Allocates the iterator record. *)
 val create : S2_shape_index.t -> t
+[@@zero_alloc ignore]
 
 (** [shape_id t] is the shape id of the current edge. Equals
     [S2_shape_index.num_shape_ids] when [is_done t]. *)
@@ -41,6 +44,7 @@ val shape_edge_id : t -> S2_shapeutil_shape_edge_id.t
 
 (** [edge t] returns the current edge. Raises when [is_done t]. *)
 val edge : t -> S2_shape.Edge.t
+[@@zero_alloc ignore]
 
 (** [is_done t] is [true] once [t] has advanced past the last edge of the index. *)
 val is_done : t -> bool

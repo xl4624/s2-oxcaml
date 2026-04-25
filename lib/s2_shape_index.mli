@@ -138,10 +138,12 @@ val add : t -> S2_shape.t -> int
 
 (** [num_shape_ids t] is the number of distinct shape ids that have been assigned. *)
 val num_shape_ids : t -> int
+[@@zero_alloc]
 
 (** [shape t id] returns the shape previously added with id [id]. Raises if [id] is
-    outside [0 .. num_shape_ids t - 1] or the shape has somehow gone missing. *)
+    outside [0 .. num_shape_ids t - 1]. *)
 val shape : t -> int -> S2_shape.t
+[@@zero_alloc]
 
 (** [build t] materializes any pending additions into the cell map. Idempotent: a no-op
     when the index is already fresh. {!iterator} calls this implicitly. *)

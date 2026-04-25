@@ -7,11 +7,11 @@ type t =
   ; mutable edge_id : int
   }
 
-let shape_id t = t.shape_id
-let edge_id t = t.edge_id
-let is_done t = t.shape_id >= S2_shape_index.num_shape_ids t.index
+let[@inline] [@zero_alloc] shape_id t = t.shape_id
+let[@inline] [@zero_alloc] edge_id t = t.edge_id
+let[@inline] [@zero_alloc] is_done t = t.shape_id >= S2_shape_index.num_shape_ids t.index
 
-let next t =
+let[@zero_alloc] next t =
   let n = S2_shape_index.num_shape_ids t.index in
   let stop = ref false in
   while not !stop do
@@ -35,7 +35,7 @@ let create index =
   t
 ;;
 
-let shape_edge_id t =
+let[@inline] [@zero_alloc] shape_edge_id t =
   S2_shapeutil_shape_edge_id.create ~shape_id:t.shape_id ~edge_id:t.edge_id
 ;;
 
@@ -45,6 +45,6 @@ let edge t =
   shape.#edge t.edge_id
 ;;
 
-let equal a b =
+let[@inline] [@zero_alloc] equal a b =
   phys_equal a.index b.index && a.shape_id = b.shape_id && a.edge_id = b.edge_id
 ;;

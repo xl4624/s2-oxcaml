@@ -53,7 +53,7 @@ val get_crossing_edges
   -> a:S2_point.t
   -> b:S2_point.t
   -> crossing_type:Crossing_type.t
-  -> Shape_edge_id.t list
+  -> Shape_edge_id.t array
 
 (** [get_crossing_edges_for_shape t ~a ~b ~shape_id ~shape ~crossing_type] is like
     {!get_crossing_edges} but restricted to edges of the given [shape]. The [shape] must
@@ -66,7 +66,7 @@ val get_crossing_edges_for_shape
   -> shape_id:int
   -> shape:S2_shape.t
   -> crossing_type:Crossing_type.t
-  -> Shape_edge_id.t list
+  -> Shape_edge_id.t array
 
 (** {1 Low-level candidate queries}
 
@@ -77,7 +77,7 @@ val get_crossing_edges_for_shape
 
 (** [get_candidates t ~a ~b] returns every indexed edge that {i may} cross [a]->[b]. The
     result is a superset of the true crossings. *)
-val get_candidates : t -> a:S2_point.t -> b:S2_point.t -> Shape_edge_id.t list
+val get_candidates : t -> a:S2_point.t -> b:S2_point.t -> Shape_edge_id.t array
 
 (** [get_candidates_for_shape t ~a ~b ~shape_id ~shape] is like {!get_candidates} but
     restricted to one shape, as in {!get_crossing_edges_for_shape}. *)
@@ -87,4 +87,4 @@ val get_candidates_for_shape
   -> b:S2_point.t
   -> shape_id:int
   -> shape:S2_shape.t
-  -> Shape_edge_id.t list
+  -> Shape_edge_id.t array

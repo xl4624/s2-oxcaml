@@ -7,11 +7,14 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t =
-  { id : S2_shapeutil_shape_edge_id.t
-  ; edge : S2_shape.Edge.t
-  }
-[@@deriving sexp_of]
+  #{ id : S2_shapeutil_shape_edge_id.t
+   ; edge : S2_shape.Edge.t
+   }
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** [create ~shape_id ~edge_id ~edge] packages the [(shape_id, edge_id)] pair with the
     edge endpoints. The caller is responsible for ensuring [edge] really is the edge at

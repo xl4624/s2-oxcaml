@@ -15,6 +15,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** [of_shape shape] returns the number of vertices in [shape]. Requires
     [0 <= shape.#dimension <= 2]. *)
 val of_shape : S2_shape.t -> int

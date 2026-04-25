@@ -7,11 +7,14 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 type t =
-  { shape_id : int
-  ; edge_id : int
-  }
-[@@deriving compare, equal, sexp_of]
+  #{ shape_id : int
+   ; edge_id : int
+   }
+
+val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 
 (** [none] is the sentinel pair [(-1, -1)] used to denote "no edge". It compares less than
     every {e valid} id and is the default value of an uninitialised {!t} on the C++ side. *)
@@ -20,3 +23,8 @@ val none : t
 (** [create ~shape_id ~edge_id] is a convenience constructor that just records the two
     fields. *)
 val create : shape_id:int -> edge_id:int -> t
+
+(** Lexicographic comparison: [shape_id] dominates [edge_id]. *)
+val compare : t -> t -> int
+
+val equal : t -> t -> bool

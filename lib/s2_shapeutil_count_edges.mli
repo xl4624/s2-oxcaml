@@ -11,6 +11,8 @@
 
 open Core
 
+[@@@zero_alloc all]
+
 (** [count_edges idx] returns the total number of edges across every shape in [idx]. Runs
     in time linear in the number of shapes. *)
 val count_edges : S2_shape_index.t -> int

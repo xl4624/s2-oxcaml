@@ -44,8 +44,8 @@ module Index_cell = struct
   ;;
 end
 
-(* Boxed wrapper so [S2_shape.t] (an unboxed record) can live inside
-   hashtables and other containers that require a [value] layout. *)
+(* Boxed wrapper so [S2_shape.t] (an unboxed record) can live inside arrays
+   and other containers that require a [value] layout. *)
 type shape_box = { shape : S2_shape.t }
 
 (* Boxed (cell_id, cell) pair so that bits64-layout cell ids can participate
@@ -73,7 +73,7 @@ type clipped_edge =
   }
 
 type index =
-  { mutable shapes : (int, shape_box) Hashtbl.Poly.t
+  { mutable shapes : shape_box array
   ; mutable next_shape_id : int
   ; max_edges_per_cell : int
   ; cell_padding : float#
@@ -624,9 +624,8 @@ let apply_updates_internal (t : index) =
   let tracker = create_tracker () in
   let all_edges = Array.init 6 ~f:(fun _ -> []) in
   for id = 0 to t.next_shape_id - 1 do
-    match Hashtbl.Poly.find t.shapes id with
-    | None -> ()
-    | Some { shape } -> add_shape_internal t id shape all_edges tracker
+    let { shape } = t.shapes.(id) in
+    add_shape_internal t id shape all_edges tracker
   done;
   let is_first = ref true in
   for face = 0 to 5 do
@@ -639,7 +638,7 @@ let apply_updates_internal (t : index) =
 ;;
 
 let create ?(max_edges_per_cell = 10) () =
-  { shapes = Hashtbl.Poly.create ()
+  { shapes = [||]
   ; next_shape_id = 0
   ; max_edges_per_cell
   ; cell_padding
@@ -653,25 +652,34 @@ let create ?(max_edges_per_cell = 10) () =
 
 let add (t : index) shape =
   let id = t.next_shape_id in
-  Hashtbl.Poly.set t.shapes ~key:id ~data:{ shape };
+  let cap = Array.length t.shapes in
+  let box = { shape } in
+  if id >= cap
+  then (
+    (* Grow by doubling. [box] doubles as the fill value: slot [id] will be
+       overwritten with [box] below (a no-op), and the trailing unused slots
+       end up holding the same boxed reference until they are eventually
+       overwritten by a future [add]. *)
+    let new_cap = if cap = 0 then 8 else cap * 2 in
+    let new_shapes = Array.create ~len:new_cap box in
+    for i = 0 to cap - 1 do
+      new_shapes.(i) <- t.shapes.(i)
+    done;
+    t.shapes <- new_shapes);
+  t.shapes.(id) <- box;
   t.next_shape_id <- id + 1;
   t.fresh <- false;
   id
 ;;
 
-let num_shape_ids t = t.next_shape_id
+let[@inline] [@zero_alloc] num_shape_ids t = t.next_shape_id
 
-let shape t id =
+let[@zero_alloc] shape t id =
   if id < 0 || id >= t.next_shape_id
   then (
     match raise_s [%message "S2_shape_index.shape: id out of range" (id : int)] with
     | (_ : Nothing.t) -> .)
-  else (
-    match Hashtbl.Poly.find t.shapes id with
-    | Some { shape } -> shape
-    | None ->
-      (match raise_s [%message "S2_shape_index.shape: missing shape" (id : int)] with
-       | (_ : Nothing.t) -> .))
+  else t.shapes.(id).shape
 ;;
 
 let build t = if not t.fresh then apply_updates_internal t

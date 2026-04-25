@@ -163,11 +163,11 @@ let has_interior_crossing (a_shape : S2_shape.t) b_index =
             ~b:v1
             ~crossing_type:S2_crossing_edge_query.Crossing_type.Interior
         in
-        match crossings with
-        | [] -> true
-        | _ :: _ ->
+        if Array.length crossings = 0
+        then true
+        else (
           found := true;
-          false))
+          false)))
   in
   !found
 ;;
