@@ -1,12 +1,5 @@
 open Core
-
-module Shape_edge_id = struct
-  type t =
-    { shape_id : int
-    ; edge_id : int
-    }
-  [@@deriving compare, equal, sexp_of]
-end
+module Shape_edge_id = S2_shapeutil_shape_edge_id
 
 module Crossing_type = struct
   type t =

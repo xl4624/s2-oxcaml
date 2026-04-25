@@ -76,7 +76,10 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_count_vertices.h`, `.cc`
   - Deps: `s2_shape`, `s2_shape_index`
 
-- [ ] **s2_shapeutil_shape_edge_id** - `S2_shapeutil.Shape_edge_id` (shape_id, edge_id pair)
+- [x] **s2_shapeutil_shape_edge_id** - `S2_shapeutil_shape_edge_id` (boxed
+      record `{ shape_id; edge_id }` with [compare], [equal], [sexp_of], plus a
+      [none] sentinel mirroring the C++ default `(-1, -1)`. The existing
+      `S2_crossing_edge_query.Shape_edge_id` is now an alias to this module.)
   - C++: `s2shapeutil_shape_edge_id.h` (header-only)
   - Deps: none
 

@@ -22,13 +22,7 @@
 open Core
 
 (** A (shape_id, edge_id) pair identifying one edge of an indexed shape. *)
-module Shape_edge_id : sig
-  type t =
-    { shape_id : int
-    ; edge_id : int
-    }
-  [@@deriving compare, equal, sexp_of]
-end
+module Shape_edge_id = S2_shapeutil_shape_edge_id
 
 (** Controls whether crossings that only share a vertex are reported. *)
 module Crossing_type : sig
