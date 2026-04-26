@@ -28,11 +28,13 @@ open Core
     testing equality, allow for small numerical error or compare discrete E5/E6/E7 values
     instead.
 
+    The C++ [S1Angle] constructors that take two [S2Point] or two [S2LatLng] values are
+    provided as {!S2_point.distance} and {!S2_latlng.distance} respectively, which avoids
+    a circular dependency between [S1_angle] and the higher-level point types.
+
     {1 Limitations}
 
-    The following features of the C++ [S1Angle] are not currently provided:
-    - constructors taking two points on the unit sphere or two [S2LatLng] values,
-    - the [Coder] interface for serialization. *)
+    The [Coder] interface for serialization is not currently provided. *)
 
 [@@@zero_alloc all]
 

@@ -327,7 +327,10 @@ track which types still lack Encode/Decode:
 
 ### Numerical / geometry conversions
 
-- [ ] `s1_angle`: `S2Point` and `S2LatLng` two-argument constructors
+- [x] `s1_angle`: `S2Point` and `S2LatLng` two-argument constructors -
+      provided as `S2_point.distance` and `S2_latlng.distance`. Placed on
+      the higher-level types instead of `S1_angle` to keep the latter free
+      of circular dependencies.
 - [ ] `s1_chord_angle`: `FastUpperBoundFrom` (radians-squared upper bound)
 - [ ] `s2_latlng`: `FromUnsignedE6` / `FromUnsignedE7` (proto fixed32 round-trip)
 - [ ] `s2_latlng`: `ToStringInDegrees` ("lat,lng" formatted string)
