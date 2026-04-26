@@ -20,7 +20,7 @@ type t =
    ; orientation : int
    ; uv : R2_rect.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option]
 
 let[@inline] [@zero_alloc] id t = t.#id
 let[@inline] [@zero_alloc] face t = t.#face
