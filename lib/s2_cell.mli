@@ -25,7 +25,8 @@ open Core
       function to avoid a module cycle between [s2_cell] and [s2_latlng_rect]. *)
 type t :
   bits64 & immediate & immediate & immediate & ((float64 & float64) & (float64 & float64))
-[@@deriving sexp_of]
+[@@deriving
+  sexp_of, unboxed_option { default_payload = #{ face = 0; level = 0; orientation = 0 } }]
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 

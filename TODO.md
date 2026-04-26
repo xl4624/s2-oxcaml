@@ -474,13 +474,11 @@ allocation.
 - [x] `s2_latlng_rect` (two intervals): `[@@deriving unboxed_option { sentinel
       = true }]`, now that `s1_interval` and `r1_interval` both expose
       sentinels.
-- [ ] `s2_cell` (unboxed record with `id`, `face`, `level`, `orientation`,
-      `uv`): blocked. `ppx_uopt` requires every field to be either an unboxed
-      scalar or a module-qualified `M.t` with `M.Option.none`; the `int` fields
-      `face`/`level`/`orientation` are immediate but not `int#`, so they fail
-      the contract check. Either migrate the int fields to `int#`, or write a
-      hand-rolled `Option` module that uses `S2_cell_id.none` as the
-      discriminator.
+- [x] `s2_cell` (unboxed record with `id`, `face`, `level`, `orientation`,
+      `uv`): uses the new `ppx_uopt` `default_payload` flag to override the
+      tagged-mode payload for the immediate `int` fields, leaving `id`/`uv` to
+      be filled by the classifier. `Option.is_none` only checks the leading
+      bool tag, so no per-field sentinel collision is possible.
 
 ### Single-field record wrappers that should be `[@@unboxed]`
 
