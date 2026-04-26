@@ -7,6 +7,7 @@
    -  TEST(S2LatLng, NegativeZeros)   - negative_zeros
    -  TEST(S2LatLng, TestDistance)    - distance
    -  E5/E6/E7 constructors          - e_constructors
+   -  Unsigned E6/E7 constructors    - unsigned_e_constructors
    -  ToPoint                        - to_point
    -  ApproxEquals                   - approx_equal
    -  TEST(S2LatLng, TestToString)    - to_string_in_degrees
@@ -230,6 +231,34 @@ let test_approx_equal fixture () =
         (S2.S2_latlng.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) a b))
 ;;
 
+let test_unsigned_e_constructors fixture () =
+  let cases = to_list (member "unsigned_e_constructors" fixture) in
+  List.iter cases ~f:(fun c ->
+    let op = string_of_json_exn (member "op" c) in
+    let name = string_of_json_exn (member "name" c) in
+    let lat_u = int_of_json_exn (member "lat_u" c) in
+    let lng_u = int_of_json_exn (member "lng_u" c) in
+    let expected_lat = float_u_of_json_exn (member "lat" c) in
+    let expected_lng = float_u_of_json_exn (member "lng" c) in
+    let result =
+      match op with
+      | "unsigned_e6" -> S2.S2_latlng.of_unsigned_e6_exn ~lat:lat_u ~lng:lng_u
+      | "unsigned_e7" -> S2.S2_latlng.of_unsigned_e7_exn ~lat:lat_u ~lng:lng_u
+      | _ ->
+        (match failwith ("unknown op: " ^ op) with
+         | (_ : Nothing.t) -> .)
+    in
+    let label = sprintf "%s/%s" op name in
+    check_float_u_exact
+      (label ^ " lat")
+      ~expected:expected_lat
+      ~actual:(S2.S1_angle.radians (S2.S2_latlng.lat result));
+    check_float_u_exact
+      (label ^ " lng")
+      ~expected:expected_lng
+      ~actual:(S2.S1_angle.radians (S2.S2_latlng.lng result)))
+;;
+
 let test_e_constructors fixture () =
   let cases = to_list (member "e_constructors" fixture) in
   List.iter cases ~f:(fun c ->
@@ -308,6 +337,12 @@ let () =
     ; "approx_equal", [ test_case "ApproxEquals" `Quick (test_approx_equal fixture) ]
     ; ( "e_constructors"
       , [ test_case "E_Constructors" `Quick (test_e_constructors fixture) ] )
+    ; ( "unsigned_e_constructors"
+      , [ test_case
+            "UnsignedE_Constructors"
+            `Quick
+            (test_unsigned_e_constructors fixture)
+        ] )
     ; "to_point", [ test_case "ToPoint" `Quick (test_to_point fixture) ]
     ; ( "to_string_in_degrees"
       , [ test_case "TestToString" `Quick (test_to_string_in_degrees fixture) ] )

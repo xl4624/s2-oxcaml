@@ -111,9 +111,37 @@ let[@inline] [@zero_alloc] of_e7_exn ~lat ~lng =
   create ~lat:lat_a ~lng:lng_a
 ;;
 
-(* TODO: port FromUnsignedE6 / FromUnsignedE7 from s2latlng.h:220-227.
-   Intended for values that have been round-tripped through unsigned proto
-   fixed32 fields. *)
+let[@inline] [@zero_alloc] of_unsigned_e6 ~lat ~lng : Option.t =
+  let lat_a = S1_angle.of_unsigned_e6 lat in
+  let lng_a = S1_angle.of_unsigned_e6 lng in
+  let deg = S1_angle.degrees lat_a in
+  if Float_u.O.(deg < -#90.0 || deg > #90.0)
+  then Option.none
+  else Option.some (create ~lat:lat_a ~lng:lng_a)
+;;
+
+let[@inline] [@zero_alloc] of_unsigned_e6_exn ~lat ~lng =
+  let lat_a = S1_angle.of_unsigned_e6 lat in
+  let lng_a = S1_angle.of_unsigned_e6 lng in
+  validate_lat_exn ~fn_name:"of_unsigned_e6_exn" ~lat_a ~lat ~lng;
+  create ~lat:lat_a ~lng:lng_a
+;;
+
+let[@inline] [@zero_alloc] of_unsigned_e7 ~lat ~lng : Option.t =
+  let lat_a = S1_angle.of_unsigned_e7 lat in
+  let lng_a = S1_angle.of_unsigned_e7 lng in
+  let deg = S1_angle.degrees lat_a in
+  if Float_u.O.(deg < -#90.0 || deg > #90.0)
+  then Option.none
+  else Option.some (create ~lat:lat_a ~lng:lng_a)
+;;
+
+let[@inline] [@zero_alloc] of_unsigned_e7_exn ~lat ~lng =
+  let lat_a = S1_angle.of_unsigned_e7 lat in
+  let lng_a = S1_angle.of_unsigned_e7 lng in
+  validate_lat_exn ~fn_name:"of_unsigned_e7_exn" ~lat_a ~lat ~lng;
+  create ~lat:lat_a ~lng:lng_a
+;;
 
 let[@inline] [@zero_alloc] lat t = S1_angle.of_radians t.#lat
 let[@inline] [@zero_alloc] lng t = S1_angle.of_radians t.#lng

@@ -16,7 +16,7 @@
 
     {2 Limitations}
 
-    The [FromUnsignedE6] / [FromUnsignedE7] constructors are not exposed. *)
+    None at present. *)
 open Core
 
 [@@@zero_alloc all]
@@ -67,6 +67,21 @@ val of_e6 : lat:int -> lng:int -> Option.t
 val of_e6_exn : lat:int -> lng:int -> t
 val of_e7 : lat:int -> lng:int -> Option.t
 val of_e7_exn : lat:int -> lng:int -> t
+
+(** {2 Unsigned E6 / E7 constructors}
+
+    Mirror the C++ [FromUnsignedE6] / [FromUnsignedE7]. The arguments are interpreted as
+    32-bit unsigned proto fields and reinterpreted as signed [int32] before being used as
+    E6/E7 scaled integers. Useful when round-tripping through fixed-width unsigned proto
+    fields where large values otherwise wrap to negative when read as signed.
+
+    Validation matches the {!of_e6} / {!of_e7} family: the safe variants return
+    [Option.none] when the resulting latitude is outside [-90, 90] degrees. *)
+
+val of_unsigned_e6 : lat:int -> lng:int -> Option.t
+val of_unsigned_e6_exn : lat:int -> lng:int -> t
+val of_unsigned_e7 : lat:int -> lng:int -> Option.t
+val of_unsigned_e7_exn : lat:int -> lng:int -> t
 
 (** [of_point p] recovers the latitude and longitude of a 3D direction vector [p]. The
     vector need not be unit length; only its direction matters. *)

@@ -340,6 +340,55 @@ int main() {
         out["e_constructors"] = cases;
     }
 
+    // FromUnsignedE6 / FromUnsignedE7 - same E6/E7 math, but the lat/lng
+    // arguments are interpreted as 32-bit unsigned values that get
+    // bit-cast to int32 before scaling. Use values that round-trip
+    // through the unsigned conversion (i.e. that exceed INT32_MAX so
+    // they wrap negative).
+    {
+        json cases = json::array();
+
+        // E6: small positive, small negative-via-wrap, and a near-zero pair.
+        auto add_e6 = [&](const std::string &name, uint32_t lat_u,
+                          uint32_t lng_u) {
+            S2LatLng ll = S2LatLng::FromUnsignedE6(lat_u, lng_u);
+            cases.push_back({
+                {"name", name},
+                {"op", "unsigned_e6"},
+                {"lat_u", lat_u},
+                {"lng_u", lng_u},
+                {"lat", ll.lat().radians()},
+                {"lng", ll.lng().radians()},
+            });
+        };
+        add_e6("zero", 0u, 0u);
+        add_e6("small_positive", 45000000u, 90000000u);
+        add_e6("negative_via_wrap",
+               static_cast<uint32_t>(-1000000),  // -1 degree as unsigned
+               static_cast<uint32_t>(-2000000));  // -2 degrees as unsigned
+
+        // E7
+        auto add_e7 = [&](const std::string &name, uint32_t lat_u,
+                          uint32_t lng_u) {
+            S2LatLng ll = S2LatLng::FromUnsignedE7(lat_u, lng_u);
+            cases.push_back({
+                {"name", name},
+                {"op", "unsigned_e7"},
+                {"lat_u", lat_u},
+                {"lng_u", lng_u},
+                {"lat", ll.lat().radians()},
+                {"lng", ll.lng().radians()},
+            });
+        };
+        add_e7("zero", 0u, 0u);
+        add_e7("small_positive", 450000000u, 900000000u);
+        add_e7("negative_via_wrap",
+               static_cast<uint32_t>(-10000000),
+               static_cast<uint32_t>(-20000000));
+
+        out["unsigned_e_constructors"] = cases;
+    }
+
     // to_point - detailed conversion cases
     {
         json cases = json::array();

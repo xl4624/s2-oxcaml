@@ -332,7 +332,7 @@ track which types still lack Encode/Decode:
       the higher-level types instead of `S1_angle` to keep the latter free
       of circular dependencies.
 - [x] `s1_chord_angle`: `FastUpperBoundFrom` (radians-squared upper bound)
-- [ ] `s2_latlng`: `FromUnsignedE6` / `FromUnsignedE7` (proto fixed32 round-trip)
+- [x] `s2_latlng`: `FromUnsignedE6` / `FromUnsignedE7` (proto fixed32 round-trip)
 - [x] `s2_latlng`: `ToStringInDegrees` ("lat,lng" formatted string)
 
 ### Distance and projection APIs
