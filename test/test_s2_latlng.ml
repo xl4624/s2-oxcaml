@@ -338,10 +338,7 @@ let () =
     ; ( "e_constructors"
       , [ test_case "E_Constructors" `Quick (test_e_constructors fixture) ] )
     ; ( "unsigned_e_constructors"
-      , [ test_case
-            "UnsignedE_Constructors"
-            `Quick
-            (test_unsigned_e_constructors fixture)
+      , [ test_case "UnsignedE_Constructors" `Quick (test_unsigned_e_constructors fixture)
         ] )
     ; "to_point", [ test_case "ToPoint" `Quick (test_to_point fixture) ]
     ; ( "to_string_in_degrees"

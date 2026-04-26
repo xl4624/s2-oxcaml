@@ -32,16 +32,31 @@ let loop_of_edge_sequence (g : G.t) edge_ids =
     S2_loop.of_vertices ~validate:false vs)
 ;;
 
-let build_from_graph (g : G.t) ~output : S2_builder.Error.t =
+let validation_error_of msg =
+  (* The OCaml [S2_polygon.find_validation_error] returns a string only, so we
+     surface a single generic code. C++ distinguishes specific codes such as
+     POLYGON_LOOPS_SHARE_EDGE or LOOP_SELF_INTERSECTION; callers wanting that
+     granularity must inspect [message]. *)
+  S2_builder.Error.create ~code:"INVALID_POLYGON" ~message:msg
+;;
+
+let build_from_graph (g : G.t) ~output ~validate : S2_builder.Error.t =
+  let finalize polygon =
+    output.polygon <- Some polygon;
+    if validate
+    then (
+      match S2_polygon.find_validation_error polygon with
+      | None -> S2_builder.Error.ok
+      | Some msg -> validation_error_of msg)
+    else S2_builder.Error.ok
+  in
   let num_edges = G.num_edges g in
   if num_edges = 0
   then (
     let is_full, err = G.is_full_polygon g in
     if not (S2_builder.Error.is_ok err)
     then err
-    else (
-      output.polygon <- Some (if is_full then S2_polygon.full () else S2_polygon.empty ());
-      S2_builder.Error.ok))
+    else finalize (if is_full then S2_polygon.full () else S2_polygon.empty ()))
   else (
     let loops, err = G.get_directed_loops g G.Loop_type.Simple in
     if not (S2_builder.Error.is_ok err)
@@ -50,11 +65,10 @@ let build_from_graph (g : G.t) ~output : S2_builder.Error.t =
       let polygon_loops =
         Array.map loops ~f:(fun edges -> loop_of_edge_sequence g edges)
       in
-      output.polygon <- Some (S2_polygon.of_oriented_loops polygon_loops);
-      S2_builder.Error.ok))
+      finalize (S2_polygon.of_oriented_loops polygon_loops)))
 ;;
 
-let layer output : S2_builder.Layer.t =
+let layer ?(validate = false) output : S2_builder.Layer.t =
   (* Graph options match s2builderutil_s2polygon_layer.cc:75-83: directed edges,
      drop degenerate edges, keep duplicates (the assembler tolerates them), and
      drop sibling pairs so zero-area regions do not produce spurious loops. *)
@@ -66,7 +80,7 @@ let layer output : S2_builder.Layer.t =
       ~sibling_pairs:S2_builder.Sibling_pairs.Discard
   in
   { graph_options
-  ; build = (fun g -> build_from_graph g ~output)
+  ; build = (fun g -> build_from_graph g ~output ~validate)
   ; name = "s2_polygon_layer"
   }
 ;;
@@ -74,5 +88,3 @@ let layer output : S2_builder.Layer.t =
 (* TODO: port undirected-edge support from s2builderutil_s2polygon_layer.cc:85-103. *)
 (* TODO: port label-set tracking (LabelSetIds / IdSetLexicon) from
    s2builderutil_s2polygon_layer.cc:121-174. *)
-(* TODO: wire up the [validate] option so that S2Polygon::FindValidationError is called
-   on the assembled polygon and any error is surfaced through the builder. *)

@@ -341,11 +341,7 @@ let () =
     [ "constructors", [ test_case "Constructors" `Quick (test_constructors fixture) ]
     ; "convenience", [ test_case "Convenience" `Quick (test_convenience fixture) ]
     ; ( "fast_upper_bound_from"
-      , [ test_case
-            "FastUpperBoundFrom"
-            `Quick
-            (test_fast_upper_bound_from fixture)
-        ] )
+      , [ test_case "FastUpperBoundFrom" `Quick (test_fast_upper_bound_from fixture) ] )
     ; "predicates", [ test_case "Predicates" `Quick (test_predicates fixture) ]
     ; "comparison", [ test_case "Comparison" `Quick (test_comparison fixture) ]
     ; "to_angle", [ test_case "ToAngle" `Quick (test_to_angle fixture) ]

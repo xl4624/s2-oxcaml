@@ -27,8 +27,7 @@
 
     Not yet supported:
     - Undirected input edges (the layer always uses directed edges).
-    - Per-edge label tracking ([LabelSetIds] / [IdSetLexicon]).
-    - The [validate] option (no post-build {!S2_polygon.find_validation_error} hook). *)
+    - Per-edge label tracking ([LabelSetIds] / [IdSetLexicon]). *)
 
 open Core
 
@@ -43,7 +42,12 @@ val create_output : unit -> output
     returned an error before reaching the layer). *)
 val result : output -> S2_polygon.t
 
-(** [layer output] returns the {!S2_builder.Layer.t} value to pass to
+(** [layer ?validate output] returns the {!S2_builder.Layer.t} value to pass to
     {!S2_builder.start_layer}. The layer records its polygon into [output] when the
-    builder calls it. *)
-val layer : output -> S2_builder.Layer.t
+    builder calls it.
+
+    If [validate] is [true] (default [false]), the layer runs
+    {!S2_polygon.find_validation_error} on the assembled polygon and, if it reports an
+    error, surfaces it through the builder with code ["INVALID_POLYGON"]. The polygon is
+    still stored in [output] either way, so callers can inspect a partially valid result. *)
+val layer : ?validate:bool -> output -> S2_builder.Layer.t

@@ -364,7 +364,7 @@ int main() {
         add_e6("zero", 0u, 0u);
         add_e6("small_positive", 45000000u, 90000000u);
         add_e6("negative_via_wrap",
-               static_cast<uint32_t>(-1000000),  // -1 degree as unsigned
+               static_cast<uint32_t>(-1000000),   // -1 degree as unsigned
                static_cast<uint32_t>(-2000000));  // -2 degrees as unsigned
 
         // E7
@@ -382,8 +382,7 @@ int main() {
         };
         add_e7("zero", 0u, 0u);
         add_e7("small_positive", 450000000u, 900000000u);
-        add_e7("negative_via_wrap",
-               static_cast<uint32_t>(-10000000),
+        add_e7("negative_via_wrap", static_cast<uint32_t>(-10000000),
                static_cast<uint32_t>(-20000000));
 
         out["unsigned_e_constructors"] = cases;

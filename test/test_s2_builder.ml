@@ -158,15 +158,19 @@ let run_fixture_case case () =
     check_polygon_matches name case polygon)
 ;;
 
-let test_smoke_unit_square () =
-  (* Build a unit-square loop directly from OCaml (no fixture). Checks that
-     the full pipeline from [S2_builder.create] through [S2_polygon_layer]
-     produces a single 4-vertex loop. *)
+let unit_square_vertices () =
   let v0 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#0.0) in
   let v1 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#1.0) in
   let v2 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#1.0 ~lng:#1.0) in
   let v3 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#1.0 ~lng:#0.0) in
-  let vs = [| v0; v1; v2; v3 |] in
+  [| v0; v1; v2; v3 |]
+;;
+
+let test_smoke_unit_square () =
+  (* Build a unit-square loop directly from OCaml (no fixture). Checks that
+     the full pipeline from [S2_builder.create] through [S2_polygon_layer]
+     produces a single 4-vertex loop. *)
+  let vs = unit_square_vertices () in
   let options = B.Options.default () in
   let builder = B.create options in
   let output = L.create_output () in
@@ -179,6 +183,20 @@ let test_smoke_unit_square () =
   check int "smoke: num_vertices = 4" 4 (S2.S2_polygon.num_vertices polygon)
 ;;
 
+let test_smoke_validate_ok () =
+  (* With [validate:true] on a well-formed polygon, the layer must report ok
+     and still populate [output]. *)
+  let vs = unit_square_vertices () in
+  let builder = B.create (B.Options.default ()) in
+  let output = L.create_output () in
+  B.start_layer builder (L.layer ~validate:true output);
+  B.add_loop builder vs;
+  let err = B.build builder in
+  check bool "validate: build ok" true (B.Error.is_ok err);
+  let polygon = L.result output in
+  check int "validate: num_loops = 1" 1 (S2.S2_polygon.num_loops polygon)
+;;
+
 let () =
   let cases = fixture_cases () in
   let fixture_tests =
@@ -186,6 +204,10 @@ let () =
       let name = string_of_json_exn (member "name" case) in
       Alcotest.test_case name `Quick (run_fixture_case case))
   in
-  let smoke_test = Alcotest.test_case "smoke_unit_square" `Quick test_smoke_unit_square in
-  Alcotest.run "s2_builder" [ "fixtures", fixture_tests; "smoke", [ smoke_test ] ]
+  let smoke_tests =
+    [ Alcotest.test_case "smoke_unit_square" `Quick test_smoke_unit_square
+    ; Alcotest.test_case "smoke_validate_ok" `Quick test_smoke_validate_ok
+    ]
+  in
+  Alcotest.run "s2_builder" [ "fixtures", fixture_tests; "smoke", smoke_tests ]
 ;;
