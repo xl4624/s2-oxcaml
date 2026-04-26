@@ -100,6 +100,20 @@ let test_constructors fixture () =
         (S2.S1_chord_angle.is_infinity result))
 ;;
 
+let test_fast_upper_bound_from fixture () =
+  let cases = to_list (member "fast_upper_bound_from" fixture) in
+  List.iter cases ~f:(fun c ->
+    let radians = float_u_of_json_exn (member "radians" c) in
+    let expected = float_u_of_json_exn (member "length2" c) in
+    let result =
+      S2.S1_chord_angle.fast_upper_bound_from (S2.S1_angle.of_radians radians)
+    in
+    check_float_u
+      (sprintf "fast_upper_bound_from %g length2" (Float_u.to_float radians))
+      ~expected
+      ~actual:(S2.S1_chord_angle.length2 result))
+;;
+
 let test_convenience fixture () =
   let cases = to_list (member "convenience" fixture) in
   List.iter cases ~f:(fun c ->
@@ -326,6 +340,12 @@ let () =
     "S1_chord_angle"
     [ "constructors", [ test_case "Constructors" `Quick (test_constructors fixture) ]
     ; "convenience", [ test_case "Convenience" `Quick (test_convenience fixture) ]
+    ; ( "fast_upper_bound_from"
+      , [ test_case
+            "FastUpperBoundFrom"
+            `Quick
+            (test_fast_upper_bound_from fixture)
+        ] )
     ; "predicates", [ test_case "Predicates" `Quick (test_predicates fixture) ]
     ; "comparison", [ test_case "Comparison" `Quick (test_comparison fixture) ]
     ; "to_angle", [ test_case "ToAngle" `Quick (test_to_angle fixture) ]

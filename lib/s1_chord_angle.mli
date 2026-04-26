@@ -106,6 +106,13 @@ val of_e5 : int -> t
 val of_e6 : int -> t
 val of_e7 : int -> t
 
+(** [fast_upper_bound_from a] is a cheap chord-angle upper bound for [a]: the result
+    [u] satisfies [to_angle u >= a]. Faster than {!of_angle} (no [sin]) but the bound
+    is loose - within about 1% of the true chord-angle for distances up to roughly
+    3100 km on Earth's surface. Useful as a coarse pruning bound before a precise
+    distance computation. *)
+val fast_upper_bound_from : S1_angle.t -> t
+
 (** {1 Accessors} *)
 
 (** [length2 t] returns the squared chord length. Most callers should not need this. *)

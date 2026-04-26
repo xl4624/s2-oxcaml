@@ -369,6 +369,26 @@ int main() {
         out["convenience"] = cases;
     }
 
+    // FastUpperBoundFrom - cheap chord-angle bound from an S1Angle. Result is
+    // a valid upper bound on the equivalent chord through the sphere; loose
+    // for large angles but very fast (no sin).
+    {
+        json cases = json::array();
+        auto add = [&](double radians) {
+            S1Angle a = S1Angle::Radians(radians);
+            S1ChordAngle c = S1ChordAngle::FastUpperBoundFrom(a);
+            cases.push_back({{"radians", radians}, {"length2", c.length2()}});
+        };
+        add(0.0);
+        add(1e-6);
+        add(0.1);
+        add(0.5);
+        add(1.0);
+        add(M_PI_2);
+        add(M_PI);
+        out["fast_upper_bound_from"] = cases;
+    }
+
     std::cout << out.dump(2) << std::endl;
     return 0;
 }

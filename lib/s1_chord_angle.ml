@@ -41,9 +41,14 @@ let[@inline] [@zero_alloc] of_e5 e5 = of_angle (S1_angle.of_e5 e5)
 let[@inline] [@zero_alloc] of_e6 e6 = of_angle (S1_angle.of_e6 e6)
 let[@inline] [@zero_alloc] of_e7 e7 = of_angle (S1_angle.of_e7 e7)
 
-(* TODO: port FastUpperBoundFrom from s1chord_angle.h:181. Uses
-   surface-distance (radians^2) as an upper bound on through-sphere
-   distance; 1% accurate up to ~3100 km on Earth. *)
+let[@inline] [@zero_alloc] fast_upper_bound_from angle =
+  (* The geodesic (surface) distance is always at least as large as the chord through
+     the sphere's interior, so squaring the radians-valued angle gives a valid
+     [length2]. The squared radian is accurate to within about 1% of the true squared
+     chord up to surface distances around 3100 km on Earth. *)
+  let r = S1_angle.radians angle in
+  of_length2 Float_u.O.(r * r)
+;;
 
 let[@inline] [@zero_alloc] length2 t = t
 
