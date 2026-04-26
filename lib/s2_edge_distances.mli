@@ -32,7 +32,6 @@
     - The [S1ChordAngle]-argument variants of {!get_point_on_line}, {!get_point_on_ray},
       {!get_point_to_left}, and {!get_point_to_right} are not exposed; only the
       [S1Angle]-argument versions are available.
-    - The overload of [Project] that accepts a precomputed [a_cross_b] is not exposed.
     - The constants [kProjectPerpendicularError], [kGetPointOnLineError], and
       [kGetPointOnRayPerpendicularError] are not exposed. *)
 
@@ -128,6 +127,17 @@ val get_update_min_distance_max_error : S1_chord_angle.t -> float#
     result along AB can be recovered via {!get_distance_fraction}. All inputs must be unit
     length. *)
 val project : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t
+
+(** [project_with_cross x a b a_cross_b] is a slightly faster {!project} for callers who
+    have already computed the cross product of the edge endpoints. The cross product does
+    not need to be normalized but should come from {!S2_point.robust_cross_prod} for the
+    most accurate result. All of [x], [a], [b] must be unit length. *)
+val project_with_cross
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
 
 (** {1 Interpolation} *)
 

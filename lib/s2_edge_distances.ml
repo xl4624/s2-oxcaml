@@ -207,10 +207,6 @@ type closest_points =
    ; b : S2_point.t
    }
 
-(* Project that takes a precomputed a_cross_b (not necessarily normalized).
-   TODO: expose as a public API mirroring the C++ overload in
-   s2edge_distances.h:119-120 and its error bound
-   kProjectPerpendicularError in s2edge_distances.h:125-126. *)
 let[@inline] [@zero_alloc] project_with_cross x a b a_cross_b =
   if S2_point.equal x a || S2_point.equal x b
   then x

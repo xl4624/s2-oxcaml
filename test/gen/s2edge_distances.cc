@@ -495,6 +495,34 @@ int main() {
         out["project"] = cases;
     }
 
+    // Project (precomputed cross-product overload) - mirror the same scenarios
+    // as `project` so we can verify [project_with_cross] matches the standard
+    // [project] when fed [RobustCrossProd(a, b)].
+    {
+        json cases = json::array();
+        auto proj_case = [&](S2Point x, S2Point a, S2Point b) {
+            x = x.Normalize();
+            a = a.Normalize();
+            b = b.Normalize();
+            S2Point cross = S2::RobustCrossProd(a, b);
+            S2Point p = S2::Project(x, a, b, cross);
+            return json{{"x", point_json(x)},
+                        {"a", point_json(a)},
+                        {"b", point_json(b)},
+                        {"a_cross_b", point_json(cross)},
+                        {"projected", point_json(p)}};
+        };
+        cases.push_back(
+            proj_case(S2Point(1, 1, 1), S2Point(1, 0, 0), S2Point(0, 1, 0)));
+        cases.push_back(
+            proj_case(S2Point(0, 0, 1), S2Point(1, 0, 0), S2Point(0, 1, 0)));
+        cases.push_back(
+            proj_case(S2Point(1, 0, 0), S2Point(1, 0, 0), S2Point(0, 1, 0)));
+        cases.push_back(
+            proj_case(S2Point(0, 1, 0), S2Point(1, 0, 0), S2Point(0, 1, 0)));
+        out["project_with_cross"] = cases;
+    }
+
     // GetPointOnLine test cases
     {
         json cases = json::array();

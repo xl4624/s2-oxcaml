@@ -340,7 +340,7 @@ track which types still lack Encode/Decode:
 
 - [ ] `s2_edge_distances`: `S1ChordAngle`-argument overloads of `GetPointOnRay`,
       `GetPointOnLine`, `GetPointToLeft`, `GetPointToRight`
-- [ ] `s2_edge_distances`: expose `project_with_cross` as a public API mirroring
+- [x] `s2_edge_distances`: expose `project_with_cross` as a public API mirroring
       the C++ overload in `s2edge_distances.h:119-120`
 - [x] `s2_edge_crossings`: expose standalone `SignedVertexCrossing` (currently
       only reachable as a private helper inside `s2_edge_crosser`)

@@ -333,6 +333,25 @@ let test_project_fixture () =
            expected))
 ;;
 
+let test_project_with_cross_fixture () =
+  let cases = to_list (member "project_with_cross" (Lazy.force fixture)) in
+  List.iteri cases ~f:(fun i c ->
+    let x = point_of_json (member "x" c) in
+    let a = point_of_json (member "a" c) in
+    let b = point_of_json (member "b" c) in
+    let a_cross_b = point_of_json (member "a_cross_b" c) in
+    let expected = point_of_json (member "projected" c) in
+    let actual = S2.S2_edge_distances.project_with_cross x a b a_cross_b in
+    check_bool
+      (sprintf "project_with_cross[%d]" i)
+      ~expected:true
+      ~actual:
+        (S2.S2_point.approx_equal
+           ~max_error:(Packed_float_option.Unboxed.none ())
+           actual
+           expected))
+;;
+
 (* ---------- Alcotest suite ---------- *)
 
 let () =
@@ -342,6 +361,10 @@ let () =
       , [ Alcotest.test_case "get_distance" `Quick test_distance
         ; Alcotest.test_case "project" `Quick test_project
         ; Alcotest.test_case "project_fixture" `Quick test_project_fixture
+        ; Alcotest.test_case
+            "project_with_cross_fixture"
+            `Quick
+            test_project_with_cross_fixture
         ] )
     ; ( "max_distance"
       , [ Alcotest.test_case "update_max_distance" `Quick test_max_distance ] )
