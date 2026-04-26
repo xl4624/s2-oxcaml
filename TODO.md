@@ -88,9 +88,15 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_edge_wrap.h`, `.cc`
   - Deps: `s2_shape`
 
-- [ ] **s2_shapeutil_conversion** - `S2_shapeutil.conversion` (shape-to-shape rewrites)
+- [x] **s2_shapeutil_conversion** - `S2_shapeutil_conversion`
+      (`shape_to_points`, `shape_to_polyline`, `shape_to_polygon`. Inlines a
+      private `chain_vertices` helper since `s2_shape_measures` (Tier 10) is
+      not yet ported. `shape_to_polygon` recognises the full-polygon
+      convention up front and routes single-loop shapes through
+      `S2_polygon.of_loops` and multi-loop shapes through
+      `S2_polygon.of_oriented_loops`.)
   - C++: `s2shapeutil_conversion.h`, `.cc`
-  - Deps: `s2_shape`, `s2_lax_polygon`, `s2_lax_polyline`
+  - Deps: `s2_shape`, `s2_polygon`, `s2_polyline`
 
 - [ ] **s2_shapeutil_build_polygon_boundaries** - `S2_shapeutil.build_polygon_boundaries`
   - C++: `s2shapeutil_build_polygon_boundaries.h`, `.cc`
