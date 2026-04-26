@@ -360,7 +360,7 @@ track which types still lack Encode/Decode:
 - [ ] `s2_predicates`: `CircleEdgeIntersectionSign`, `CircleEdgeIntersectionOrdering`
 - [ ] `s2_predicates`: `EdgeCircumcenterSign`, `GetVoronoiSiteExclusion`
       (required for faithful `S2_builder` Voronoi snapping)
-- [ ] `s2_predicates`: low-level `TriageSign`, `ExpensiveSign`, `UnperturbedSign`
+- [x] `s2_predicates`: low-level `TriageSign`, `ExpensiveSign`, `UnperturbedSign`
       entry points (for callers that precompute cross products)
 
 ### Query extensions

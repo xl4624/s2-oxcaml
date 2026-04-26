@@ -74,6 +74,67 @@ let test_sign_basic () = test_sign_section "sign_basic" ()
 let test_sign_collinear () = test_sign_section "sign_collinear" ()
 let test_sign_symbolic () = test_sign_section "sign_symbolic" ()
 
+(* Verify the low-level entry points compose into [robust_sign]:
+   - [triage_sign_with_cross] matches [triage_sign] when fed [V.cross a b].
+   - [triage_sign] then [expensive_sign ~perturb:true] reproduces [robust_sign].
+   - [unperturbed_sign] matches [robust_sign] for cases where no symbolic
+     perturbation is required (i.e. [robust_sign] returned a non-zero value
+     via the triage or stable tier rather than via Edelsbrunner-Muecke). *)
+let test_low_level_sign_section section_name () =
+  let cases = to_list (member section_name (Lazy.force fixture)) in
+  List.iter cases ~f:(fun c ->
+    let label = string_of_json_exn (member "label" c) in
+    let a = point_of_json (member "a" c) in
+    let b = point_of_json (member "b" c) in
+    let c_pt = point_of_json (member "c" c) in
+    let robust = S2.S2_predicates.robust_sign a b c_pt in
+    let triage = S2.S2_predicates.triage_sign a b c_pt in
+    let triage_with =
+      S2.S2_predicates.triage_sign_with_cross a b c_pt (S2.R3_vector.cross a b)
+    in
+    if Int.( <> )
+         (S2.S2_predicates.Direction.to_int triage)
+         (S2.S2_predicates.Direction.to_int triage_with)
+    then
+      Alcotest.failf
+        "%s/%s: triage_sign_with_cross disagrees with triage_sign"
+        section_name
+        label;
+    let composed =
+      match triage with
+      | S2.S2_predicates.Direction.Counter_clockwise | Clockwise -> triage
+      | Indeterminate -> S2.S2_predicates.expensive_sign a b c_pt ~perturb:true
+    in
+    let composed_int = S2.S2_predicates.Direction.to_int composed in
+    let robust_int_check = S2.S2_predicates.Direction.to_int robust in
+    if Int.( <> ) composed_int robust_int_check
+    then
+      Alcotest.failf
+        "%s/%s: triage + expensive_sign(~perturb:true) = %d, robust_sign = %d"
+        section_name
+        label
+        composed_int
+        robust_int_check;
+    let unperturbed = S2.S2_predicates.unperturbed_sign a b c_pt in
+    let robust_int = S2.S2_predicates.Direction.to_int robust in
+    let unperturbed_int = S2.S2_predicates.Direction.to_int unperturbed in
+    (* When robust_sign returns a non-zero value via triage or stable tiers,
+       unperturbed_sign returns the same; in the symbolic-perturbation cases
+       it returns 0 instead. So unperturbed must equal either robust or 0. *)
+    if Int.( <> ) unperturbed_int 0 && Int.( <> ) unperturbed_int robust_int
+    then
+      Alcotest.failf
+        "%s/%s: unperturbed_sign = %d, robust_sign = %d (expected 0 or robust)"
+        section_name
+        label
+        unperturbed_int
+        robust_int)
+;;
+
+let test_low_level_basic () = test_low_level_sign_section "sign_basic" ()
+let test_low_level_collinear () = test_low_level_sign_section "sign_collinear" ()
+let test_low_level_symbolic () = test_low_level_sign_section "sign_symbolic" ()
+
 let test_sign_underflow () =
   let cases = to_list (member "sign_underflow" (Lazy.force fixture)) in
   List.iter cases ~f:(fun c ->
@@ -176,6 +237,11 @@ let () =
         ; Alcotest.test_case "underflow" `Quick test_sign_underflow
         ; Alcotest.test_case "collinear" `Quick test_sign_collinear
         ; Alcotest.test_case "symbolic" `Quick test_sign_symbolic
+        ] )
+    ; ( "sign_low_level"
+      , [ Alcotest.test_case "basic" `Quick test_low_level_basic
+        ; Alcotest.test_case "collinear" `Quick test_low_level_collinear
+        ; Alcotest.test_case "symbolic" `Quick test_low_level_symbolic
         ] )
     ; "ordered_ccw", [ Alcotest.test_case "ordered_ccw" `Quick test_ordered_ccw ]
     ; ( "compare_distances"

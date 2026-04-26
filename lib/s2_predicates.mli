@@ -17,8 +17,7 @@
     Limitations: the following upstream predicates are not yet ported -
     - [CompareEdgeDistance], [CompareEdgePairDistance], [CompareEdgeDirections]
     - [CircleEdgeIntersectionSign], [CircleEdgeIntersectionOrdering]
-    - [EdgeCircumcenterSign], [GetVoronoiSiteExclusion]
-    - the lower-level [TriageSign], [ExpensiveSign], [UnperturbedSign] entry points. *)
+    - [EdgeCircumcenterSign], [GetVoronoiSiteExclusion] *)
 
 open Core
 
@@ -56,6 +55,53 @@ val sign : S2_point.t -> S2_point.t -> S2_point.t -> bool
     - [robust_sign b c a = robust_sign a b c] (cyclic rotation preserves the sign)
     - [robust_sign c b a = -robust_sign a b c] (swapping two arguments inverts it) *)
 val robust_sign : S2_point.t -> S2_point.t -> S2_point.t -> Direction.t
+
+(** {2 Low-level entry points}
+
+    {!robust_sign} above is a three-tier cascade: a fast floating-point triage, a stable
+    determinant fallback, and finally exact arithmetic with symbolic perturbation. The
+    functions below expose the individual tiers for callers that need finer control - for
+    example, to interleave their own work between tiers, or to reuse a precomputed
+    [a x b]. Most callers should prefer {!robust_sign}. *)
+
+(** [triage_sign a b c] is the fast floating-point triage tier. Returns
+    {!Direction.Counter_clockwise} or {!Direction.Clockwise} when the signed determinant
+    [(a x b) . c] is definitely outside the rounding envelope, and
+    {!Direction.Indeterminate} when it is inside. Indeterminate results should be
+    resolved by falling through to {!expensive_sign}. *)
+val triage_sign : S2_point.t -> S2_point.t -> S2_point.t -> Direction.t
+
+(** [triage_sign_with_cross a b c a_cross_b] is {!triage_sign} for callers that have
+    already computed [a x b]. The cross product must come from {!R3_vector.cross} (i.e.
+    the plain unnormalized form), {b not} from {!S2_point.robust_cross_prod}.
+
+    Precondition: [a_cross_b = R3_vector.cross a b]. *)
+val triage_sign_with_cross
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> Direction.t
+
+(** [expensive_sign a b c ~perturb] runs the slow path: a stable determinant
+    formulation followed, on exact zero, by an arbitrary-precision determinant plus
+    symbolic perturbation when [perturb] is [true]. Returns {!Direction.Indeterminate}
+    only when two arguments are equal (or, if [perturb] is [false], when the three
+    points are exactly coplanar with the origin). Inputs need not be unit-length. *)
+val expensive_sign
+  :  S2_point.t
+  -> S2_point.t
+  -> S2_point.t
+  -> perturb:bool
+  -> Direction.t
+
+(** [unperturbed_sign a b c] is like {!robust_sign} but disables the symbolic
+    perturbation step, so it returns {!Direction.Indeterminate} whenever the three
+    inputs are exactly coplanar with the origin (linearly dependent), even when they
+    are pairwise distinct. Most callers should not use this directly; it is exposed
+    for predicates such as [EdgeCircumcenterSign] that compose their own perturbation
+    schemes from this primitive. *)
+val unperturbed_sign : S2_point.t -> S2_point.t -> S2_point.t -> Direction.t
 
 (** [ordered_ccw a b c o] returns [true] iff the directed edges [OA], [OB], [OC] are
     encountered in that order when sweeping counter-clockwise around [o]. Equivalently,

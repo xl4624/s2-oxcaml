@@ -412,6 +412,32 @@ let[@zero_alloc] sign_dot_prod a b =
    from s2predicates.h:205-264 / s2predicates.cc. *)
 (* TODO: port EdgeCircumcenterSign and GetVoronoiSiteExclusion from
    s2predicates.h:279-316 / s2predicates.cc. *)
-(* TODO: port the low-level TriageSign / ExpensiveSign / UnperturbedSign
-   entry points from s2predicates.h:318-420 for callers that want to supply
-   their own precomputed cross products. *)
+(* Fast triage that takes a precomputed [a x b] (computed via [V.cross], not
+   [robust_cross_prod]). The det error bound is the same as [triage_sign] above; the
+   only saving here is one cross product. The [a] and [b] arguments are not used at
+   runtime, but are kept in the signature so the precondition [a_cross_b = V.cross a b]
+   stays visible to callers. *)
+let[@inline] [@zero_alloc] triage_sign_with_cross _a _b c a_cross_b =
+  let open Float_u.O in
+  let det = V.dot a_cross_b c in
+  if det > max_determinant_error ()
+  then Direction.Counter_clockwise
+  else if det < Float_u.neg (max_determinant_error ())
+  then Direction.Clockwise
+  else Direction.Indeterminate
+;;
+
+let[@zero_alloc] expensive_sign a b c ~perturb =
+  (* The internal [exact_sign] assumes pairwise-distinct inputs because the symbolic
+     perturbation step requires lexicographic ordering of the three points. Match the
+     C++ [ExpensiveSign] contract by short-circuiting when any two points coincide. *)
+  if V.equal a b || V.equal b c || V.equal c a
+  then Direction.Indeterminate
+  else Direction.of_int (exact_sign a b c ~perturb)
+;;
+
+let[@zero_alloc] unperturbed_sign a b c =
+  match triage_sign a b c with
+  | (Counter_clockwise | Clockwise) as s -> s
+  | Indeterminate -> expensive_sign a b c ~perturb:false
+;;
