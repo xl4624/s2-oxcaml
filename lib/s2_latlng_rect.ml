@@ -4,7 +4,7 @@ type t =
   #{ lat : R1_interval.t
    ; lng : S1_interval.t
    }
-[@@deriving sexp_of]
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 let full_lat =
   let open Float_u.O in

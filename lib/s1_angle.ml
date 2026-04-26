@@ -1,6 +1,6 @@
 open Core
 
-type t = Float_u.t
+type t = Float_u.t [@@deriving unboxed_option { sentinel = true }]
 
 let%template[@alloc a = (heap, stack)] [@inline] sexp_of_t t : Sexp.t =
   Sexp.List [ Sexp.List [ Sexp.Atom "radians"; Float.sexp_of_t (Float_u.to_float t) ] ]

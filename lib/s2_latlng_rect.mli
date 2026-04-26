@@ -18,7 +18,8 @@ open Core
 
 [@@@zero_alloc all]
 
-type t : (float64 & float64) & (float64 & float64) [@@deriving sexp_of]
+type t : (float64 & float64) & (float64 & float64)
+[@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 

@@ -458,25 +458,29 @@ and land it independently.
 ### Types that should derive `unboxed_option`
 
 `unboxed_option` already lives on `r1_interval`, `r2_point`, `r2_rect`,
-`r3_vector`, `s1_chord_angle`, `s2_cap`, `s2_latlng`, and `s2_point`. Extend
-to the remaining types that have an obvious sentinel so callers can skip
-`Option`-header allocation.
+`r3_vector`, `s1_chord_angle`, `s2_cap`, `s2_latlng`, `s2_point`, `s1_angle`,
+`s1_interval`, `s2_latlng_rect`, and `s2_cell_id`. Extend to the remaining
+types that have an obvious sentinel so callers can skip `Option`-header
+allocation.
 
-- [ ] `s2_cell_id` (`type t : bits64`): sentinel candidate is
-      `S2_cell_id.none` (all zeros) or the already-reserved `sentinel`.
-      Eliminates `S2_cell_id.t option` boxing in shape-index builds and
-      crossing-edge query paths.
-- [ ] `s1_angle` (alias of `Float_u.t`): consider an alias for
-      `Packed_float_option.Unboxed` with `nan` as the sentinel, or expose
-      `S1_angle.Unboxed_option` for APIs currently returning
-      `S1_angle.t option`.
-- [ ] `s1_interval` (`float# & float#`): pair-sentinel pattern already used
-      by `r1_interval`; port the derivation.
-- [ ] `s2_latlng_rect` (two intervals): derivable once `s1_interval` and
-      `r1_interval` expose sentinels consistently.
+- [x] `s2_cell_id` (`type t : bits64`): `[@@deriving unboxed_option { sentinel
+      = true }]`. The PPX-chosen sentinel is `Int64.min_value`, which is
+      distinct from both `S2_cell_id.none` (all zeros) and `S2_cell_id.sentinel`
+      (all ones), so existing reserved values keep their meaning.
+- [x] `s1_angle` (alias of `Float_u.t`): `[@@deriving unboxed_option { sentinel
+      = true }]` (sentinel is `Float_u.nan ()`).
+- [x] `s1_interval` (`float# & float#`): `[@@deriving unboxed_option { sentinel
+      = true }]`, matching the `r1_interval` pattern.
+- [x] `s2_latlng_rect` (two intervals): `[@@deriving unboxed_option { sentinel
+      = true }]`, now that `s1_interval` and `r1_interval` both expose
+      sentinels.
 - [ ] `s2_cell` (unboxed record with `id`, `face`, `level`, `orientation`,
-      `uv`): pick a sentinel `id` (reuse `S2_cell_id.none`); then
-      `S2_cell.t option` return types can go away.
+      `uv`): blocked. `ppx_uopt` requires every field to be either an unboxed
+      scalar or a module-qualified `M.t` with `M.Option.none`; the `int` fields
+      `face`/`level`/`orientation` are immediate but not `int#`, so they fail
+      the contract check. Either migrate the int fields to `int#`, or write a
+      hand-rolled `Option` module that uses `S2_cell_id.none` as the
+      discriminator.
 
 ### Single-field record wrappers that should be `[@@unboxed]`
 
@@ -591,5 +595,9 @@ wrapping:
       value-layout), and `test_s2_cap.ml`'s encode/decode test where the
       "actual" value comes from `get_le_f64_from_string` (boxed
       bytes-to-float helper); both sides are intentionally boxed there.
-- [ ] Sweep for `Alcotest.(check (float _))` at sites where
-      `Test_helpers.check_float_u` would apply.
+- [x] Sweep for `Alcotest.(check (float _))` at sites where
+      `Test_helpers.check_float_u` would apply. No raw Alcotest float
+      testables in use; the project standardised on
+      `Test_helpers.check_float` / `check_float_u` already, and the
+      remaining boxed `check_float` call sites are the two
+      intentional holdouts noted above.

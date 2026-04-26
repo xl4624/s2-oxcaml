@@ -66,7 +66,7 @@ module Hilbert = struct
   let lookup = make_lookup_tables ()
 end
 
-type t = int64#
+type t = int64# [@@deriving unboxed_option { sentinel = true }]
 
 let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t t : Sexp.t
   =

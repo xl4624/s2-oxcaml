@@ -38,7 +38,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t : float64 [@@deriving sexp_of]
+type t : float64 [@@deriving sexp_of, unboxed_option { sentinel = true }]
 
 val%template sexp_of_t : t -> Sexp.t @ m
 [@@alloc a @ m = (heap @ global, stack @ local)] [@@zero_alloc ignore]

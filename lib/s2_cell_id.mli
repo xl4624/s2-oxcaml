@@ -25,7 +25,7 @@ open Core
 
 [@@@zero_alloc all]
 
-type t : bits64
+type t : bits64 [@@deriving unboxed_option { sentinel = true }]
 
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val hash : t -> int [@@zero_alloc ignore]
