@@ -115,9 +115,6 @@ let[@inline] [@zero_alloc] of_e7_exn ~lat ~lng =
    Intended for values that have been round-tripped through unsigned proto
    fixed32 fields. *)
 
-(* TODO: port ToStringInDegrees from s2latlng.cc:111-114. Formats the
-   normalized latlng as "lat_deg,lng_deg". *)
-
 let[@inline] [@zero_alloc] lat t = S1_angle.of_radians t.#lat
 let[@inline] [@zero_alloc] lng t = S1_angle.of_radians t.#lng
 
@@ -167,6 +164,15 @@ let[@inline] [@zero_alloc] normalized t : t =
     in
     let lng = Float_util.ieee_remainder_u t.#lng (#2.0 * Float_u.pi ()) in
     #{ lat; lng }
+;;
+
+let[@zero_alloc ignore] to_string_in_degrees t =
+  let n = normalized t in
+  let open Float_u.O in
+  let scale = #180.0 / Float_u.pi () in
+  let lat_deg = Float_u.to_float (n.#lat * scale) in
+  let lng_deg = Float_u.to_float (n.#lng * scale) in
+  Printf.sprintf "%f,%f" lat_deg lng_deg
 ;;
 
 let[@inline] [@zero_alloc] to_point t =

@@ -9,10 +9,10 @@
    -  E5/E6/E7 constructors          - e_constructors
    -  ToPoint                        - to_point
    -  ApproxEquals                   - approx_equal
+   -  TEST(S2LatLng, TestToString)    - to_string_in_degrees
 
    Deliberately omitted:
    -  TEST(S2LatLng, InfIsInvalid) / NanIsInvalid - covered by is_valid cases
-   -  TEST(S2LatLng, TestToString)    - string formatting not ported
    -  TEST(S2LatLng, TestHashCode)    - hash not ported
    -  TEST(S2LatLng, S2CoderWorks)    - serialization not ported
    -  TEST(S2LatLng, SupportsAbslHash) - hash not ported
@@ -278,6 +278,20 @@ let test_to_point fixture () =
     check_r3_vector (name ^ " to_point") ~expected ~actual:result)
 ;;
 
+let test_to_string_in_degrees fixture () =
+  let cases = to_list (member "to_string_in_degrees" fixture) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let ll =
+      S2.S2_latlng.of_degrees
+        ~lat:(float_u_of_json_exn (member "lat_deg" c))
+        ~lng:(float_u_of_json_exn (member "lng_deg" c))
+    in
+    let expected = string_of_json_exn (member "expected" c) in
+    let actual = S2.S2_latlng.to_string_in_degrees ll in
+    Alcotest.check Alcotest.string (name ^ " to_string_in_degrees") expected actual)
+;;
+
 let () =
   let fixture = load_fixture "s2latlng.json" in
   Alcotest.run
@@ -295,5 +309,7 @@ let () =
     ; ( "e_constructors"
       , [ test_case "E_Constructors" `Quick (test_e_constructors fixture) ] )
     ; "to_point", [ test_case "ToPoint" `Quick (test_to_point fixture) ]
+    ; ( "to_string_in_degrees"
+      , [ test_case "TestToString" `Quick (test_to_string_in_degrees fixture) ] )
     ]
 ;;

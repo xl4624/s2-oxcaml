@@ -333,7 +333,7 @@ track which types still lack Encode/Decode:
       of circular dependencies.
 - [ ] `s1_chord_angle`: `FastUpperBoundFrom` (radians-squared upper bound)
 - [ ] `s2_latlng`: `FromUnsignedE6` / `FromUnsignedE7` (proto fixed32 round-trip)
-- [ ] `s2_latlng`: `ToStringInDegrees` ("lat,lng" formatted string)
+- [x] `s2_latlng`: `ToStringInDegrees` ("lat,lng" formatted string)
 - [ ] `r2_point`: `R2Edge` (pair of `R2Point`s, if a caller needs it)
 
 ### Distance and projection APIs

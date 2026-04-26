@@ -365,6 +365,30 @@ int main() {
         out["to_point"] = cases;
     }
 
+    // TEST(S2LatLng, TestToString) - ToStringInDegrees produces "lat,lng"
+    // formatted with %f (default 6 decimals of precision) after normalizing
+    // out-of-range inputs.
+    {
+        json cases = json::array();
+        auto test = [&](const std::string &name, double lat_deg,
+                        double lng_deg) {
+            S2LatLng ll = S2LatLng::FromDegrees(lat_deg, lng_deg);
+            cases.push_back({
+                {"name", name},
+                {"lat_deg", lat_deg},
+                {"lng_deg", lng_deg},
+                {"expected", ll.ToStringInDegrees()},
+            });
+        };
+        test("zero", 0, 0);
+        test("simple", 1.5, 91.7);
+        test("negative", 9.9, -0.31);
+        test("irrational", std::sqrt(2.0), -std::sqrt(5.0));
+        test("over_lat_91", 91.3, 190.4);
+        test("under_lat_neg100", -100, -710);
+        out["to_string_in_degrees"] = cases;
+    }
+
     std::cout << out.dump(2) << std::endl;
     return 0;
 }

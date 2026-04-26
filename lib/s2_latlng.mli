@@ -16,8 +16,7 @@
 
     {2 Limitations}
 
-    - [ToStringInDegrees] from the C++ API is not exposed; use {!pp} for debug output.
-    - The [FromUnsignedE6] / [FromUnsignedE7] constructors are not exposed. *)
+    The [FromUnsignedE6] / [FromUnsignedE7] constructors are not exposed. *)
 open Core
 
 [@@@zero_alloc all]
@@ -27,6 +26,14 @@ type t : float64 & float64 [@@deriving sexp_of, unboxed_option { sentinel = true
 val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 val pp : Format.formatter -> t -> unit [@@zero_alloc ignore]
 val to_string : t -> string [@@zero_alloc ignore]
+
+(** [to_string_in_degrees t] returns the latitude and longitude of [t] (after
+    {!normalized}) in degrees, separated by a comma, each formatted to six digits after
+    the decimal point. For example,
+    [to_string_in_degrees (of_degrees ~lat:#94.518 ~lng:#150.300)] returns
+    ["90.000000,150.300000"] (the [94.518] latitude is clamped to [90] by normalization). *)
+val to_string_in_degrees : t -> string
+[@@zero_alloc ignore]
 
 (** {1 Constructors} *)
 
