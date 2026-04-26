@@ -582,8 +582,14 @@ wrapping:
 
 ### Test-side boxing
 
-- [ ] Sweep `test/test_*.ml` for leftover `float_of_json_exn` (the boxed
+- [x] Sweep `test/test_*.ml` for leftover `float_of_json_exn` (the boxed
       variant). Per AGENTS.md it is a smell outside quickcheck generators;
       fixture-driven tests should be fully `float#`-native.
+      Two non-trivial holdouts remain: `test_s2_measures.ml`'s
+      `List.fold` accumulator (would require switching to a
+      mutable-local pattern because `'a` in `'a list` /`'a ref` must be
+      value-layout), and `test_s2_cap.ml`'s encode/decode test where the
+      "actual" value comes from `get_le_f64_from_string` (boxed
+      bytes-to-float helper); both sides are intentionally boxed there.
 - [ ] Sweep for `Alcotest.(check (float _))` at sites where
       `Test_helpers.check_float_u` would apply.

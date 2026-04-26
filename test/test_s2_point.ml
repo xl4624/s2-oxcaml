@@ -145,8 +145,11 @@ let test_frames fixture () =
        columns: det = col0 . (col1 x col2). An orthonormal right-handed frame
        satisfies det = 1. *)
     let #{ S2.S2_point.col0; col1; col2 } = frame in
-    let det = Float_u.to_float (S2.R3_vector.dot col0 (S2.R3_vector.cross col1 col2)) in
-    check_float (name ^ " det") ~expected:(float_of_json_exn (member "det" c)) ~actual:det)
+    let det = S2.R3_vector.dot col0 (S2.R3_vector.cross col1 col2) in
+    check_float_u
+      (name ^ " det")
+      ~expected:(float_u_of_json_exn (member "det" c))
+      ~actual:det)
 ;;
 
 let test_rotate fixture () =

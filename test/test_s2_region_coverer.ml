@@ -123,12 +123,8 @@ let test_cap_coverings () =
     let max_cells = int_of_json_exn (member "max_cells" entry) in
     let level_mod = int_of_json_exn (member "level_mod" entry) in
     let center = r3_vector_of_json (member "center" entry) in
-    let radius_deg = float_of_json_exn (member "radius_deg" entry) in
-    let cap =
-      S2.S2_cap.of_center_angle
-        center
-        (S2.S1_angle.of_degrees (Float_u.of_float radius_deg))
-    in
+    let radius_deg = float_u_of_json_exn (member "radius_deg" entry) in
+    let cap = S2.S2_cap.of_center_angle center (S2.S1_angle.of_degrees radius_deg) in
     let rc = S2.S2_region_coverer.create ~min_level ~max_level ~max_cells ~level_mod () in
     let region = S2.S2_region.of_cap cap in
     let covering = S2.S2_region_coverer.covering rc region in
@@ -271,12 +267,8 @@ let test_fast_covering () =
     | "cap_fast" ->
       let expected = cell_ids_of_json (member "covering" entry) in
       let center = r3_vector_of_json (member "center" entry) in
-      let radius_deg = float_of_json_exn (member "radius_deg" entry) in
-      let cap =
-        S2.S2_cap.of_center_angle
-          center
-          (S2.S1_angle.of_degrees (Float_u.of_float radius_deg))
-      in
+      let radius_deg = float_u_of_json_exn (member "radius_deg" entry) in
+      let cap = S2.S2_cap.of_center_angle center (S2.S1_angle.of_degrees radius_deg) in
       let rc = S2.S2_region_coverer.create () in
       let covering = S2.S2_region_coverer.fast_covering rc (S2.S2_region.of_cap cap) in
       let actual = S2.S2_cell_union.cell_ids_raw covering in

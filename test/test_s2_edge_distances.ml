@@ -112,9 +112,9 @@ let test_project () =
     let expected_closest = point_of_json (member "closest" c) in
     let is_endpoint = bool_of_json_exn (member "expected_closest_is_endpoint" c) in
     let closest = S2.S2_edge_distances.project x a b in
-    let dist_radians = float_of_json_exn (member "distance_radians" c) in
+    let dist_radians = float_u_of_json_exn (member "distance_radians" c) in
     (* When distance is pi/2, the closest point is ambiguous on which side *)
-    if not (Float.( = ) dist_radians (Float.pi /. 2.0))
+    if not Float_u.O.(dist_radians = Float_u.pi () / #2.0)
     then
       if is_endpoint
       then
@@ -204,7 +204,7 @@ let test_interior_distance_conservative () =
   let x = point_of_json (member "x" c) in
   let a = point_of_json (member "a" c) in
   let b = point_of_json (member "b" c) in
-  let expected_length2 = float_of_json_exn (member "min_distance_length2" c) in
+  let expected_length2 = float_u_of_json_exn (member "min_distance_length2" c) in
   let result =
     S2.S2_edge_distances.update_min_distance x a b S2.S1_chord_angle.infinity
   in
@@ -212,10 +212,10 @@ let test_interior_distance_conservative () =
   (match%optional_u.S2.S1_chord_angle.Option result with
    | None -> Alcotest.fail "expected Some"
    | Some d ->
-     check_float
+     check_float_u
        "length2"
        ~expected:expected_length2
-       ~actual:(Float_u.to_float (S2.S1_chord_angle.length2 d)));
+       ~actual:(S2.S1_chord_angle.length2 d));
   (* Also test that successor still updates (conservative lower bound test) *)
   match%optional_u.S2.S1_chord_angle.Option result with
   | None -> ()
@@ -267,19 +267,15 @@ let test_point_to_left_right () =
   let r = float_u_of_json_exn (member "distance_radians" c) in
   let expected_left = point_of_json (member "left" c) in
   let expected_right = point_of_json (member "right" c) in
-  let expected_left_dist = float_of_json_exn (member "left_dist" c) in
-  let expected_right_dist = float_of_json_exn (member "right_dist" c) in
+  let expected_left_dist = float_u_of_json_exn (member "left_dist" c) in
+  let expected_right_dist = float_u_of_json_exn (member "right_dist" c) in
   let angle = S2.S1_angle.of_radians r in
   let actual_left = S2.S2_edge_distances.get_point_to_left a b angle in
   let actual_right = S2.S2_edge_distances.get_point_to_right a b angle in
-  let left_dist =
-    Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance a actual_left))
-  in
-  let right_dist =
-    Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance a actual_right))
-  in
-  check_float "left_dist" ~expected:expected_left_dist ~actual:left_dist;
-  check_float "right_dist" ~expected:expected_right_dist ~actual:right_dist;
+  let left_dist = S2.S1_angle.radians (S2.S2_point.distance a actual_left) in
+  let right_dist = S2.S1_angle.radians (S2.S2_point.distance a actual_right) in
+  check_float_u "left_dist" ~expected:expected_left_dist ~actual:left_dist;
+  check_float_u "right_dist" ~expected:expected_right_dist ~actual:right_dist;
   let me = Packed_float_option.Unboxed.some #1e-14 in
   check_bool
     "left_approx"

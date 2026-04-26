@@ -52,15 +52,12 @@ let test_planar_centroid_semi_equator () =
   let cv = point_of_json (member "c" c) in
   let expected = point_of_json (member "centroid" c) in
   let expected_normalized = point_of_json (member "centroid_normalized" c) in
-  let expected_norm = float_of_json_exn (member "centroid_norm" c) in
+  let expected_norm = float_u_of_json_exn (member "centroid_norm" c) in
   let actual = S2.S2_centroids.planar_centroid a b cv in
   check_point "centroid" ~expected ~actual;
   let actual_normalized = S2.R3_vector.normalize actual in
   check_point "normalized" ~expected:expected_normalized ~actual:actual_normalized;
-  check_float
-    "norm"
-    ~expected:expected_norm
-    ~actual:(Float_u.to_float (S2.R3_vector.norm actual))
+  check_float_u "norm" ~expected:expected_norm ~actual:(S2.R3_vector.norm actual)
 ;;
 
 let test_planar_centroid_cases () =
@@ -96,7 +93,7 @@ let test_edge_true_centroid_semi_equator () =
   let expected_bc = point_of_json (member "centroid_bc" c) in
   let expected_sum = point_of_json (member "centroid_sum" c) in
   let expected_normalized = point_of_json (member "centroid_sum_normalized" c) in
-  let expected_norm = float_of_json_exn (member "centroid_sum_norm" c) in
+  let expected_norm = float_u_of_json_exn (member "centroid_sum_norm" c) in
   let actual_ab = S2.S2_centroids.edge_true_centroid a b in
   let actual_bc = S2.S2_centroids.edge_true_centroid b cv in
   check_point "centroid_ab" ~expected:expected_ab ~actual:actual_ab;
@@ -105,10 +102,7 @@ let test_edge_true_centroid_semi_equator () =
   check_point "centroid_sum" ~expected:expected_sum ~actual:actual_sum;
   let actual_normalized = S2.R3_vector.normalize actual_sum in
   check_point "normalized" ~expected:expected_normalized ~actual:actual_normalized;
-  check_float
-    "norm"
-    ~expected:expected_norm
-    ~actual:(Float_u.to_float (S2.R3_vector.norm actual_sum))
+  check_float_u "norm" ~expected:expected_norm ~actual:(S2.R3_vector.norm actual_sum)
 ;;
 
 let test_edge_true_centroid_cases () =

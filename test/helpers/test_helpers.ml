@@ -277,9 +277,7 @@ let check_r3_vector msg ~(expected : S2.R3_vector.t) ~actual =
 let latlng_of_json_exn j =
   match to_list j with
   | [ lat; lng ] ->
-    S2.S2_latlng.of_radians
-      ~lat:(Float_u.of_float (float_of_json_exn lat))
-      ~lng:(Float_u.of_float (float_of_json_exn lng))
+    S2.S2_latlng.of_radians ~lat:(float_u_of_json_exn lat) ~lng:(float_u_of_json_exn lng)
   | _ ->
     (match failwith "expected [lat, lng]" with
      | (_ : Nothing.t) -> .)

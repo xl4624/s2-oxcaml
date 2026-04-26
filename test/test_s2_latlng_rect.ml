@@ -126,34 +126,26 @@ let test_empty_and_full () =
 let test_accessors () =
   let d = get "accessors" in
   let d1 = latlng_rect_of_json (member "d1" d) in
-  check_float
+  check_float_u
     "lat_lo deg"
     ~eps:1e-13
-    ~expected:(float_of_json_exn (member "d1_lat_lo_deg" d))
-    ~actual:
-      (Float_u.to_float
-         (S2.S1_angle.degrees (S2.S2_latlng.lat (S2.S2_latlng_rect.lo d1))));
-  check_float
+    ~expected:(float_u_of_json_exn (member "d1_lat_lo_deg" d))
+    ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lat (S2.S2_latlng_rect.lo d1)));
+  check_float_u
     "lat_hi deg"
     ~eps:1e-13
-    ~expected:(float_of_json_exn (member "d1_lat_hi_deg" d))
-    ~actual:
-      (Float_u.to_float
-         (S2.S1_angle.degrees (S2.S2_latlng.lat (S2.S2_latlng_rect.hi d1))));
-  check_float
+    ~expected:(float_u_of_json_exn (member "d1_lat_hi_deg" d))
+    ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lat (S2.S2_latlng_rect.hi d1)));
+  check_float_u
     "lng_lo deg"
     ~eps:1e-13
-    ~expected:(float_of_json_exn (member "d1_lng_lo_deg" d))
-    ~actual:
-      (Float_u.to_float
-         (S2.S1_angle.degrees (S2.S2_latlng.lng (S2.S2_latlng_rect.lo d1))));
-  check_float
+    ~expected:(float_u_of_json_exn (member "d1_lng_lo_deg" d))
+    ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lng (S2.S2_latlng_rect.lo d1)));
+  check_float_u
     "lng_hi deg"
     ~eps:1e-13
-    ~expected:(float_of_json_exn (member "d1_lng_hi_deg" d))
-    ~actual:
-      (Float_u.to_float
-         (S2.S1_angle.degrees (S2.S2_latlng.lng (S2.S2_latlng_rect.hi d1))))
+    ~expected:(float_u_of_json_exn (member "d1_lng_hi_deg" d))
+    ~actual:(S2.S1_angle.degrees (S2.S2_latlng.lng (S2.S2_latlng_rect.hi d1)))
 ;;
 
 let test_from_center_size () =
@@ -225,17 +217,17 @@ let test_get_center_size () =
     ~expected:(S2.S1_angle.radians (S2.S2_latlng.lng expected_s))
     ~actual:(S2.S1_angle.radians (S2.S2_latlng.lng s));
   (* Empty size should be negative *)
-  let empty_size_lat = float_of_json_exn (member "empty_size_lat_rad" d) in
-  let empty_size_lng = float_of_json_exn (member "empty_size_lng_rad" d) in
+  let empty_size_lat = float_u_of_json_exn (member "empty_size_lat_rad" d) in
+  let empty_size_lng = float_u_of_json_exn (member "empty_size_lng_rad" d) in
   let es = S2.S2_latlng_rect.size S2.S2_latlng_rect.empty in
-  check_float
+  check_float_u
     "empty size lat"
     ~expected:empty_size_lat
-    ~actual:(Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng.lat es)));
-  check_float
+    ~actual:(S2.S1_angle.radians (S2.S2_latlng.lat es));
+  check_float_u
     "empty size lng"
     ~expected:empty_size_lng
-    ~actual:(Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng.lng es)))
+    ~actual:(S2.S1_angle.radians (S2.S2_latlng.lng es))
 ;;
 
 let test_get_vertex () =
@@ -414,27 +406,24 @@ let test_polar_closure () =
 
 let test_area () =
   let d = get "area" in
-  let empty_area = float_of_json_exn (member "empty_area" d) in
-  let full_area = float_of_json_exn (member "full_area" d) in
-  let quarter_area = float_of_json_exn (member "quarter_area" d) in
-  check_float
+  let empty_area = float_u_of_json_exn (member "empty_area" d) in
+  let full_area = float_u_of_json_exn (member "full_area" d) in
+  let quarter_area = float_u_of_json_exn (member "quarter_area" d) in
+  check_float_u
     "empty"
     ~expected:empty_area
-    ~actual:(Float_u.to_float (S2.S2_latlng_rect.area S2.S2_latlng_rect.empty));
-  check_float
+    ~actual:(S2.S2_latlng_rect.area S2.S2_latlng_rect.empty);
+  check_float_u
     "full"
     ~expected:full_area
-    ~actual:(Float_u.to_float (S2.S2_latlng_rect.area S2.S2_latlng_rect.full));
+    ~actual:(S2.S2_latlng_rect.area S2.S2_latlng_rect.full);
   (* quarter sphere: lat=[0,pi/2], lng=[0,pi/2] *)
   let quarter =
     S2.S2_latlng_rect.create
       ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
       ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
   in
-  check_float
-    "quarter"
-    ~expected:quarter_area
-    ~actual:(Float_u.to_float (S2.S2_latlng_rect.area quarter))
+  check_float_u "quarter" ~expected:quarter_area ~actual:(S2.S2_latlng_rect.area quarter)
 ;;
 
 let test_centroid () =
@@ -509,16 +498,16 @@ let test_cap_bound () =
     let r = latlng_rect_of_json (member "rect" case) in
     let cap = S2.S2_latlng_rect.cap_bound r in
     let expected_center = r3_vector_of_json (member "cap_center" case) in
-    let expected_height = float_of_json_exn (member "cap_height" case) in
+    let expected_height = float_u_of_json_exn (member "cap_height" case) in
     check_r3_vector
       (label ^ " center")
       ~expected:expected_center
       ~actual:(S2.S2_cap.center cap);
-    check_float
+    check_float_u
       (label ^ " height")
       ~eps:1e-13
       ~expected:expected_height
-      ~actual:(Float_u.to_float (S2.S2_cap.height cap)))
+      ~actual:(S2.S2_cap.height cap))
 ;;
 
 let test_distance_to_latlng () =
@@ -527,11 +516,9 @@ let test_distance_to_latlng () =
     let label = string_of_json_exn (member "label" case) in
     let r = latlng_rect_of_json (member "rect" case) in
     let p = latlng_of_json_exn (member "point" case) in
-    let expected = float_of_json_exn (member "distance_rad" case) in
-    let actual =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng_rect.distance_to_latlng r p))
-    in
-    check_float (label ^ " dist") ~eps:1e-10 ~expected ~actual)
+    let expected = float_u_of_json_exn (member "distance_rad" case) in
+    let actual = S2.S1_angle.radians (S2.S2_latlng_rect.distance_to_latlng r p) in
+    check_float_u (label ^ " dist") ~eps:1e-10 ~expected ~actual)
 ;;
 
 let test_distance_overlapping () =
@@ -547,11 +534,9 @@ let test_distance_overlapping () =
       ~hi:(S2.S2_latlng.of_degrees ~lat:lat_hi ~lng:lng_hi)
   in
   let check key other =
-    let expected = float_of_json_exn (member key d) in
-    let actual =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng_rect.distance a other))
-    in
-    check_float key ~eps:1e-10 ~expected ~actual
+    let expected = float_u_of_json_exn (member key d) in
+    let actual = S2.S1_angle.radians (S2.S2_latlng_rect.distance a other) in
+    check_float_u key ~eps:1e-10 ~expected ~actual
   in
   check "self" a;
   check "overlap1" (make_rect #0. #1. #2. #3.);
@@ -586,12 +571,11 @@ let test_hausdorff_contained () =
       ~hi:(S2.S2_latlng.of_degrees ~lat:lat_hi ~lng:lng_hi)
   in
   let check key rect =
-    let expected = float_of_json_exn (member key d) in
+    let expected = float_u_of_json_exn (member key d) in
     let actual =
-      Float_u.to_float
-        (S2.S1_angle.radians (S2.S2_latlng_rect.directed_hausdorff_distance a rect))
+      S2.S1_angle.radians (S2.S2_latlng_rect.directed_hausdorff_distance a rect)
     in
-    check_float key ~eps:1e-10 ~expected ~actual
+    check_float_u key ~eps:1e-10 ~expected ~actual
   in
   check "same" (make_rect (-#10.) #20. (-#5.) #90.);
   check "bigger" (make_rect (-#10.) #19. (-#5.) #91.);
@@ -605,19 +589,16 @@ let test_hausdorff_point_to_rect () =
     let label = string_of_json_exn (member "label" case) in
     let a = latlng_rect_of_json (member "a" case) in
     let b = latlng_rect_of_json (member "b" case) in
-    let expected_h = float_of_json_exn (member "hausdorff_rad" case) in
-    let expected_d = float_of_json_exn (member "distance_rad" case) in
+    let expected_h = float_u_of_json_exn (member "hausdorff_rad" case) in
+    let expected_d = float_u_of_json_exn (member "distance_rad" case) in
     let actual_h =
-      Float_u.to_float
-        (S2.S1_angle.radians (S2.S2_latlng_rect.directed_hausdorff_distance a b))
+      S2.S1_angle.radians (S2.S2_latlng_rect.directed_hausdorff_distance a b)
     in
-    let actual_d =
-      Float_u.to_float (S2.S1_angle.radians (S2.S2_latlng_rect.distance a b))
-    in
-    check_float (label ^ " hausdorff") ~eps:1e-10 ~expected:expected_h ~actual:actual_h;
-    check_float (label ^ " distance") ~eps:1e-10 ~expected:expected_d ~actual:actual_d;
+    let actual_d = S2.S1_angle.radians (S2.S2_latlng_rect.distance a b) in
+    check_float_u (label ^ " hausdorff") ~eps:1e-10 ~expected:expected_h ~actual:actual_h;
+    check_float_u (label ^ " distance") ~eps:1e-10 ~expected:expected_d ~actual:actual_d;
     (* For a point rect, directed Hausdorff = distance *)
-    check_float (label ^ " h=d") ~eps:1e-10 ~expected:expected_h ~actual:actual_h)
+    check_float_u (label ^ " h=d") ~eps:1e-10 ~expected:expected_h ~actual:actual_h)
 ;;
 
 let test_hausdorff_distance () =
