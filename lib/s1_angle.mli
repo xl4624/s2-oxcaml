@@ -28,9 +28,9 @@ open Core
     testing equality, allow for small numerical error or compare discrete E5/E6/E7 values
     instead.
 
-    The C++ [S1Angle] constructors that take two [S2Point] or two [S2LatLng] values are
-    provided as {!S2_point.distance} and {!S2_latlng.distance} respectively, which avoids
-    a circular dependency between [S1_angle] and the higher-level point types.
+    The angle between two points or two latlngs is exposed as {!S2_point.distance} and
+    {!S2_latlng.distance} rather than as constructors here, since this module sits below
+    both of those in the dependency order.
 
     {1 Limitations}
 

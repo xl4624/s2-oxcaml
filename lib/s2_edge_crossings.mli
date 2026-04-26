@@ -26,8 +26,8 @@
 
     {2 Limitations}
 
-    The [S2::RobustCrossProd] helper and its error bound [kRobustCrossProdError] live in
-    {!S2_point} and are re-exported only indirectly. *)
+    Robust cross-product utilities live in {!S2_point} (see {!S2_point.robust_cross_prod})
+    rather than being re-exported here. *)
 
 open Core
 

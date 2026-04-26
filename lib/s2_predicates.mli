@@ -99,8 +99,8 @@ val expensive_sign
     perturbation step, so it returns {!Direction.Indeterminate} whenever the three
     inputs are exactly coplanar with the origin (linearly dependent), even when they
     are pairwise distinct. Most callers should not use this directly; it is exposed
-    for predicates such as [EdgeCircumcenterSign] that compose their own perturbation
-    schemes from this primitive. *)
+    for higher-level predicates that compose their own perturbation schemes on top of
+    this primitive. *)
 val unperturbed_sign : S2_point.t -> S2_point.t -> S2_point.t -> Direction.t
 
 (** [ordered_ccw a b c o] returns [true] iff the directed edges [OA], [OB], [OC] are

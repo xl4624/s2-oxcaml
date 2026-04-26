@@ -428,9 +428,10 @@ let[@inline] [@zero_alloc] triage_sign_with_cross _a _b c a_cross_b =
 ;;
 
 let[@zero_alloc] expensive_sign a b c ~perturb =
-  (* The internal [exact_sign] assumes pairwise-distinct inputs because the symbolic
-     perturbation step requires lexicographic ordering of the three points. Match the
-     C++ [ExpensiveSign] contract by short-circuiting when any two points coincide. *)
+  (* [exact_sign] assumes pairwise-distinct inputs because the symbolic perturbation
+     step requires the three points in lexicographic order. Short-circuit when any two
+     points coincide so the public contract is "result is non-zero unless two of the
+     inputs are the same". *)
   if V.equal a b || V.equal b c || V.equal c a
   then Direction.Indeterminate
   else Direction.of_int (exact_sign a b c ~perturb)

@@ -43,11 +43,7 @@
     v}
 
     The maximum distance between adjacent representable chord-angle values is 13.5 cm on
-    Earth, and the worst-case rounding error is 9.5 cm.
-
-    {2 Limitations}
-
-    - [FastUpperBoundFrom] from the C++ API is not yet exposed. *)
+    Earth, and the worst-case rounding error is 9.5 cm. *)
 open Core
 
 [@@@zero_alloc all]

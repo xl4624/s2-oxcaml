@@ -70,10 +70,10 @@ val of_e7_exn : lat:int -> lng:int -> t
 
 (** {2 Unsigned E6 / E7 constructors}
 
-    Mirror the C++ [FromUnsignedE6] / [FromUnsignedE7]. The arguments are interpreted as
-    32-bit unsigned proto fields and reinterpreted as signed [int32] before being used as
-    E6/E7 scaled integers. Useful when round-tripping through fixed-width unsigned proto
-    fields where large values otherwise wrap to negative when read as signed.
+    The [lat] and [lng] arguments are interpreted as 32-bit unsigned values (the low 32
+    bits are kept and reinterpreted as signed [int32]) before being scaled like {!of_e6}
+    or {!of_e7}. Useful when reading values that have been stored in unsigned fixed-width
+    proto fields, where large values otherwise wrap to negative when read as signed.
 
     Validation matches the {!of_e6} / {!of_e7} family: the safe variants return
     [Option.none] when the resulting latitude is outside [-90, 90] degrees. *)
