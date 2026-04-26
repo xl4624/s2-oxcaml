@@ -98,9 +98,16 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_conversion.h`, `.cc`
   - Deps: `s2_shape`, `s2_polygon`, `s2_polyline`
 
-- [ ] **s2_shapeutil_build_polygon_boundaries** - `S2_shapeutil.build_polygon_boundaries`
+- [x] **s2_shapeutil_build_polygon_boundaries** -
+      `S2_shapeutil_build_polygon_boundaries.build_polygon_boundaries`
+      (groups loop components into faces by inferring nesting against
+      `S2_pointutil.origin`. Inputs are wrapped in
+      `S2_shapeutil_build_polygon_boundaries.Loop.t` because `S2_shape.t`
+      cannot inhabit a polymorphic list directly. Output ids are flat shape
+      ids assigned in input order.)
   - C++: `s2shapeutil_build_polygon_boundaries.h`, `.cc`
-  - Deps: `s2_shape_index`
+  - Deps: `s2_shape_index`, `s2_contains_point_query`,
+    `s2_shapeutil_contains_brute_force`
 
 - [ ] **s2_shapeutil_visit_crossing_edge_pairs** - `S2_shapeutil.visit_crossing_edge_pairs`
       (needed by `S2_polygon` validation and `S2_validation_query`)
