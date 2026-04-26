@@ -56,33 +56,30 @@ let build_shape case : S2.S2_shape.t =
      | (_ : Nothing.t) -> .)
 ;;
 
-let run_case case =
-  let name = string_of_json_exn (member "name" case) in
-  let shape = build_shape case in
-  let edges = to_list (member "edges" case) in
-  List.iter edges ~f:(fun e ->
-    let edge_id = int_of_json_exn (member "edge_id" e) in
-    let expected_next = int_of_json_exn (member "next" e) in
-    let expected_prev = int_of_json_exn (member "prev" e) in
-    check
-      int
-      (sprintf "%s edge=%d next" name edge_id)
-      expected_next
-      (Edge_wrap.next_edge_wrap shape ~edge_id);
-    check
-      int
-      (sprintf "%s edge=%d prev" name edge_id)
-      expected_prev
-      (Edge_wrap.prev_edge_wrap shape ~edge_id))
-;;
-
-let test_all_cases () =
+let test_cases () =
   let cases = to_list (member "cases" (Lazy.force fixture)) in
-  List.iter cases ~f:run_case
+  List.iter cases ~f:(fun case ->
+    let name = string_of_json_exn (member "name" case) in
+    let shape = build_shape case in
+    let edges = to_list (member "edges" case) in
+    List.iter edges ~f:(fun e ->
+      let edge_id = int_of_json_exn (member "edge_id" e) in
+      let expected_next = int_of_json_exn (member "next" e) in
+      let expected_prev = int_of_json_exn (member "prev" e) in
+      check
+        int
+        (sprintf "%s edge=%d next" name edge_id)
+        expected_next
+        (Edge_wrap.next_edge_wrap shape ~edge_id);
+      check
+        int
+        (sprintf "%s edge=%d prev" name edge_id)
+        expected_prev
+        (Edge_wrap.prev_edge_wrap shape ~edge_id)))
 ;;
 
 let () =
   Alcotest.run
     "S2_shapeutil_edge_wrap"
-    [ "fixture", [ test_case "all cases" `Quick test_all_cases ] ]
+    [ "fixture", [ test_case "all cases" `Quick test_cases ] ]
 ;;

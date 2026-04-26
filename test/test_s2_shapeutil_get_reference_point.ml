@@ -49,40 +49,39 @@ let ref_point_of_json j =
   S2.S2_shape.Reference_point.create ~point ~contained
 ;;
 
-let test_case_from_fixture case =
-  let name = Yojson.Safe.Util.to_string (member "name" case) in
-  let loops = loops_of_json (member "loops" case) in
-  let expected = ref_point_of_json (member "reference_point" case) in
-  let polygon = S2.S2_lax_polygon.of_loops loops in
-  let shape = S2.S2_lax_polygon.to_shape polygon in
-  let actual = S2.S2_shapeutil_get_reference_point.get_reference_point shape in
-  check bool (sprintf "%s: contained" name) expected.#contained actual.#contained;
-  (* The point must match bit-exactly: the algorithm picks a specific
-     vertex (or [S2_point.origin] in the all-balanced fallback), so any
-     drift indicates a divergence from the C++ algorithm. *)
-  check
-    bool
-    (sprintf "%s: point" name)
-    true
-    (S2.S2_point.equal expected.#point actual.#point);
-  (* Round-trip the reference point through [contains_brute_force]: by
-     construction the chosen point's containment must be preserved when
-     traced from itself (zero edge crossings), so the two answers must
-     agree. *)
-  check
-    bool
-    (sprintf "%s: brute force agrees with reference point" name)
-    actual.#contained
-    (S2.S2_shapeutil_contains_brute_force.contains_brute_force shape ~point:actual.#point)
-;;
-
-let test_all_cases () =
+let test_cases () =
   let cases = to_list (member "cases" (Lazy.force fixture)) in
-  List.iter cases ~f:test_case_from_fixture
+  List.iter cases ~f:(fun case ->
+    let name = string_of_json_exn (member "name" case) in
+    let loops = loops_of_json (member "loops" case) in
+    let expected = ref_point_of_json (member "reference_point" case) in
+    let polygon = S2.S2_lax_polygon.of_loops loops in
+    let shape = S2.S2_lax_polygon.to_shape polygon in
+    let actual = S2.S2_shapeutil_get_reference_point.get_reference_point shape in
+    check bool (sprintf "%s: contained" name) expected.#contained actual.#contained;
+    (* The point must match bit-exactly: the algorithm picks a specific
+       vertex (or [S2_point.origin] in the all-balanced fallback), so any
+       drift indicates a divergence from the C++ algorithm. *)
+    check
+      bool
+      (sprintf "%s: point" name)
+      true
+      (S2.S2_point.equal expected.#point actual.#point);
+    (* Round-trip the reference point through [contains_brute_force]: by
+       construction the chosen point's containment must be preserved when
+       traced from itself (zero edge crossings), so the two answers must
+       agree. *)
+    check
+      bool
+      (sprintf "%s: brute force agrees with reference point" name)
+      actual.#contained
+      (S2.S2_shapeutil_contains_brute_force.contains_brute_force
+         shape
+         ~point:actual.#point))
 ;;
 
 let () =
   Alcotest.run
     "S2_shapeutil_get_reference_point"
-    [ "fixture", [ test_case "all cases" `Quick test_all_cases ] ]
+    [ "fixture", [ test_case "all cases" `Quick test_cases ] ]
 ;;
