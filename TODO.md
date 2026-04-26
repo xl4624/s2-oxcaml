@@ -1,40 +1,3 @@
-## Tier 8 - Builder
-
-- [x] **s2_builder** - `S2_builder` (public API, `Graph`, `Options`,
-      `Snap_function.identity`, `Layer`, `AddEdge`/`AddIntersection`/`Build`,
-      `S2_polygon_layer` sibling module covering the surface required by
-      `s2_boolean_operation`; scope deferred: the full Voronoi
-      snap-rounding algorithm (s2builder.cc:727-1252 - `ChooseInitialSites`,
-      `CollectSiteEdges`, `MaybeAddExtraSites`, `SnapEdge` Voronoi loop) is
-      replaced by a simplified cluster-merge for non-zero snap radius that
-      preserves topology but is not bit-exact with C++;
-      `IntLatLngSnapFunction` / `S2CellIdSnapFunction` stubs raise; undirected
-      edges, `ForceVertex`, labels, `simplify_edge_chains`, memory tracking,
-      and lax/polyline layers are not implemented. Requires `S2PointIndex` +
-      `s2pred::GetVoronoiSiteExclusion` + `EdgeCircumcenterSign` to complete
-      the faithful algorithm.)
-  - Go: `s2/builder.go` | C++: `s2builder.h`, `s2builder.cc`
-  - Deps: `s2_shape_index`, `s2_polygon`, `s2_polyline`, `s2_edge_crosser`
-
-- [x] **s2_boolean_operation** - `S2_boolean_operation` (predicate-only,
-      polygon-only: `is_empty`, `intersects`, `contains`, `equals` for two
-      polygon shapes under default `Polygon_model.Semi_open`; replaces the
-      Go-style boundary algorithm in `S2_polygon.contains` / `intersects`
-      for multi-loop cases. Implemented as a simplified per-edge
-      containment test rather than a full CrossingProcessor port - captures
-      the SEMI_OPEN shared-boundary semantics needed by
-      `S2_polygon.contains p p` and similar shared-edge predicates without
-      the ~3,400 lines of the full C++ module. Scope deferred: set-operation
-      output via an `S2_builder.Layer.t`, polyline and point inputs, `Open`
-      and `Closed` polygon models, mixed-dimension operands, and any case
-      involving invalid polygons with non-normalised loop nesting. These
-      raise or silently disagree with C++ on such inputs; `two_shells` in
-      the fixture exercises the valid multi-loop path.)
-  - Go: (not in Go) | C++: `s2boolean_operation.h`, `s2boolean_operation.cc`
-  - Deps: `s2_builder`, `s2_shape_index`
-
----
-
 ## Tier 9 - Shapeutil helpers
 
 Small helper modules layered on `S2_shape` / `S2_shape_index`. Several of
@@ -108,13 +71,20 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shapeutil_contains_brute_force.h`, `.cc`
   - Deps: `s2_shape`, `s2_edge_crosser`
 
-- [ ] **s2_shapeutil_get_reference_point** - `S2_shapeutil.get_reference_point`
-      (pick an unambiguous point and compute its containment for a 2D shape;
-      used by `S2_loop`, `S2_polygon`, lax shapes today with an ad-hoc version)
+- [x] **s2_shapeutil_get_reference_point** -
+      `S2_shapeutil_get_reference_point.get_reference_point` (thin wrapper
+      that unpacks an `S2_shape.t` and dispatches to the existing
+      `S2_shape.get_reference_point` algorithm. Caller is responsible for
+      passing a dimension-2 shape; behaviour is otherwise unspecified. The
+      sort-based fallback for the all-balanced case and the empty/full
+      conventions live in `S2_shape`.)
   - C++: `s2shapeutil_get_reference_point.h`, `.cc`
-  - Deps: `s2_shape`, `s2_contains_point_query`
+  - Deps: `s2_shape`
 
-- [ ] **s2_shapeutil_edge_wrap** - `S2_shapeutil.edge_wrap`
+- [x] **s2_shapeutil_edge_wrap** - `S2_shapeutil_edge_wrap` (two free
+      functions: `next_edge_wrap` and `prev_edge_wrap`. Polygon chains always
+      wrap; polyline chains wrap only when the last edge's [v1] equals the
+      first edge's [v0] (closed polyline); point shapes always return [-1].)
   - C++: `s2shapeutil_edge_wrap.h`, `.cc`
   - Deps: `s2_shape`
 
