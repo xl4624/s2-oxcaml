@@ -240,31 +240,6 @@ let[@inline] edge_or_vertex_crossing t c d =
   chain_edge_or_vertex_crossing t d
 ;;
 
-(* Signed analogue of [S2_edge_crossings.vertex_crossing] used when
-   AB and CD share an endpoint.  Returns +1 for a counter-clockwise
-   shared-vertex crossing, -1 for clockwise, and 0 when the shared
-   vertex does not count as a crossing under the S2 perturbation
-   rules. *)
-let signed_vertex_crossing a b c d =
-  if S2_point.equal a b || S2_point.equal c d
-  then 0
-  else if S2_point.equal a c
-  then
-    if S2_point.equal b d || S2_edge_crossings.ordered_ccw (S2_point.ortho a) d b a
-    then 1
-    else 0
-  else if S2_point.equal b d
-  then if S2_edge_crossings.ordered_ccw (S2_point.ortho b) c a b then 1 else 0
-  else if S2_point.equal a d
-  then
-    if S2_point.equal b c || S2_edge_crossings.ordered_ccw (S2_point.ortho a) c b a
-    then -1
-    else 0
-  else if S2_point.equal b c
-  then if S2_edge_crossings.ordered_ccw (S2_point.ortho b) d a b then -1 else 0
-  else 0
-;;
-
 let[@inline] last_interior_crossing_sign t =
   (* When AB crosses CD, the signed crossing direction equals
      Sign(ABC).  We don't store that directly, but the cached
@@ -279,7 +254,8 @@ let chain_signed_edge_or_vertex_crossing t d =
   let #{ state; sign } = chain_crossing_sign t d in
   match sign with
   | -1 -> #{ state; sign = 0 }
-  | 0 -> #{ state; sign = signed_vertex_crossing state.#a state.#b c_prev d }
+  | 0 ->
+    #{ state; sign = S2_edge_crossings.signed_vertex_crossing state.#a state.#b c_prev d }
   | _ -> #{ state; sign = last_interior_crossing_sign state }
 ;;
 

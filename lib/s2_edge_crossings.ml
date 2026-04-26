@@ -461,11 +461,29 @@ let[@inline] [@zero_alloc] edge_or_vertex_crossing
   if cs < 0 then false else if cs > 0 then true else vertex_crossing a b c d
 ;;
 
-(* TODO: port the standalone S2::SignedVertexCrossing from
-   s2edge_crossings.h:200-201.  The same logic is currently only
-   reachable as the private helper [signed_vertex_crossing] inside
-   s2_edge_crosser.ml; lifting it here would parallel the exposed
-   [vertex_crossing] above. *)
+(* Tie-breaking for shared-vertex crossings: returns +1 when AB enters the region bounded
+   by CD (interior on the left), -1 when AB exits, and 0 when the configuration is not
+   considered a crossing under the perturbation rules. The four-distinct-vertices case is
+   undefined; callers must invoke [vertex_crossing]/[signed_vertex_crossing] only when at
+   least one endpoint is shared. *)
+let signed_vertex_crossing
+  (a : S2_point.t)
+  (b : S2_point.t)
+  (c : S2_point.t)
+  (d : S2_point.t)
+  =
+  if S2_point.equal a b || S2_point.equal c d
+  then 0
+  else if S2_point.equal a c
+  then if S2_point.equal b d || ordered_ccw (S2_point.ortho a) d b a then 1 else 0
+  else if S2_point.equal b d
+  then if ordered_ccw (S2_point.ortho b) c a b then 1 else 0
+  else if S2_point.equal a d
+  then if S2_point.equal b c || ordered_ccw (S2_point.ortho a) c b a then -1 else 0
+  else if S2_point.equal b c
+  then if ordered_ccw (S2_point.ortho b) d a b then -1 else 0
+  else 0
+;;
 
 let angle_contains_vertex (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   not (ordered_ccw (S2_point.ortho b) c a b)

@@ -26,11 +26,8 @@
 
     {2 Limitations}
 
-    - The standalone [S2::SignedVertexCrossing(a, b, c, d)] function is not exposed as a
-      top-level value. The same logic is reachable through
-      {!S2_edge_crosser.signed_edge_or_vertex_crossing}.
-    - The [S2::RobustCrossProd] helper and its error bound [kRobustCrossProdError] live in
-      {!S2_point} and are re-exported only indirectly. *)
+    The [S2::RobustCrossProd] helper and its error bound [kRobustCrossProdError] live in
+    {!S2_point} and are re-exported only indirectly. *)
 
 open Core
 
@@ -105,6 +102,26 @@ val vertex_crossing : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t -> bo
     can be written as "count how many polygon edges this test edge crosses" without any
     special-case logic for coincident endpoints. *)
 val edge_or_vertex_crossing : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t -> bool
+
+(** [signed_vertex_crossing a b c d] is a signed analogue of {!vertex_crossing} used when
+    AB and CD share at least one vertex. Returns [-1] when AB crosses CD from left to
+    right, [+1] when AB crosses CD from right to left, and [0] when the shared-vertex
+    configuration does not count as a crossing under the perturbation rules. If CD bounds
+    a region with the "interior is on the left" convention, the result is [-1] when AB
+    exits the region and [+1] when AB enters it - making it suitable for accumulating
+    winding-number deltas along a path.
+
+    Useful identities:
+    - [signed_vertex_crossing a a c d = 0]
+    - [signed_vertex_crossing a b c c = 0]
+    - [signed_vertex_crossing a b a b = 1]
+    - [signed_vertex_crossing a b b a = -1]
+    - [signed_vertex_crossing b a c d = - signed_vertex_crossing a b c d]
+    - [signed_vertex_crossing a b d c = - signed_vertex_crossing a b c d]
+
+    Precondition: AB and CD must share at least one vertex; the four-distinct-vertices
+    case is undefined and returns [0]. *)
+val signed_vertex_crossing : S2_point.t -> S2_point.t -> S2_point.t -> S2_point.t -> int
 
 (** {1 Angle predicates} *)
 

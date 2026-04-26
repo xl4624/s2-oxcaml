@@ -225,6 +225,70 @@ int main() {
         out["vertex_crossing"] = cases;
     }
 
+    // SignedVertexCrossing - same shared-vertex setups, signed result.
+    {
+        json cases = json::array();
+        auto add = [&](const std::string &name, const S2Point &a,
+                       const S2Point &b, const S2Point &c, const S2Point &d) {
+            cases.push_back(
+                {{"name", name},
+                 {"a", point_json(a)},
+                 {"b", point_json(b)},
+                 {"c", point_json(c)},
+                 {"d", point_json(d)},
+                 {"expected", S2::SignedVertexCrossing(a, b, c, d)}});
+        };
+
+        // Identity (1): SVC(a,a,c,d) == 0.
+        {
+            S2Point a(1, 0, 0), c(0, 1, 0), d(0, 0, 1);
+            add("degenerate_ab", a, a, c, d);
+        }
+        // Identity (1): SVC(a,b,c,c) == 0.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0), c(0, 0, 1);
+            add("degenerate_cd", a, b, c, c);
+        }
+        // Identity (2): SVC(a,b,a,b) == +1.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0);
+            add("same_edge", a, b, a, b);
+        }
+        // Identity (3): SVC(a,b,b,a) == -1.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0);
+            add("reversed_edge", a, b, b, a);
+        }
+        // a == c, b != d.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0), d(0, 0, 1);
+            add("a_eq_c", a, b, a, d);
+        }
+        // b == d.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0), c(0, 0, 1);
+            add("b_eq_d", a, b, c, b);
+        }
+        // a == d.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0), c(0, 0, 1);
+            add("a_eq_d", a, b, c, a);
+        }
+        // b == c.
+        {
+            S2Point a(1, 0, 0), b(0, 1, 0), d(0, 0, 1);
+            add("b_eq_c", a, b, b, d);
+        }
+        // Shared endpoint from crosser_test (case 6).
+        {
+            S2Point a = S2Point(7, -2, 3).Normalize();
+            S2Point b = S2Point(2, 3, 4).Normalize();
+            S2Point d = S2Point(-1, 2, 5).Normalize();
+            add("shared_endpoint_crosser6", a, b, b, d);
+        }
+        out["signed_vertex_crossing"] = cases;
+    }
+
     // TEST(S2, GetIntersection) - selected deterministic cases
     {
         json cases = json::array();

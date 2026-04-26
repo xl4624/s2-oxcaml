@@ -6,6 +6,7 @@
    -  TEST(S2, Crossings) (from s2edge_crosser_test.cc)
    -  TEST(S2, AngleContainsVertex)
    -  TEST(S2, VertexCrossing) - manual cases
+   -  SignedVertexCrossing - shared-vertex setups + identity cases
    -  TEST(S2, GetIntersection) - selected deterministic cases
    -  TEST(S2, RobustSign / Sign) - basic cases
    -  TEST(S2, CompareEdgesOrderInvariant)
@@ -112,6 +113,30 @@ let test_vertex_crossing () =
     let expected = bool_of_json_exn (member "expected" c) in
     let actual = S2.S2_edge_crossings.vertex_crossing a b cc d in
     Alcotest.(check bool) name expected actual)
+;;
+
+(* ---------- signed_vertex_crossing ---------------------------------------- *)
+let test_signed_vertex_crossing () =
+  let data = Lazy.force fixture in
+  let cases = to_list (member "signed_vertex_crossing" data) in
+  List.iter cases ~f:(fun c ->
+    let name = string_of_json_exn (member "name" c) in
+    let a = point_of_json (member "a" c) in
+    let b = point_of_json (member "b" c) in
+    let cc = point_of_json (member "c" c) in
+    let d = point_of_json (member "d" c) in
+    let expected = int_of_json_exn (member "expected" c) in
+    let actual = S2.S2_edge_crossings.signed_vertex_crossing a b cc d in
+    Alcotest.(check int) name expected actual;
+    (* Antisymmetry under each edge reversal. *)
+    Alcotest.(check int)
+      (name ^ " swap_ab")
+      (-expected)
+      (S2.S2_edge_crossings.signed_vertex_crossing b a cc d);
+    Alcotest.(check int)
+      (name ^ " swap_cd")
+      (-expected)
+      (S2.S2_edge_crossings.signed_vertex_crossing a b d cc))
 ;;
 
 (* ---------- sign ---------------------------------------------------------- *)
@@ -318,6 +343,9 @@ let () =
       , [ Alcotest.test_case "angle_contains_vertex" `Quick test_angle_contains_vertex ] )
     ; ( "vertex_crossing"
       , [ Alcotest.test_case "vertex_crossing" `Quick test_vertex_crossing ] )
+    ; ( "signed_vertex_crossing"
+      , [ Alcotest.test_case "signed_vertex_crossing" `Quick test_signed_vertex_crossing ]
+      )
     ; "sign", [ Alcotest.test_case "sign" `Quick test_sign ]
     ; "intersection", [ Alcotest.test_case "intersection" `Quick test_intersection ]
     ; "compare_edges", [ Alcotest.test_case "compare_edges" `Quick test_compare_edges ]

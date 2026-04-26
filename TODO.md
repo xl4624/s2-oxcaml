@@ -342,7 +342,7 @@ track which types still lack Encode/Decode:
       `GetPointOnLine`, `GetPointToLeft`, `GetPointToRight`
 - [ ] `s2_edge_distances`: expose `project_with_cross` as a public API mirroring
       the C++ overload in `s2edge_distances.h:119-120`
-- [ ] `s2_edge_crossings`: expose standalone `SignedVertexCrossing` (currently
+- [x] `s2_edge_crossings`: expose standalone `SignedVertexCrossing` (currently
       only reachable as a private helper inside `s2_edge_crosser`)
 - [ ] `s2_loop`: `GetDistance` / `GetDistanceToBoundary` / `Project` /
       `ProjectToBoundary` / `BoundaryNear`
