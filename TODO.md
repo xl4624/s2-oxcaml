@@ -530,10 +530,11 @@ These wrap one value-layout field and exist only for typing. Marking them
 
 ### Option boxing on mutable query / index state
 
-- [ ] `s2_loop.index_cache` has `mutable crossing_query :
-      S2_crossing_edge_query.t option`. Replace with a nullable slot (e.g.,
-      a plain ref holding a real value initialised to a sentinel empty
-      query) to avoid the allocated `Some _` on first lazy build.
+- [x] `s2_loop.index_cache.crossing_query`: dropped the inner `option`
+      and now build the crossing query eagerly alongside the point query.
+      Both share the dominant cost (the shape index build), so an unused
+      crossing query just costs one iterator allocation, and the per-loop
+      `Some _` allocation is gone.
 - [ ] `s2_closest_edge_query.t.iter : S2_shape_index.Iterator.t option` and
       its per-entry `S2_shape_index.Index_cell.t option` array box on
       iterator creation. Give `S2_shape_index.Iterator` and `Index_cell` a

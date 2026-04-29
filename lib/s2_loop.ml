@@ -14,7 +14,7 @@ type index_cache =
   { idx : S2_shape_index.t
   ; sid : int
   ; point_query : S2_contains_point_query.t
-  ; mutable crossing_query : S2_crossing_edge_query.t option
+  ; crossing_query : S2_crossing_edge_query.t
   }
 
 type t =
@@ -454,7 +454,9 @@ let to_shape t : S2_shape.t =
 (* Lazily build and cache the loop's shape index together with point and crossing query
    objects. All index-driven predicates (contains_point, contains_cell,
    may_intersect_cell, contains, intersects) share this cache so the index is built at
-   most once per loop. *)
+   most once per loop. The crossing query is built eagerly alongside the point query
+   because both share the index build that dominates setup cost; an unused crossing query
+   just costs one iterator allocation. *)
 let get_index_cache t =
   match t.index_cache with
   | Some c -> c
@@ -462,20 +464,13 @@ let get_index_cache t =
     let idx = S2_shape_index.create () in
     let sid = S2_shape_index.add idx (to_shape t) in
     let point_query = S2_contains_point_query.create idx () in
-    let c = { idx; sid; point_query; crossing_query = None } in
+    let crossing_query = S2_crossing_edge_query.create idx in
+    let c = { idx; sid; point_query; crossing_query } in
     t.index_cache <- Some c;
     c
 ;;
 
-let get_crossing_query t =
-  let c = get_index_cache t in
-  match c.crossing_query with
-  | Some q -> q
-  | None ->
-    let q = S2_crossing_edge_query.create c.idx in
-    c.crossing_query <- Some q;
-    q
-;;
+let get_crossing_query t = (get_index_cache t).crossing_query
 
 let contains_point t p =
   if not (S2_latlng_rect.contains_point t.bound p)
