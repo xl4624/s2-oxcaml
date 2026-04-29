@@ -10,12 +10,12 @@ let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t 
   [@exclave_if_stack a]
 ;;
 
-let relative_sum_error = Float_u.O.(#2.02 * Float_u.epsilon_float ())
+let relative_sum_error = Float_u.O.(#2.02 * Float_u.epsilon_float)
 let max_length2 = #4.0
 let zero = #0.0
 let right = #2.0
 let straight = max_length2
-let infinity = Float_u.infinity ()
+let infinity = Float_u.infinity
 let negative = -#1.0
 
 let[@inline] [@zero_alloc] rec of_angle angle =
@@ -23,8 +23,8 @@ let[@inline] [@zero_alloc] rec of_angle angle =
   if Float_u.O.(radians < #0.0)
   then negative
   else if S1_angle.is_inf angle
-  then Float_u.infinity ()
-  else if Float_u.O.(radians >= Float_u.pi ())
+  then Float_u.infinity
+  else if Float_u.O.(radians >= Float_u.pi)
   then straight
   else
     let open Float_u.O in
@@ -74,7 +74,7 @@ let[@inline] [@zero_alloc] is_valid t =
 
 let[@inline] [@zero_alloc] successor t =
   if Float_u.O.(t >= max_length2)
-  then Float_u.infinity ()
+  then Float_u.infinity
   else if Float_u.O.(t < #0.0)
   then zero
   else
@@ -159,7 +159,7 @@ let[@inline] [@zero_alloc] plus_error t error =
    each (the maximum error from S2Point normalization). Absolute term
    16 * epsilon^2 accounts for the product of the two relative errors. *)
 let[@inline] [@zero_alloc] max_point_error t =
-  let eps = Float_u.epsilon_float () in
+  let eps = Float_u.epsilon_float in
   Float_u.O.((#4.5 * eps * t) + (#16.0 * eps * eps))
 ;;
 
@@ -168,7 +168,7 @@ let[@inline] [@zero_alloc] max_point_error t =
    so the coefficient is 1.5 * epsilon. *)
 let[@inline] [@zero_alloc] max_angle_error t =
   let open Float_u.O in
-  #1.5 * Float_u.epsilon_float () * t
+  #1.5 * Float_u.epsilon_float * t
 ;;
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare a b

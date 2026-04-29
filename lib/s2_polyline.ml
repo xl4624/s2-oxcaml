@@ -314,7 +314,7 @@ let find_end_vertex (vertices : S2_point.t array) tolerance start =
   while (not stop) && index < n do
     let candidate = vertices.(index) in
     let distance = S1_angle.radians (S2_point.distance origin candidate) in
-    if Float_u.O.(distance > Float_u.pi () / #2.0 && last_distance > #0.0)
+    if Float_u.O.(distance > Float_u.pi / #2.0 && last_distance > #0.0)
     then stop <- true
     else if Float_u.O.(distance < last_distance && last_distance > tolerance)
     then stop <- true

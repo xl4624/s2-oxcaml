@@ -38,8 +38,8 @@ let[@inline] [@zero_alloc] plate_carree ~x_scale =
   let open Float_u.O in
   #{ kind_tag = plate_carree_tag
    ; x_wrap = #2.0 * x_scale
-   ; to_radians = Float_u.pi () / x_scale
-   ; from_radians = x_scale / Float_u.pi ()
+   ; to_radians = Float_u.pi / x_scale
+   ; from_radians = x_scale / Float_u.pi
    }
 ;;
 
@@ -47,8 +47,8 @@ let[@inline] [@zero_alloc] mercator ~max_x =
   let open Float_u.O in
   #{ kind_tag = mercator_tag
    ; x_wrap = #2.0 * max_x
-   ; to_radians = Float_u.pi () / max_x
-   ; from_radians = max_x / Float_u.pi ()
+   ; to_radians = Float_u.pi / max_x
+   ; from_radians = max_x / Float_u.pi
    }
 ;;
 
@@ -84,7 +84,7 @@ let[@inline] [@zero_alloc] to_latlng t p =
     let k = Float_u.exp two_ty in
     let lat =
       if Float_u.is_inf k
-      then if R2_point.y p > #0.0 then Float_u.pi () / #2.0 else -(Float_u.pi () / #2.0)
+      then if R2_point.y p > #0.0 then Float_u.pi / #2.0 else -(Float_u.pi / #2.0)
       else Float_u.asin ((k - #1.0) / (k + #1.0))
     in
     S2_latlng.of_radians ~lat ~lng:x)

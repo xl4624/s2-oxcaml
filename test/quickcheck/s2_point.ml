@@ -158,7 +158,7 @@ let%test_unit "distance_to_antipodal_is_pi" =
         let p_unit = S2.R3_vector.normalize p in
         let antipode = S2.R3_vector.neg p_unit in
         let d = S2.S1_angle.radians (S2.S2_point.distance p_unit antipode) in
-        assert (Float_u.abs (d - Float_u.pi ()) <= #1e-9)))
+        assert (Float_u.abs (d - Float_u.pi) <= #1e-9)))
 ;;
 
 let%test_unit "normalize_is_unit_length" =
@@ -183,7 +183,7 @@ let%test_unit "rotate_by_full_turn_identity" =
       then (
         let a = S2.R3_vector.normalize a in
         let axis = S2.R3_vector.normalize b in
-        let full = S2.S1_angle.of_radians (#2.0 * Float_u.pi ()) in
+        let full = S2.S1_angle.of_radians (#2.0 * Float_u.pi) in
         let rotated = S2.S2_point.rotate a ~axis ~angle:full in
         assert (
           S2.S2_point.approx_equal

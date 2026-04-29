@@ -59,7 +59,7 @@ struct
   ;;
 
   let pop_exn h =
-    if h.len = 0 then failwith "Binary_heap.pop_exn: empty heap";
+    if h.len = 0 then raise_s [%message "Binary_heap.pop_exn: empty heap"];
     let top = h.data.(0) in
     let new_len = h.len - 1 in
     h.len <- new_len;

@@ -157,7 +157,7 @@ let init_origin_and_bound (vs : S2_point.t array) : init_result =
       rb <- S2_latlng_rect_bounder.add_point rb (vertex_raw vs i)
     done;
     let b = S2_latlng_rect_bounder.get_bound rb in
-    let half_pi = Float_u.O.(Float_u.pi () / #2.0) in
+    let half_pi = Float_u.O.(Float_u.pi / #2.0) in
     let b =
       if brute_force_contains_point ~vertices:vs ~origin_inside north_pole
       then
@@ -259,7 +259,7 @@ let invert t =
         dst)
     in
     let new_origin_inside = not t.origin_inside in
-    let half_pi = Float_u.O.(Float_u.pi () / #2.0) in
+    let half_pi = Float_u.O.(Float_u.pi / #2.0) in
     let lat = S2_latlng_rect.lat t.bound in
     let #{ origin_inside = _; bound; subregion_bound } : init_result =
       if is_empty_or_full t
@@ -287,7 +287,7 @@ let invert t =
 ;;
 
 let is_normalized t =
-  if Float_u.O.(S1_interval.length (S2_latlng_rect.lng t.bound) < Float_u.pi ())
+  if Float_u.O.(S1_interval.length (S2_latlng_rect.lng t.bound) < Float_u.pi)
   then true
   else (
     let curv = S2_loop_measures.curvature t.vertices in
@@ -304,7 +304,7 @@ let normalize t = if is_normalized t then t else invert t
 
 let area t =
   if is_full t
-  then Float_u.O.(#4.0 * Float_u.pi ())
+  then Float_u.O.(#4.0 * Float_u.pi)
   else if is_empty t
   then #0.0
   else S2_loop_measures.area t.vertices
@@ -316,9 +316,9 @@ let centroid t =
 
 let curvature t =
   if is_full t
-  then Float_u.O.(-#2.0 * Float_u.pi ())
+  then Float_u.O.(-#2.0 * Float_u.pi)
   else if is_empty t
-  then Float_u.O.(#2.0 * Float_u.pi ())
+  then Float_u.O.(#2.0 * Float_u.pi)
   else S2_loop_measures.curvature t.vertices
 ;;
 

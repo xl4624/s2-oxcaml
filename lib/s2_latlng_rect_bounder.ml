@@ -46,7 +46,7 @@ let add_internal (t : t) (b : S2_point.t) (b_latlng : S2_latlng.t) : t =
         let b_lng_rad = S1_angle.radians (S2_latlng.lng b_latlng) in
         let lng_ab = S1_interval.from_point_pair a_lng_rad b_lng_rad in
         let lng_ab =
-          if S1_interval.length lng_ab >= Float_u.pi () - (#2.0 * Float_u.epsilon_float ())
+          if S1_interval.length lng_ab >= Float_u.pi - (#2.0 * Float_u.epsilon_float)
           then S1_interval.full
           else lng_ab
         in
@@ -72,8 +72,8 @@ let add_internal (t : t) (b : S2_point.t) (b_latlng : S2_latlng.t) : t =
             let max_lat =
               Float_u.min
                 (Float_u.atan2 (Float_u.sqrt ((nx * nx) + (ny * ny))) (Float_u.abs nz)
-                 + (#3.0 * Float_u.epsilon_float ()))
-                (Float_u.pi () / #2.0)
+                 + (#3.0 * Float_u.epsilon_float))
+                (Float_u.pi / #2.0)
             in
             (* Tight bound relative to the endpoints using a latitude budget. *)
             let ab_norm = R3_vector.norm (R3_vector.sub a b) in
@@ -82,11 +82,11 @@ let add_internal (t : t) (b : S2_point.t) (b_latlng : S2_latlng.t) : t =
               #2.0
               * Float_u.asin
                   (Float_u.min
-                     ((#1.0 + (#4.0 * Float_u.epsilon_float ())) * lat_budget_z)
+                     ((#1.0 + (#4.0 * Float_u.epsilon_float)) * lat_budget_z)
                      #1.0)
             in
             let max_delta =
-              (#0.5 * (lat_budget - R1_interval.length lat_ab)) + Float_u.epsilon_float ()
+              (#0.5 * (lat_budget - R1_interval.length lat_ab)) + Float_u.epsilon_float
             in
             let hi =
               if m_a <= m_error && m_b >= Float_u.neg m_error
@@ -118,7 +118,7 @@ let[@zero_alloc] get_bound t =
      re-projects an S2Point back to S2LatLng, then take polar_closure so that
      a bound that touches a pole covers every longitude at that pole. *)
   let open Float_u.O in
-  let expansion = S2_latlng.of_radians ~lat:(#2.0 * Float_u.epsilon_float ()) ~lng:#0.0 in
+  let expansion = S2_latlng.of_radians ~lat:(#2.0 * Float_u.epsilon_float) ~lng:#0.0 in
   S2_latlng_rect.polar_closure (S2_latlng_rect.expanded t.#bound expansion)
 ;;
 
@@ -132,25 +132,25 @@ let[@zero_alloc] expand_for_subregions bound =
     let lng_gap =
       Float_u.max
         #0.0
-        (Float_u.pi () - S1_interval.length lng - (#2.5 * Float_u.epsilon_float ()))
+        (Float_u.pi - S1_interval.length lng - (#2.5 * Float_u.epsilon_float))
     in
     let min_abs_lat =
       Float_util.max_u (R1_interval.lo lat) (Float_u.neg (R1_interval.hi lat))
     in
-    let lat_gap1 = (Float_u.pi () / #2.0) + R1_interval.lo lat in
-    let lat_gap2 = (Float_u.pi () / #2.0) - R1_interval.hi lat in
+    let lat_gap1 = (Float_u.pi / #2.0) + R1_interval.lo lat in
+    let lat_gap2 = (Float_u.pi / #2.0) - R1_interval.hi lat in
     let returns_full =
       if min_abs_lat >= #0.0
       then (#2.0 * min_abs_lat) + lng_gap < #1.354e-15
-      else if lng_gap >= Float_u.pi () / #2.0
+      else if lng_gap >= Float_u.pi / #2.0
       then lat_gap1 + lat_gap2 < #1.687e-15
       else Float_util.max_u lat_gap1 lat_gap2 * lng_gap < #1.765e-15
     in
     if returns_full
     then S2_latlng_rect.full
     else (
-      let lat_expansion = #9.0 * Float_u.epsilon_float () in
-      let lng_expansion = if lng_gap <= #0.0 then Float_u.pi () else #0.0 in
+      let lat_expansion = #9.0 * Float_u.epsilon_float in
+      let lng_expansion = if lng_gap <= #0.0 then Float_u.pi else #0.0 in
       S2_latlng_rect.polar_closure
         (S2_latlng_rect.expanded
            bound
@@ -160,6 +160,6 @@ let[@zero_alloc] expand_for_subregions bound =
 let max_error_for_tests () =
   let open Float_u.O in
   S2_latlng.of_radians
-    ~lat:(#10.0 * Float_u.epsilon_float ())
-    ~lng:(#1.0 * Float_u.epsilon_float ())
+    ~lat:(#10.0 * Float_u.epsilon_float)
+    ~lng:(#1.0 * Float_u.epsilon_float)
 ;;

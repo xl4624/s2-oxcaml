@@ -343,7 +343,7 @@ let test_add_point () =
   let p =
     S2.S2_latlng_rect.add_point
       p
-      (S2.S2_latlng.of_radians ~lat:#0.0 ~lng:(Float_u.neg (Float_u.pi () / #2.0)))
+      (S2.S2_latlng.of_radians ~lat:#0.0 ~lng:(Float_u.neg (Float_u.pi / #2.0)))
   in
   check_bool
     "after_second is_point"
@@ -353,8 +353,8 @@ let test_add_point () =
     S2.S2_latlng_rect.add_point
       p
       (S2.S2_latlng.of_radians
-         ~lat:(Float_u.pi () / #4.0)
-         ~lng:(Float_u.neg (Float_u.pi ())))
+         ~lat:(Float_u.pi / #4.0)
+         ~lng:(Float_u.neg (Float_u.pi)))
   in
   let p =
     S2.S2_latlng_rect.add_point

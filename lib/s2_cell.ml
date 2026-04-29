@@ -88,7 +88,7 @@ let[@inline] [@zero_alloc] average_area level =
   (* AvgArea = 4*pi / (6 * 4^level): divide the sphere (area 4*pi) evenly over
      the 6 * 4^level cells at the given level. *)
   let open Float_u.O in
-  Float_u.pi () * #4.0 / #6.0 / (#4.0 ** of_int level)
+  Float_u.pi * #4.0 / #6.0 / (#4.0 ** of_int level)
 ;;
 
 let[@inline] [@zero_alloc] spherical_area a b c =
@@ -124,7 +124,7 @@ let approx_area t =
     in
     flat_area
     * #2.0
-    / (#1.0 + Float_u.sqrt (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.pi ())))
+    / (#1.0 + Float_u.sqrt (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.pi)))
 ;;
 
 (* The [5/3 * DBL_EPSILON] UV margin cancels the worst-case rounding in the
@@ -135,7 +135,7 @@ let contains_point t p =
   match%optional_u.R2_point.Option uv with
   | None -> false
   | Some uv ->
-    let margin = Float_u.O.(#5.0 / #3.0 * Float_u.epsilon_float ()) in
+    let margin = Float_u.O.(#5.0 / #3.0 * Float_u.epsilon_float) in
     R2_rect.contains_point (R2_rect.expanded_scalar t.#uv margin) uv
 ;;
 

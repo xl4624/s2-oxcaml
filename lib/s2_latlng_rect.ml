@@ -8,7 +8,7 @@ type t =
 
 let full_lat =
   let open Float_u.O in
-  R1_interval.create ~lo:(Float_u.neg (Float_u.pi () / #2.0)) ~hi:(Float_u.pi () / #2.0)
+  R1_interval.create ~lo:(Float_u.neg (Float_u.pi / #2.0)) ~hi:(Float_u.pi / #2.0)
 ;;
 
 let empty = #{ lat = R1_interval.empty; lng = S1_interval.empty }
@@ -91,8 +91,8 @@ let[@inline] [@zero_alloc] is_inverted t = S1_interval.is_inverted t.#lng
 
 let[@inline] [@zero_alloc] is_valid t =
   let open Float_u.O in
-  Float_u.abs (R1_interval.lo t.#lat) <= Float_u.pi () / #2.0
-  && Float_u.abs (R1_interval.hi t.#lat) <= Float_u.pi () / #2.0
+  Float_u.abs (R1_interval.lo t.#lat) <= Float_u.pi / #2.0
+  && Float_u.abs (R1_interval.hi t.#lat) <= Float_u.pi / #2.0
   && S1_interval.is_valid t.#lng
   && Bool.equal (R1_interval.is_empty t.#lat) (S1_interval.is_empty t.#lng)
 ;;
@@ -186,8 +186,8 @@ let[@inline] [@zero_alloc] expanded t margin =
 
 let[@inline] [@zero_alloc] polar_closure t =
   let open Float_u.O in
-  if R1_interval.lo t.#lat = Float_u.neg (Float_u.pi () / #2.0)
-     || R1_interval.hi t.#lat = Float_u.pi () / #2.0
+  if R1_interval.lo t.#lat = Float_u.neg (Float_u.pi / #2.0)
+     || R1_interval.hi t.#lat = Float_u.pi / #2.0
   then #{ lat = t.#lat; lng = S1_interval.full }
   else t
 ;;
@@ -203,14 +203,14 @@ let[@inline] [@zero_alloc] cap_bound t =
   else
     let open Float_u.O in
     let mutable pole_z = #1.0 in
-    let mutable pole_angle = (Float_u.pi () / #2.0) - R1_interval.lo t.#lat in
+    let mutable pole_angle = (Float_u.pi / #2.0) - R1_interval.lo t.#lat in
     if R1_interval.lo t.#lat + R1_interval.hi t.#lat < #0.0
     then (
       (* The latitudes are skewed south; centering at the south pole yields the
          smaller cap. *)
       pole_z <- -#1.0;
-      pole_angle <- (Float_u.pi () / #2.0) + R1_interval.hi t.#lat);
-    let pole_angle_with_err = (#1.0 + (#2.0 * Float_u.epsilon_float ())) * pole_angle in
+      pole_angle <- (Float_u.pi / #2.0) + R1_interval.hi t.#lat);
+    let pole_angle_with_err = (#1.0 + (#2.0 * Float_u.epsilon_float)) * pole_angle in
     let pole_cap =
       S2_cap.of_center_angle
         (S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:pole_z)
@@ -219,7 +219,7 @@ let[@inline] [@zero_alloc] cap_bound t =
     (* For longitude spans <= 180 degrees the tightest "mid-cap" is attained at
        one of the four rectangle vertices, so we seed with the center and add
        each vertex. *)
-    if S1_interval.length t.#lng <= Float_u.pi ()
+    if S1_interval.length t.#lng <= Float_u.pi
     then (
       let mutable mid_cap = S2_cap.of_point (S2_latlng.to_point (center t)) in
       for k = 0 to 3 do
@@ -241,15 +241,15 @@ let[@inline] [@zero_alloc] from_cap c =
     let mutable all_longitudes = false in
     let mutable lat_lo = S1_angle.radians (S2_latlng.lat center_ll) - cap_angle in
     let mutable lat_hi = S1_angle.radians (S2_latlng.lat center_ll) + cap_angle in
-    let mutable lng_lo = Float_u.neg (Float_u.pi ()) in
-    let mutable lng_hi = Float_u.pi () in
-    if lat_lo <= Float_u.neg (Float_u.pi () / #2.0)
+    let mutable lng_lo = Float_u.neg (Float_u.pi) in
+    let mutable lng_hi = Float_u.pi in
+    if lat_lo <= Float_u.neg (Float_u.pi / #2.0)
     then (
-      lat_lo <- Float_u.neg (Float_u.pi () / #2.0);
+      lat_lo <- Float_u.neg (Float_u.pi / #2.0);
       all_longitudes <- true);
-    if lat_hi >= Float_u.pi () / #2.0
+    if lat_hi >= Float_u.pi / #2.0
     then (
-      lat_hi <- Float_u.pi () / #2.0;
+      lat_hi <- Float_u.pi / #2.0;
       all_longitudes <- true);
     if not all_longitudes
     then (
@@ -259,8 +259,8 @@ let[@inline] [@zero_alloc] from_cap c =
       then (
         let angle_a = Float_u.asin (sin_a / sin_c) in
         let lng = S1_angle.radians (S2_latlng.lng center_ll) in
-        lng_lo <- Float_util.ieee_remainder_u (lng - angle_a) (#2.0 * Float_u.pi ());
-        lng_hi <- Float_util.ieee_remainder_u (lng + angle_a) (#2.0 * Float_u.pi ())));
+        lng_lo <- Float_util.ieee_remainder_u (lng - angle_a) (#2.0 * Float_u.pi);
+        lng_hi <- Float_util.ieee_remainder_u (lng + angle_a) (#2.0 * Float_u.pi)));
     #{ lat = R1_interval.create ~lo:lat_lo ~hi:lat_hi
      ; lng = S1_interval.create ~lo:lng_lo ~hi:lng_hi
      })
@@ -268,7 +268,7 @@ let[@inline] [@zero_alloc] from_cap c =
 
 let pole_min_lat =
   let open Float_u.O in
-  Float_u.asin (Float_u.sqrt (#1.0 / #3.0)) - (#0.5 * Float_u.epsilon_float ())
+  Float_u.asin (Float_u.sqrt (#1.0 / #3.0)) - (#0.5 * Float_u.epsilon_float)
 ;;
 
 (* For levels > 0 we build the bound from the four corners of the cell's
@@ -281,7 +281,7 @@ let[@zero_alloc] from_cell cell =
   let level = S2_cell.level cell in
   let face = S2_cell.face cell in
   let uv = S2_cell.bound_uv cell in
-  let two_eps = Float_u.O.(#2.0 * Float_u.epsilon_float ()) in
+  let two_eps = Float_u.O.(#2.0 * Float_u.epsilon_float) in
   let two_eps_ll = S2_latlng.of_radians ~lat:two_eps ~lng:two_eps in
   if Stdlib.( > ) level 0
   then
@@ -325,9 +325,9 @@ let[@zero_alloc] from_cell cell =
     polar_closure (expanded #{ lat; lng } two_eps_ll)
   else
     let open Float_u.O in
-    let pi4 = Float_u.pi () / #4.0 in
-    let pi2 = Float_u.pi () / #2.0 in
-    let pi3_4 = #3.0 * Float_u.pi () / #4.0 in
+    let pi4 = Float_u.pi / #4.0 in
+    let pi2 = Float_u.pi / #2.0 in
+    let pi3_4 = #3.0 * Float_u.pi / #4.0 in
     let bound =
       match face with
       | 0 ->
@@ -353,7 +353,7 @@ let[@zero_alloc] from_cell cell =
          ; lng = S1_interval.full
          }
     in
-    let one_eps_ll = S2_latlng.of_radians ~lat:(Float_u.epsilon_float ()) ~lng:#0.0 in
+    let one_eps_ll = S2_latlng.of_radians ~lat:(Float_u.epsilon_float) ~lng:#0.0 in
     expanded bound one_eps_ll
 ;;
 
@@ -520,11 +520,11 @@ let[@zero_alloc] bisector_intersection lat_interval lng_val =
   let lat_center = R1_interval.center lat_interval in
   let ortho_bisector =
     if lat_center >= #0.0
-    then S2_latlng.of_radians ~lat:(lat_center - (Float_u.pi () / #2.0)) ~lng:lng_abs
+    then S2_latlng.of_radians ~lat:(lat_center - (Float_u.pi / #2.0)) ~lng:lng_abs
     else
       S2_latlng.of_radians
-        ~lat:(Float_u.neg lat_center - (Float_u.pi () / #2.0))
-        ~lng:(lng_abs - Float_u.pi ())
+        ~lat:(Float_u.neg lat_center - (Float_u.pi / #2.0))
+        ~lng:(lng_abs - Float_u.pi)
   in
   let ortho_lng = S2_point.of_coords ~x:#0.0 ~y:(-#1.0) ~z:#0.0 in
   S2_point.robust_cross_prod ortho_lng (S2_latlng.to_point ortho_bisector)
@@ -553,7 +553,7 @@ let[@zero_alloc] directed_hausdorff_distance_helper lng_diff a b =
       let d2 = point_to_segment_distance a_hi b_lo b_hi in
       if S1_angle.radians d1 > S1_angle.radians d2 then d1 else d2
     in
-    if lng_diff <= Float_u.pi () / #2.0
+    if lng_diff <= Float_u.pi / #2.0
     then (
       (* Case A2 *)
       if R1_interval.contains a #0.0 && R1_interval.contains b #0.0
@@ -595,7 +595,7 @@ let[@zero_alloc] directed_hausdorff_distance t other =
   if is_empty t
   then S1_angle.of_radians #0.0
   else if is_empty other
-  then S1_angle.of_radians (Float_u.pi ())
+  then S1_angle.of_radians (Float_u.pi)
   else (
     let lng_diff = S1_interval.directed_hausdorff_distance t.#lng other.#lng in
     directed_hausdorff_distance_helper lng_diff t.#lat other.#lat)

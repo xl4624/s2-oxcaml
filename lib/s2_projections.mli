@@ -39,7 +39,7 @@ val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
 (** [plate_carree ~x_scale] constructs a plate carree projection whose x coordinate
     (longitude) spans [[-x_scale, x_scale]] and whose y coordinate (latitude) spans
     [[-x_scale/2, x_scale/2]]. For example [x_scale = #180.0] gives a degree-valued range,
-    [x_scale = Float_u.pi ()] gives a radian range of [[-pi, pi] x [-pi/2, pi/2]]. *)
+    [x_scale = Float_u.pi] gives a radian range of [[-pi, pi] x [-pi/2, pi/2]]. *)
 val plate_carree : x_scale:float# -> t
 
 (** [mercator ~max_x] constructs a spherical Mercator projection whose x coordinate

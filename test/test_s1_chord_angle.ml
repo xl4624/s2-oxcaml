@@ -50,8 +50,8 @@ let chord_angle_of_name = function
 ;;
 
 let float_u_or_infinity_of_json_exn = function
-  | `String "infinity" -> Float_u.infinity ()
-  | `String "-infinity" -> Float_u.neg_infinity ()
+  | `String "infinity" -> Float_u.infinity
+  | `String "-infinity" -> Float_u.neg_infinity
   | j -> float_u_of_json_exn j
 ;;
 
@@ -292,7 +292,7 @@ let test_trigonometry fixture () =
       ~actual:(S2.S1_chord_angle.cos angle);
     let expected_tan =
       match member "tan" c with
-      | `Null -> Float_u.infinity ()
+      | `Null -> Float_u.infinity
       | j -> float_u_of_json_exn j
     in
     check_float_u

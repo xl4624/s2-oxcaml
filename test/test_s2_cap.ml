@@ -284,7 +284,7 @@ let test_basic f () =
     Float_u.(
       S2.S1_chord_angle.max_point_error (S2.S2_cap.radius_chord concave)
       + S2.S1_chord_angle.max_angle_error (S2.S2_cap.radius_chord concave)
-      + (#3.0 * Float_u.epsilon_float ()))
+      + (#3.0 * Float_u.epsilon_float))
   in
   let concave_min =
     S2.S2_cap.of_center_chord_angle
@@ -358,7 +358,7 @@ let test_basic f () =
     "hemi_contains_tiny"
     (bool_of_json_exn (member "hemi_contains_tiny" b))
     (S2.S2_cap.contains_cap hemi tiny);
-  let pi4 = Float_u.(Float_u.pi () / #4.0) in
+  let pi4 = Float_u.(Float_u.pi / #4.0) in
   (check bool)
     "hemi_contains_small_cap"
     (bool_of_json_exn (member "hemi_contains_small_cap" b))
@@ -428,7 +428,7 @@ let test_rect_bound f () =
       | "north_tangent" ->
         S2.S2_cap.of_center_angle
           (S2.S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#1.0)
-          (S2.S1_angle.of_radians Float_u.((Float_u.pi () / #4.0) + #1e-16))
+          (S2.S1_angle.of_radians Float_u.((Float_u.pi / #4.0) + #1e-16))
       | "north_45_eps" ->
         S2.S2_cap.of_center_angle
           (S2.S2_point.of_coords ~x:#1.0 ~y:#0.0 ~z:#1.0)
@@ -436,7 +436,7 @@ let test_rect_bound f () =
       | "eastern_hemi" ->
         S2.S2_cap.of_center_angle
           (S2.S2_point.of_coords ~x:#0.0 ~y:#1.0 ~z:#0.0)
-          (S2.S1_angle.of_radians Float_u.((Float_u.pi () / #2.0) + #2e-16))
+          (S2.S1_angle.of_radians Float_u.((Float_u.pi / #2.0) + #2e-16))
       | "equator_50" ->
         S2.S2_cap.of_center_angle (latlng_point 0.0 50.0) (S2.S1_angle.of_degrees #20.0)
       | "north_pole_cap" ->

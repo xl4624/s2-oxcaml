@@ -217,7 +217,7 @@ let p x y z =
 let check_direction label ~expected ~actual =
   let normalized = S2.R3_vector.normalize actual in
   let max_error =
-    Packed_float_option.Unboxed.some Float_u.O.(#2.0 * Float_u.epsilon_float ())
+    Packed_float_option.Unboxed.some Float_u.O.(#2.0 * Float_u.epsilon_float)
   in
   if not (S2.S2_point.approx_equal ~max_error normalized expected)
   then

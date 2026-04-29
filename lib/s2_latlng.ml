@@ -44,7 +44,7 @@ let[@inline] [@zero_alloc] create ~lat ~lng =
 ;;
 
 let zero = #{ lat = #0.0; lng = #0.0 }
-let invalid = #{ lat = Float_u.pi (); lng = Float_u.O.(#2.0 * Float_u.pi ()) }
+let invalid = #{ lat = Float_u.pi; lng = Float_u.O.(#2.0 * Float_u.pi) }
 let[@inline] [@zero_alloc] of_radians ~lat ~lng = #{ lat; lng }
 
 let[@inline] [@zero_alloc] of_degrees ~lat ~lng =
@@ -170,8 +170,8 @@ let[@inline] [@zero_alloc] of_point p =
 
 let[@inline] [@zero_alloc] is_valid t =
   let open Float_u.O in
-  Float_u.abs t.#lat <= Float_u.pi () / #2.0
-  && Float_u.abs t.#lng <= Float_u.pi ()
+  Float_u.abs t.#lat <= Float_u.pi / #2.0
+  && Float_u.abs t.#lng <= Float_u.pi
   && (not (Float_u.is_nan t.#lat || Float_u.is_inf t.#lat))
   && not (Float_u.is_nan t.#lng || Float_u.is_inf t.#lng)
 ;;
@@ -187,17 +187,17 @@ let[@inline] [@zero_alloc] normalized t : t =
     let lat =
       Float_u.clamp_exn
         t.#lat
-        ~min:(Float_u.neg (Float_u.pi ()) / #2.0)
-        ~max:(Float_u.pi () / #2.0)
+        ~min:(Float_u.neg (Float_u.pi) / #2.0)
+        ~max:(Float_u.pi / #2.0)
     in
-    let lng = Float_util.ieee_remainder_u t.#lng (#2.0 * Float_u.pi ()) in
+    let lng = Float_util.ieee_remainder_u t.#lng (#2.0 * Float_u.pi) in
     #{ lat; lng }
 ;;
 
 let[@zero_alloc ignore] to_string_in_degrees t =
   let n = normalized t in
   let open Float_u.O in
-  let scale = #180.0 / Float_u.pi () in
+  let scale = #180.0 / Float_u.pi in
   let lat_deg = Float_u.to_float (n.#lat * scale) in
   let lng_deg = Float_u.to_float (n.#lng * scale) in
   Printf.sprintf "%f,%f" lat_deg lng_deg

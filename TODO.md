@@ -583,16 +583,44 @@ Already adopted by `approx_equal` on `R1_interval`, `S1_interval`,
       (e.g., perpendicular foot off the edge) that return
       `Packed_float_option.Unboxed.t`.
 
+### Boxed `option` returns on hot paths
+
+Several public APIs return a value-layout `option` that allocates a `Some _`
+on every successful call. Each one wants either an `unboxed_option` deriver
+on the result type, or a sentinel-style API rewrite.
+
+- [ ] `S2_shape_index.Index_cell.find_clipped : t -> shape_id:int ->
+      Clipped_shape.t option`. Called per cell from
+      `S2_crossing_edge_query.get_candidates_for_shape` and (less hot) from
+      `S2_shape_index_region` / `S2_validation_query` when those land.
+      `Clipped_shape.t` is a value-layout abstract type; the simplest fix
+      is to derive `unboxed_option` on `Clipped_shape.t` (it has an obvious
+      sentinel since `shape_id = -1` is unused). Failing that, expose a
+      sentinel-checking accessor (e.g., `find_clipped_or_empty`) so callers
+      can branch without an `option` wrapper.
+- [ ] `S2_edge_clipping.clip_to_face` and `S2_edge_clipping.clip_edge`
+      return `clipped_uv option`. `clipped_uv` is a boxed two-`R2_point.t`
+      record - the boxing is unnecessary, and the `option` adds another
+      indirection. Convert `clipped_uv` to an unboxed product
+      (`#{ a : R2_point.t; b : R2_point.t }`) and derive `unboxed_option`
+      with the empty-rectangle sentinel.
+- [ ] `S2_polygon.parent : t -> int -> int option`. The boxed `Some n`
+      allocates per call. Pick a sentinel (e.g., `-1`, mirroring the
+      "k < 0" convention already used by `last_descendant`) and return
+      plain `int`, or expose a `parent_unboxed` companion using a
+      `Packed_int_option`-style helper if we add one.
+
 ### Hashtbl / Hash_set on unboxed keys
 
-Current usages key by `int` or a value-layout wrapper. Once shape-edge-id
-lands, a bits64-keyed or `(int & int)`-keyed hash set is needed to avoid
-wrapping:
+Current usages key by `int` or a value-layout wrapper. A bits64-keyed or
+`(int & int)`-keyed hash set is needed to avoid wrapping:
 
-- [ ] Provide an unboxed-key hash-set helper in `util/` (e.g.,
-      `Int_pair_hash_set`) before `s2_shapeutil_visit_crossing_edge_pairs`
-      and `s2_validation_query` land; otherwise those ports will re-box on
-      every lookup.
+- [ ] `s2_closest_edge_query.tested_edges : (int * int, unit) Hashtbl.t`
+      allocates a fresh boxed `(shape_id, edge_id)` pair on every
+      `maybe_add_result` call (see `s2_closest_edge_query.ml:415` and
+      `s2_closest_edge_query.ml:823-832`). Replace with an unboxed-key
+      `Int_pair_hash_set` helper in `util/` once it exists. The same
+      helper would benefit `s2_validation_query` when it lands.
 
 ### Test-side boxing
 
@@ -611,3 +639,31 @@ wrapping:
       `Test_helpers.check_float` / `check_float_u` already, and the
       remaining boxed `check_float` call sites are the two
       intentional holdouts noted above.
+
+---
+
+## Style / consistency cleanups
+
+Small, mechanical fixes that don't fit anywhere above. Tracked here so we
+don't lose track of them; pick up whenever touching the affected file.
+
+- [ ] Replace the three remaining `failwith` call sites in `lib/` with
+      `raise_s [%message ...]` per AGENTS.md ("Prefer `Core.raise_s` over
+      `failwith` or `invalid_arg`"):
+      - `lib/s2_shape_index.ml:30` (`Index_cell.clipped` index check)
+      - `lib/s2_shape_index.ml:754` (`Iterator.index_cell` end check)
+      - `lib/util/binary_heap.ml:62` (`pop_exn` empty heap)
+- Naming note: `S2_pointutil.approx_equals` and
+  `S2_loop.boundary_approx_equals` use the plural `_equals` suffix
+  whereas `R1_interval.approx_equal`, `R2_rect.approx_equal`,
+  `S2_point.approx_equal`, `S2_latlng.approx_equal`, `S2_cap.approx_equal`
+  use singular `_equal`. The -s variants come from C++ (`S2::ApproxEquals`,
+  `S2Loop::BoundaryApproxEquals`); the rest match the OCaml-style
+  predicate convention. Leaving the inconsistency as-is for now since
+  changing the -s variants would just trade one inconsistency for
+  another, but flagging it here so future contributors know it was a
+  conscious choice.
+- [ ] `lib/r2_point.ml:20` flags `R2Edge` (pair of `R2_point.t`) as a
+      possible port. No internal caller currently needs it; revisit only
+      if a downstream port (closest-cell-query, polygon-rasterization)
+      asks for it.

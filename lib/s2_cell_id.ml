@@ -178,7 +178,7 @@ let[@zero_alloc] from_face_ij_wrap face i j =
   let int_j = (2 * (j - (limit_ij / 2))) + 1 in
   let open Float_u.O in
   let scale = #1.0 / Float_u.of_int limit_ij in
-  let lim = #1.0 + Float_u.epsilon_float () in
+  let lim = #1.0 + Float_u.epsilon_float in
   let u =
     Float_util.max_u
       (Float_u.neg lim)

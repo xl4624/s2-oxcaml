@@ -194,7 +194,7 @@ let test_degrees_vs_radians fixture () =
   List.iter cases ~f:(fun c ->
     let k = int_of_json_exn (member "k" c) in
     let from_deg = S2.S1_angle.of_degrees (#45.0 * Float_u.of_int k) in
-    let from_rad = S2.S1_angle.of_radians (Float_u.of_int k * Float_u.pi () / #4.0) in
+    let from_rad = S2.S1_angle.of_radians (Float_u.of_int k * Float_u.pi / #4.0) in
     (check bool)
       (sprintf "deg(45*%d) == rad(%d*pi/4)" k k)
       (bool_of_json_exn (member "equal" c))

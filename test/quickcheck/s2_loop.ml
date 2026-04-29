@@ -90,7 +90,7 @@ let%test_unit "area_plus_curvature_equals_2pi" =
     let a = S2.S2_loop.area loop in
     let c = S2.S2_loop.curvature loop in
     let sum = a + c in
-    let expected = #2.0 * Float_u.pi () in
+    let expected = #2.0 * Float_u.pi in
     assert (Float_u.abs (sum - expected) <= #1e-10))
 ;;
 
@@ -99,7 +99,7 @@ let%test_unit "area_nonneg_and_bounded" =
     let open Float_u.O in
     let loop = Cell_loop.to_loop t in
     let a = S2.S2_loop.area loop in
-    let four_pi = #4.0 * Float_u.pi () in
+    let four_pi = #4.0 * Float_u.pi in
     assert (a >= #0.0);
     assert (a <= four_pi + #1e-10))
 ;;
@@ -111,7 +111,7 @@ let%test_unit "invert_area_complement" =
     let loop = Cell_loop.to_loop t in
     let a = S2.S2_loop.area loop in
     let ainv = S2.S2_loop.area (S2.S2_loop.invert loop) in
-    let four_pi = #4.0 * Float_u.pi () in
+    let four_pi = #4.0 * Float_u.pi in
     assert (Float_u.abs (a + ainv - four_pi) <= #1e-10))
 ;;
 

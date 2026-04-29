@@ -45,23 +45,23 @@ let named_interval =
   | "empty" -> S2.S1_interval.empty
   | "full" -> S2.S1_interval.full
   | "zero" -> S2.S1_interval.create ~lo:#0.0 ~hi:#0.0
-  | "pi" -> S2.S1_interval.create ~lo:(Float_u.pi ()) ~hi:(Float_u.pi ())
+  | "pi" -> S2.S1_interval.create ~lo:(Float_u.pi) ~hi:(Float_u.pi)
   | "mipi" ->
     S2.S1_interval.create
-      ~lo:(Float_u.neg (Float_u.pi ()))
-      ~hi:(Float_u.neg (Float_u.pi ()))
-  | "pi2" -> S2.S1_interval.create ~lo:(Float_u.pi () / #2.) ~hi:(Float_u.pi () / #2.)
+      ~lo:(Float_u.neg (Float_u.pi))
+      ~hi:(Float_u.neg (Float_u.pi))
+  | "pi2" -> S2.S1_interval.create ~lo:(Float_u.pi / #2.) ~hi:(Float_u.pi / #2.)
   | "mipi2" ->
     S2.S1_interval.create
-      ~lo:(Float_u.neg (Float_u.pi () / #2.))
-      ~hi:(Float_u.neg (Float_u.pi () / #2.))
-  | "quad12" -> S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.pi ())
+      ~lo:(Float_u.neg (Float_u.pi / #2.))
+      ~hi:(Float_u.neg (Float_u.pi / #2.))
+  | "quad12" -> S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.pi)
   | "quad23" ->
     S2.S1_interval.create
-      ~lo:(Float_u.pi () / #2.)
-      ~hi:(Float_u.neg (Float_u.pi () / #2.))
-  | "quad34" -> S2.S1_interval.create ~lo:(Float_u.pi ()) ~hi:#0.0
-  | "quad123" -> S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.neg (Float_u.pi () / #2.))
+      ~lo:(Float_u.pi / #2.)
+      ~hi:(Float_u.neg (Float_u.pi / #2.))
+  | "quad34" -> S2.S1_interval.create ~lo:(Float_u.pi) ~hi:#0.0
+  | "quad123" -> S2.S1_interval.create ~lo:#0.0 ~hi:(Float_u.neg (Float_u.pi / #2.))
   | name ->
     (match failwith (sprintf "unknown named interval: %s" name) with
      | (_ : Nothing.t) -> .)
@@ -201,7 +201,7 @@ let test_add_point fixture () =
     | `String "add_pi_then_mipi" ->
       let result =
         S2.S1_interval.(
-          add_point (add_point empty (Float_u.pi ())) (Float_u.neg (Float_u.pi ())))
+          add_point (add_point empty (Float_u.pi)) (Float_u.neg (Float_u.pi)))
       in
       let expected = s1_interval_of_json (member "expected" c) in
       check_float_u_exact
@@ -215,7 +215,7 @@ let test_add_point fixture () =
     | `String "add_mipi_then_pi" ->
       let result =
         S2.S1_interval.(
-          add_point (add_point empty (Float_u.neg (Float_u.pi ()))) (Float_u.pi ()))
+          add_point (add_point empty (Float_u.neg (Float_u.pi))) (Float_u.pi))
       in
       let expected = s1_interval_of_json (member "expected" c) in
       check_float_u_exact

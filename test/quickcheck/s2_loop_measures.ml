@@ -74,7 +74,7 @@ let%test_unit "area_plus_curvature_is_2pi" =
     let vs = Cell_vertices.to_vertices t in
     let a = S2.S2_loop_measures.area vs in
     let c = S2.S2_loop_measures.curvature vs in
-    let expected = #2.0 * Float_u.pi () in
+    let expected = #2.0 * Float_u.pi in
     assert (Float_u.abs (a + c - expected) <= #1e-10))
 ;;
 

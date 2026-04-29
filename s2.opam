@@ -9,7 +9,7 @@ tags: ["geometry" "s2" "geospatial"]
 homepage: "https://github.com/xl4624/s2-oxcaml"
 bug-reports: "https://github.com/xl4624/s2-oxcaml/issues"
 depends: [
-  "dune" {>= "3.22"}
+  "dune" {>= "3.2"}
   "ocaml" {>= "5.0"}
   "async"
   "core"
@@ -35,4 +35,3 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/xl4624/s2-oxcaml.git"
-x-maintenance-intent: ["(latest)"]

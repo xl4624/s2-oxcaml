@@ -13,8 +13,8 @@ let fixture = load_fixture "s2projections.json"
 (* The generator encodes +/-inf as the tagged strings "inf" / "-inf" so we can
    round-trip polar Mercator samples. *)
 let float_u_or_inf = function
-  | `String "inf" -> Float_u.infinity ()
-  | `String "-inf" -> Float_u.neg_infinity ()
+  | `String "inf" -> Float_u.infinity
+  | `String "-inf" -> Float_u.neg_infinity
   | j -> float_u_of_json_exn j
 ;;
 

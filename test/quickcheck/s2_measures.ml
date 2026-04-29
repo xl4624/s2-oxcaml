@@ -69,7 +69,7 @@ let%test_unit "turn_angle_antisymmetric" =
       let cba = radians (S2.S2_measures.turn_angle c b a) in
       let open Float_u.O in
       let sum = abc + cba in
-      let near_pi = Float_u.abs (Float_u.abs abc - Float_u.pi ()) <= #1e-9 in
+      let near_pi = Float_u.abs (Float_u.abs abc - Float_u.pi) <= #1e-9 in
       if not near_pi
       then
         if Float_u.abs sum > #1e-13
@@ -154,7 +154,7 @@ let%test_unit "angle_range" =
       let open Float_u.O in
       let r = radians (S2.S2_measures.angle a b c) in
       assert (r >= #0.0);
-      assert (r <= Float_u.pi () + #1e-14))
+      assert (r <= Float_u.pi + #1e-14))
 ;;
 
 let%test_unit "girard_area_vs_area_large_triangle" =
@@ -167,7 +167,7 @@ let%test_unit "girard_area_vs_area_large_triangle" =
     ~f:(fun { S2_point_triple.a; b; c } ->
       let open Float_u.O in
       let ar = S2.S2_measures.area a b c in
-      if ar > #1e-4 && ar < Float_u.pi ()
+      if ar > #1e-4 && ar < Float_u.pi
       then (
         let g = S2.S2_measures.girard_area a b c in
         let diff = Float_u.abs (ar - g) in

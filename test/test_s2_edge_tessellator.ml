@@ -258,8 +258,8 @@ let test_projected_multi_crossing () =
     ~actual:(S2.R2_point.y last);
   let min_x = float_u_of_json_exn (member "min_x" c) in
   let max_x = float_u_of_json_exn (member "max_x" c) in
-  let mutable obs_min = Float_u.infinity () in
-  let mutable obs_max = Float_u.neg_infinity () in
+  let mutable obs_min = Float_u.infinity in
+  let mutable obs_max = Float_u.neg_infinity in
   for k = 0 to Array.length actual - 1 do
     let x = S2.R2_point.x actual.(k) in
     obs_min <- Float_u.min obs_min x;

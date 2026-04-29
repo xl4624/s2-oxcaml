@@ -31,7 +31,7 @@ let[@inline] [@zero_alloc] to_r3 t = t
 
 let[@inline] [@zero_alloc] is_unit_length t =
   let open Float_u.O in
-  Float_u.abs (R3_vector.norm2 t - #1.0) <= #5.0 * Float_u.epsilon_float ()
+  Float_u.abs (R3_vector.norm2 t - #1.0) <= #5.0 * Float_u.epsilon_float
 ;;
 
 (* Cross [a] with a scratch vector whose dominant component is set to 1 on
@@ -183,7 +183,7 @@ let[@inline] [@zero_alloc] fround t =
 ;;
 
 let[@inline] [@zero_alloc] nan () =
-  R3_vector.create ~x:(Float_u.nan ()) ~y:(Float_u.nan ()) ~z:(Float_u.nan ())
+  R3_vector.create ~x:(Float_u.nan) ~y:(Float_u.nan) ~z:(Float_u.nan)
 ;;
 
 let[@inline] [@zero_alloc] is_nan t =

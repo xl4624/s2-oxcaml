@@ -114,7 +114,7 @@ let test_project () =
     let closest = S2.S2_edge_distances.project x a b in
     let dist_radians = float_u_of_json_exn (member "distance_radians" c) in
     (* When distance is pi/2, the closest point is ambiguous on which side *)
-    if not Float_u.O.(dist_radians = Float_u.pi () / #2.0)
+    if not Float_u.O.(dist_radians = Float_u.pi / #2.0)
     then
       if is_endpoint
       then

@@ -2,19 +2,19 @@ open Core
 
 (* Error bound constants.  Derived from the IEEE-754 double epsilon following
    the analysis in s2edge_clipping.h:83-153. *)
-let face_clip_error_radians = Float_u.O.(#3.0 * Float_u.epsilon_float ())
-let face_clip_error_uv_dist = Float_u.O.(#9.0 * Float_u.epsilon_float ())
+let face_clip_error_radians = Float_u.O.(#3.0 * Float_u.epsilon_float)
+let face_clip_error_uv_dist = Float_u.O.(#9.0 * Float_u.epsilon_float)
 
 let face_clip_error_uv_coord =
-  Float_u.O.(#9.0 * (#1.0 / Float_u.sqrt #2.0) * Float_u.epsilon_float ())
+  Float_u.O.(#9.0 * (#1.0 / Float_u.sqrt #2.0) * Float_u.epsilon_float)
 ;;
 
 let intersects_rect_error_uv_dist =
-  Float_u.O.(#3.0 * Float_u.sqrt #2.0 * Float_u.epsilon_float ())
+  Float_u.O.(#3.0 * Float_u.sqrt #2.0 * Float_u.epsilon_float)
 ;;
 
-let edge_clip_error_uv_coord = Float_u.O.(#2.25 * Float_u.epsilon_float ())
-let edge_clip_error_uv_dist = Float_u.O.(#2.25 * Float_u.epsilon_float ())
+let edge_clip_error_uv_coord = Float_u.O.(#2.25 * Float_u.epsilon_float)
+let edge_clip_error_uv_dist = Float_u.O.(#2.25 * Float_u.epsilon_float)
 
 let shape_index_cell_padding =
   Float_u.O.(#2.0 * (face_clip_error_uv_coord + edge_clip_error_uv_coord))

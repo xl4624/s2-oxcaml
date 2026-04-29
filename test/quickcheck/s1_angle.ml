@@ -189,7 +189,7 @@ let%test_unit "normalized_in_range" =
     let open Float_u.O in
     let a = S1_angle_only.to_angle t in
     let n = S2.S1_angle.radians (S2.S1_angle.normalized a) in
-    let neg_pi = Float_u.neg (Float_u.pi ()) in
+    let neg_pi = Float_u.neg (Float_u.pi) in
     assert (n > neg_pi);
-    assert (n <= Float_u.pi ()))
+    assert (n <= Float_u.pi))
 ;;

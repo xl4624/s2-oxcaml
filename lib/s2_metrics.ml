@@ -58,7 +58,7 @@ let get_closest_level t value =
 
 let min_angle_span = #{ dim = 1; deriv = Float_u.O.(#4.0 / #3.0) }
 let max_angle_span = #{ dim = 1; deriv = #1.704897179199218452 }
-let avg_angle_span = #{ dim = 1; deriv = Float_u.O.(Float_u.pi () / #2.0) }
+let avg_angle_span = #{ dim = 1; deriv = Float_u.O.(Float_u.pi / #2.0) }
 let min_width = #{ dim = 1; deriv = Float_u.O.(#2.0 * Float_u.sqrt #2.0 / #3.0) }
 let max_width = #{ dim = 1; deriv = max_angle_span.#deriv }
 let avg_width = #{ dim = 1; deriv = #1.434523672886099389 }
@@ -72,4 +72,4 @@ let avg_diag = #{ dim = 1; deriv = #2.060422738998471683 }
 let max_diag_aspect = Float_u.sqrt #3.0
 let min_area = #{ dim = 2; deriv = Float_u.O.(#8.0 * Float_u.sqrt #2.0 / #9.0) }
 let max_area = #{ dim = 2; deriv = #2.635799256963161491 }
-let avg_area = #{ dim = 2; deriv = Float_u.O.(#4.0 * Float_u.pi () / #6.0) }
+let avg_area = #{ dim = 2; deriv = Float_u.O.(#4.0 * Float_u.pi / #6.0) }

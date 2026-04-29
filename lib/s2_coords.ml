@@ -1,6 +1,6 @@
 open Core
 
-let max_xyz_to_uv_error = Float_u.O.(#0.5 * Float_u.epsilon_float ())
+let max_xyz_to_uv_error = Float_u.O.(#0.5 * Float_u.epsilon_float)
 let max_cell_level = 30
 let limit_ij = 1 lsl max_cell_level
 let max_si_ti = 1 lsl (max_cell_level + 1)

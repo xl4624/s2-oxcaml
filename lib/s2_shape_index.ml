@@ -27,7 +27,12 @@ module Index_cell = struct
 
   let clipped t i =
     if i < 0 || i >= Array.length t.shapes
-    then failwith "S2_shape_index.Index_cell.clipped: index out of range";
+    then
+      raise_s
+        [%message
+          "S2_shape_index.Index_cell.clipped: index out of range"
+            (i : int)
+            ~num_clipped:(Array.length t.shapes : int)];
     t.shapes.(i)
   ;;
 
@@ -751,7 +756,8 @@ module Iterator = struct
   let index_cell it =
     match it.cur_cell with
     | Some c -> c
-    | None -> failwith "S2_shape_index.Iterator.index_cell: iterator at end"
+    | None ->
+      raise_s [%message "S2_shape_index.Iterator.index_cell: iterator at end"]
   ;;
 
   let locate_point it p =

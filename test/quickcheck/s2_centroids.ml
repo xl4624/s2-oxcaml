@@ -135,7 +135,7 @@ let%test_unit "true_centroid_norm_bounded" =
     ~f:(fun { S2_point_triple.a; b; c } ->
       let t = S2.S2_centroids.true_centroid a b c in
       let n = S2.R3_vector.norm t in
-      let bound = Float_u.O.((Float_u.pi () * #2.0) + #1e-12) in
+      let bound = Float_u.O.((Float_u.pi * #2.0) + #1e-12) in
       assert (Float_u.O.(n <= bound)))
 ;;
 
@@ -169,6 +169,6 @@ let%test_unit "edge_true_centroid_norm_bounded" =
       let n = S2.R3_vector.norm t in
       (* The edge centroid integrated over the great-circle arc has norm
          bounded by the arc length (<= pi). *)
-      let bound = Float_u.O.(Float_u.pi () + #1e-12) in
+      let bound = Float_u.O.(Float_u.pi + #1e-12) in
       assert (Float_u.O.(n <= bound)))
 ;;

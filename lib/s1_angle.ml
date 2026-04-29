@@ -14,13 +14,13 @@ let[@zero_alloc ignore] pp ppf t =
 
 let[@zero_alloc ignore] to_string t = Float_u.to_string t
 let zero = #0.0
-let infinity = Float_u.infinity ()
+let infinity = Float_u.infinity
 
 (* TODO: port the S2Point and S2LatLng two-argument constructors from s1angle.h once
    the corresponding OCaml modules exist. *)
 (* TODO: port the S1Angle::Coder serialization interface from s1angle.h. *)
 let[@inline] [@zero_alloc] of_radians r = r
-let[@inline] [@zero_alloc] of_degrees d = Float_u.O.(Float_u.pi () / #180.0 * d)
+let[@inline] [@zero_alloc] of_degrees d = Float_u.O.(Float_u.pi / #180.0 * d)
 let[@inline] [@zero_alloc] of_e5 e = of_degrees Float_u.O.(#1e-5 * Float_u.of_int e)
 let[@inline] [@zero_alloc] of_e6 e = of_degrees Float_u.O.(#1e-6 * Float_u.of_int e)
 let[@inline] [@zero_alloc] of_e7 e = of_degrees Float_u.O.(#1e-7 * Float_u.of_int e)
@@ -40,7 +40,7 @@ let[@inline] [@zero_alloc] of_unsigned_e7 (u : int) =
 ;;
 
 let[@inline] [@zero_alloc] radians t = t
-let[@inline] [@zero_alloc] degrees t = Float_u.O.(#180.0 / Float_u.pi () * t)
+let[@inline] [@zero_alloc] degrees t = Float_u.O.(#180.0 / Float_u.pi * t)
 
 module Int_option = struct
   type value = int
@@ -141,10 +141,10 @@ let[@inline] [@zero_alloc] sin_cos t =
    the (-pi, pi] convention used by S2 lat/lng normalization. *)
 let[@inline] [@zero_alloc] normalized t =
   let open Float_u.O in
-  let two_pi = #2.0 * Float_u.pi () in
+  let two_pi = #2.0 * Float_u.pi in
   let n = Float_u.round_nearest_half_to_even (t / two_pi) in
   let r = t - (n * two_pi) in
-  if r <= Float_u.neg (Float_u.pi ()) then Float_u.pi () else r
+  if r <= Float_u.neg (Float_u.pi) then Float_u.pi else r
 ;;
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare (radians a) (radians b)

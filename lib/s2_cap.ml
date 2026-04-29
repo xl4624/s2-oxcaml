@@ -24,9 +24,9 @@ let[@inline] [@zero_alloc] of_center_angle center angle =
   let open Float_u.O in
   let angle =
     if S1_angle.is_inf angle
-    then S1_angle.of_radians (Float_u.pi ())
-    else if S1_angle.radians angle > Float_u.pi ()
-    then S1_angle.of_radians (Float_u.pi ())
+    then S1_angle.of_radians (Float_u.pi)
+    else if S1_angle.radians angle > Float_u.pi
+    then S1_angle.of_radians (Float_u.pi)
     else angle
   in
   #{ center; radius = S1_chord_angle.of_angle angle }
@@ -39,7 +39,7 @@ let[@inline] [@zero_alloc] of_center_height center height =
 ;;
 
 let[@inline] [@zero_alloc] of_center_area center area =
-  #{ center; radius = S1_chord_angle.of_length2 Float_u.O.(area / Float_u.pi ()) }
+  #{ center; radius = S1_chord_angle.of_length2 Float_u.O.(area / Float_u.pi) }
 ;;
 
 let[@inline] [@zero_alloc] center t = t.#center
@@ -49,7 +49,7 @@ let radius_angle t = S1_chord_angle.to_angle t.#radius
 
 let[@inline] [@zero_alloc] area t =
   let open Float_u.O in
-  #2.0 * Float_u.pi () * Float_util.max_u #0.0 (height t)
+  #2.0 * Float_u.pi * Float_util.max_u #0.0 (height t)
 ;;
 
 let[@inline] [@zero_alloc] is_empty t = S1_chord_angle.is_negative t.#radius
@@ -157,7 +157,7 @@ let[@inline] [@zero_alloc] add_cap t other =
     in
     let err =
       Float_u.(
-        ((#2.0 * Float_u.epsilon_float ()) + S1_chord_angle.relative_sum_error)
+        ((#2.0 * Float_u.epsilon_float) + S1_chord_angle.relative_sum_error)
         * S1_chord_angle.length2 dist)
     in
     let dist = S1_chord_angle.plus_error dist err in

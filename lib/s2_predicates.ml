@@ -8,14 +8,14 @@ module Dyadic = Exact_arith.Dyadic
 module Exact_vec = Exact_arith.Exact_vec
 
 (* Rounding epsilon for IEEE float64: 2^-53. *)
-let[@inline] [@zero_alloc] dbl_error () = Float_u.O.(Float_u.epsilon_float () / #2.0)
+let[@inline] [@zero_alloc] dbl_error () = Float_u.O.(Float_u.epsilon_float / #2.0)
 
 (* Conservative upper bound on the error in evaluating [(A x B) . C] in
    floating point for unit-length inputs. Derivation: see s2predicates.h
    lines 376-392; for vectors of magnitude <= sqrt(2) the bound doubles. *)
 let[@inline] [@zero_alloc] max_determinant_error () =
   let open Float_u.O in
-  #1.8274 * Float_u.epsilon_float ()
+  #1.8274 * Float_u.epsilon_float
 ;;
 
 (* Stable-sign error scaling: [det_error_multiplier * sqrt(|e1|^2 * |e2|^2)]
@@ -23,7 +23,7 @@ let[@inline] [@zero_alloc] max_determinant_error () =
    are used for the cross product. See s2predicates.cc::StableSign. *)
 let[@inline] [@zero_alloc] det_error_multiplier () =
   let open Float_u.O in
-  #3.2321 * Float_u.epsilon_float ()
+  #3.2321 * Float_u.epsilon_float
 ;;
 
 module Direction = struct
@@ -68,7 +68,7 @@ let[@inline] [@zero_alloc] triage_sign a b c =
 let[@inline] [@zero_alloc] min_no_underflow_error () =
   let open Float_u.O in
   (* DBL_MIN = 2.2250738585072014e-308 *)
-  det_error_multiplier () * Float_u.sqrt (Float_u.min_positive_normal_value ())
+  det_error_multiplier () * Float_u.sqrt (Float_u.min_positive_normal_value)
 ;;
 
 (* Second-level stable formula. Uses the two shortest edges of the triangle
@@ -396,7 +396,7 @@ let[@zero_alloc] compare_distance x y r =
    to [|a|^2 <= 2] and [|b|^2 <= 2]. *)
 let[@zero_alloc] sign_dot_prod a b =
   let open Float_u.O in
-  let max_error = #3.046875 * Float_u.epsilon_float () in
+  let max_error = #3.046875 * Float_u.epsilon_float in
   let dp = V.dot a b in
   if Float_u.abs dp > max_error
   then if dp > #0.0 then 1 else -1

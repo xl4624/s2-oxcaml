@@ -102,7 +102,7 @@ let test_boundary_level_cases () =
     let input =
       (* JSON has no infinity literal; the generator emits it as null. *)
       match member "input" c with
-      | `Null -> Float_u.infinity ()
+      | `Null -> Float_u.infinity
       | j -> float_u_of_json_exn j
     in
     let expected = int_of_json_exn (member "expected_level" c) in

@@ -17,8 +17,8 @@ let[@inline] [@zero_alloc] update_min_interior_distance_impl
   let open Float_u.O in
   let ab2 = R3_vector.norm2 (R3_vector.sub a b) in
   let max_error =
-    (#4.75 * Float_u.epsilon_float () * (xa2 + xb2 + ab2))
-    + (#8.0 * Float_u.epsilon_float () * Float_u.epsilon_float ())
+    (#4.75 * Float_u.epsilon_float * (xa2 + xb2 + ab2))
+    + (#8.0 * Float_u.epsilon_float * Float_u.epsilon_float)
   in
   if Float_u.abs (xa2 - xb2) >= ab2 + max_error
   then S1_chord_angle.Option.none
@@ -123,8 +123,8 @@ let[@inline] [@zero_alloc] get_update_min_interior_distance_max_error dist =
     let a = Float_u.sqrt (b * (#2.0 - b)) in
     (((#2.5 + (#2.0 * Float_u.sqrt #3.0) + (#8.5 * a)) * a)
      + ((#2.0 + (#2.0 * Float_u.sqrt #3.0 / #3.0) + (#6.5 * (#1.0 - b))) * b)
-     + ((#23.0 + (#16.0 / Float_u.sqrt #3.0)) * Float_u.epsilon_float ()))
-    * Float_u.epsilon_float ()
+     + ((#23.0 + (#16.0 / Float_u.sqrt #3.0)) * Float_u.epsilon_float))
+    * Float_u.epsilon_float
 ;;
 
 let[@inline] [@zero_alloc] get_update_min_distance_max_error dist =

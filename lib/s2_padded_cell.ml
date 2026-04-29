@@ -219,7 +219,7 @@ let shrink_to_fit t rect =
   if quick_reject
   then t.#id
   else (
-    let extra = Float_u.O.(t.#padding + (#1.5 * Float_u.epsilon_float ())) in
+    let extra = Float_u.O.(t.#padding + (#1.5 * Float_u.epsilon_float)) in
     let padded = R2_rect.expanded_scalar rect extra in
     let padded_x = R2_rect.x padded in
     let padded_y = R2_rect.y padded in

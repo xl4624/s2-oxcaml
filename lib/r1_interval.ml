@@ -96,7 +96,7 @@ let[@inline] [@zero_alloc] directed_hausdorff_distance t y =
   if is_empty t
   then #0.0
   else if is_empty y
-  then Float_u.infinity ()
+  then Float_u.infinity
   else Float_util.max_u #0.0 (Float_util.max_u (t.#hi - y.#hi) (y.#lo - t.#lo))
 ;;
 

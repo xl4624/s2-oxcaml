@@ -75,8 +75,8 @@ let check_cell_props msg expected_json actual =
 (** Matches [S2LatLng::FromDegrees] -> unit-sphere point used by [S2CellId(point)]. *)
 let r3_from_lat_lng_deg ~lat_deg ~lng_deg =
   let open Float_u.O in
-  let lat = lat_deg * Float_u.pi () / #180. in
-  let lng = lng_deg * Float_u.pi () / #180. in
+  let lat = lat_deg * Float_u.pi / #180. in
+  let lng = lng_deg * Float_u.pi / #180. in
   let clat = Float_u.cos lat in
   S2.R3_vector.create
     ~x:(clat * Float_u.cos lng)
