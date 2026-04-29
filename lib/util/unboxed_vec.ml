@@ -48,6 +48,8 @@ struct
     b.len <- b.len + 1
   ;;
 
+  let[@inline] clear b = b.len <- 0
+
   let to_array b =
     let out = Array.create ~len:b.len E.default in
     for i = 0 to b.len - 1 do

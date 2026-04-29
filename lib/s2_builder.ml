@@ -84,54 +84,12 @@ end
 let k_max_input_edge_id = Int.max_value
 let k_no_input_edge_id = Int.max_value - 1
 
-(* Minimal growing array for values whose layout cannot be stored in [Dynarray.t] (which
-   requires a value layout). We use this for S2_point.t which is a float64 product. *)
-module Point_buffer = struct
-  type t =
-    { mutable arr : S2_point.t array
-    ; mutable len : int
-    }
+module Point_buffer =
+Unboxed_vec.Make [@kind (float64 & float64 & float64) mod external_] (struct
+    type t = S2_point.t
 
-  let zero = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#0.0
-  let create () = { arr = Array.create ~len:8 zero; len = 0 }
-  let length t = t.len
-
-  let get t i =
-    if i < 0 || i >= t.len
-    then
-      raise_s
-        [%message "Point_buffer.get: index out of range" (i : int) ~len:(t.len : int)];
-    t.arr.(i)
-  ;;
-
-  let grow t =
-    let n = Array.length t.arr in
-    let new_arr = Array.create ~len:(Int.max 8 (n * 2)) zero in
-    for i = 0 to t.len - 1 do
-      new_arr.(i) <- t.arr.(i)
-    done;
-    t.arr <- new_arr
-  ;;
-
-  let add_last t p =
-    if t.len = Array.length t.arr then grow t;
-    t.arr.(t.len) <- p;
-    t.len <- t.len + 1
-  ;;
-
-  let clear t = t.len <- 0
-
-  let to_array t =
-    if t.len = 0
-    then [||]
-    else (
-      let out = Array.create ~len:t.len t.arr.(0) in
-      for i = 1 to t.len - 1 do
-        out.(i) <- t.arr.(i)
-      done;
-      out)
-  ;;
-end
+    let default = R3_vector.zero
+  end)
 
 module Id_set_lexicon = struct
   (* Interns sorted integer sets so many edges sharing the same set can share storage. Id
@@ -732,7 +690,7 @@ let add_vertex t p =
   if n > 0 && S2_point.equal (Point_buffer.get t.input_vertices (n - 1)) p
   then n - 1
   else (
-    Point_buffer.add_last t.input_vertices p;
+    Point_buffer.push t.input_vertices p;
     n)
 ;;
 
@@ -835,14 +793,14 @@ let add_edge_crossings t =
       if r.#sign > 0
       then (
         let p = S2_edge_crossings.get_intersection a0 a1 b0 b1 in
-        Point_buffer.add_last new_points p)
+        Point_buffer.push new_points p)
     done
   done;
   if Point_buffer.length new_points > 0
   then (
     t.snapping_needed <- true;
     for k = 0 to Point_buffer.length new_points - 1 do
-      Point_buffer.add_last t.input_vertices (Point_buffer.get new_points k)
+      Point_buffer.push t.input_vertices (Point_buffer.get new_points k)
     done)
 ;;
 
@@ -879,7 +837,7 @@ let dedupe_and_snap_sites t =
       site_of.(i) <- !found)
     else (
       site_of.(i) <- Point_buffer.length sites;
-      Point_buffer.add_last sites p)
+      Point_buffer.push sites p)
   done;
   Point_buffer.to_array sites, site_of
 ;;

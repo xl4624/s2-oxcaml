@@ -515,10 +515,10 @@ These wrap one value-layout field and exist only for typing. Marking them
       their priority-queue entries. Add a ppx-templated `Make` variant
       covering the element kinds those queues actually use (distance +
       payload pair, typically `float64 & value`).
-- [ ] `s2_builder.Point_buffer` is a hand-rolled growable array for
-      `S2_point.t` (float64 & float64 & float64) duplicating what
-      `util/unboxed_vec.ml` already provides. Replace with a
-      `Unboxed_vec.Make` instantiation; remove the module.
+- [x] `s2_builder.Point_buffer` is now a `Unboxed_vec.Make` instantiation
+      (parameterised at `(float64 & float64 & float64) mod external_`).
+      `Unboxed_vec` gained a `clear` operation to cover the one user the
+      bespoke buffer needed.
 - [ ] `util/unboxed_vec.ml` covers only pair and triple `float64` kinds.
       Extend the `[@kind ...]` list whenever a new call site needs a
       different product (e.g., a `int & int` buffer for `(shape_id,

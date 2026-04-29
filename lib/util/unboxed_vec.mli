@@ -36,6 +36,9 @@ module%template
   (** [push b v] appends [v] to [b], growing the backing array if needed. *)
   val push : t -> E.t -> unit
 
+  (** [clear b] resets [b] to length zero without releasing the backing array. *)
+  val clear : t -> unit
+
   (** [to_array b] returns a fresh array whose length is [length b]. *)
   val to_array : t -> E.t array
 end
