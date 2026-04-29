@@ -230,18 +230,32 @@ let add_face_edge (fe : face_edge) (all_edges : face_edge list array) =
       all_edges.(a_face) <- fe :: all_edges.(a_face))
     else
       for face = 0 to 5 do
-        match S2_edge_clipping.clip_to_padded_face v0 v1 face ~padding:cell_padding with
+        match%optional_u.S2_edge_clipping.Clipped_uv.Option
+          S2_edge_clipping.clip_to_padded_face v0 v1 face ~padding:cell_padding
+        with
         | None -> ()
         | Some clipped ->
-          let fe = { fe with a = clipped.a; b = clipped.b } in
+          let fe =
+            { fe with
+              a = S2_edge_clipping.Clipped_uv.a clipped
+            ; b = S2_edge_clipping.Clipped_uv.b clipped
+            }
+          in
           all_edges.(face) <- fe :: all_edges.(face)
       done)
   else
     for face = 0 to 5 do
-      match S2_edge_clipping.clip_to_padded_face v0 v1 face ~padding:cell_padding with
+      match%optional_u.S2_edge_clipping.Clipped_uv.Option
+        S2_edge_clipping.clip_to_padded_face v0 v1 face ~padding:cell_padding
+      with
       | None -> ()
       | Some clipped ->
-        let fe = { fe with a = clipped.a; b = clipped.b } in
+        let fe =
+          { fe with
+            a = S2_edge_clipping.Clipped_uv.a clipped
+          ; b = S2_edge_clipping.Clipped_uv.b clipped
+          }
+        in
         all_edges.(face) <- fe :: all_edges.(face)
     done
 ;;

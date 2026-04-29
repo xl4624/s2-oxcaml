@@ -106,9 +106,13 @@ let%test_unit "clip_to_padded_face_in_uv_rect" =
     ~config:qc_config
     ~f:(fun { S2_point_pair.a; b } ->
       for face = 0 to 5 do
-        match S2_edge_clipping.clip_to_padded_face a b face ~padding:#0.0 with
+        match%optional_u.S2_edge_clipping.Clipped_uv.Option
+          S2_edge_clipping.clip_to_padded_face a b face ~padding:#0.0
+        with
         | None -> ()
-        | Some { a = a_uv; b = b_uv } ->
+        | Some clipped ->
+          let a_uv = S2_edge_clipping.Clipped_uv.a clipped in
+          let b_uv = S2_edge_clipping.Clipped_uv.b clipped in
           if not (in_unit_uv a_uv && in_unit_uv b_uv)
           then Alcotest.failf "clip_to_padded_face face %d outside uv rect" face
       done)
@@ -119,9 +123,13 @@ let%test_unit "clip_edge_inside_unit_rect" =
     (module R2_segment_in_unit_square)
     ~config:qc_config
     ~f:(fun { R2_segment_in_unit_square.a; b } ->
-      match S2_edge_clipping.clip_edge a b unit_uv_rect with
+      match%optional_u.S2_edge_clipping.Clipped_uv.Option
+        S2_edge_clipping.clip_edge a b unit_uv_rect
+      with
       | None -> Alcotest.fail "clip_edge returned None for segment inside rect"
-      | Some { a = a_clip; b = b_clip } ->
+      | Some clipped ->
+        let a_clip = S2_edge_clipping.Clipped_uv.a clipped in
+        let b_clip = S2_edge_clipping.Clipped_uv.b clipped in
         let close p q =
           Float_u.O.(
             Float_u.abs (R2_point.x p - R2_point.x q) <= #1e-14

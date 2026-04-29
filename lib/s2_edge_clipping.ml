@@ -27,11 +27,17 @@ type face_segment =
   }
 [@@deriving sexp_of]
 
-type clipped_uv =
-  { a : R2_point.t
-  ; b : R2_point.t
-  }
-[@@deriving sexp_of]
+module Clipped_uv = struct
+  type t =
+    #{ a : R2_point.t
+     ; b : R2_point.t
+     }
+  [@@deriving sexp_of, unboxed_option { sentinel = true }]
+
+  let[@inline] [@zero_alloc] create ~a ~b = #{ a; b }
+  let[@inline] [@zero_alloc] a t = t.#a
+  let[@inline] [@zero_alloc] b t = t.#b
+end
 
 (* --- Exact sign tricks on u + v vs w ---------------------------------
 
@@ -240,16 +246,16 @@ let clip_destination
 ;;
 
 let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding : float#)
-  : clipped_uv option
+  : Clipped_uv.Option.t
   =
   (* Fast path: both endpoints project onto the requested face, so the clipped segment is
      just their (u, v) projections. *)
   if Int.equal (S2_coords.get_face (S2_point.to_r3 a_xyz)) face
      && Int.equal (S2_coords.get_face (S2_point.to_r3 b_xyz)) face
   then (
-    let a_uv = S2_coords.valid_face_xyz_to_uv face (S2_point.to_r3 a_xyz) in
-    let b_uv = S2_coords.valid_face_xyz_to_uv face (S2_point.to_r3 b_xyz) in
-    Some { a = a_uv; b = b_uv })
+    let a = S2_coords.valid_face_xyz_to_uv face (S2_point.to_r3 a_xyz) in
+    let b = S2_coords.valid_face_xyz_to_uv face (S2_point.to_r3 b_xyz) in
+    Clipped_uv.Option.some (Clipped_uv.create ~a ~b))
   else
     let open Float_u.O in
     (* Compute the cross product in xyz (not uvw) to take advantage of the robust
@@ -266,7 +272,7 @@ let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding
         ~z:(R3_vector.z n)
     in
     if not (intersects_face scaled_n)
-    then None
+    then Clipped_uv.Option.none
     else (
       let n = R3_vector.normalize n in
       let a_tangent = R3_vector.cross n a in
@@ -285,8 +291,8 @@ let clip_to_padded_face (a_xyz : S2_point.t) (b_xyz : S2_point.t) face ~(padding
       in
       let #(b_uv, b_score) = clip_destination a b scaled_n a_tangent b_tangent scale_uv in
       if Int.( < ) (Int.( + ) a_score b_score) 3
-      then Some { a = a_uv; b = b_uv }
-      else None)
+      then Clipped_uv.Option.some (Clipped_uv.create ~a:a_uv ~b:b_uv)
+      else Clipped_uv.Option.none)
 ;;
 
 let[@inline] clip_to_face a b face = clip_to_padded_face a b face ~padding:#0.0
@@ -481,11 +487,11 @@ let get_clipped_edge_bound (a : R2_point.t) (b : R2_point.t) (clip : R2_rect.t)
   | None -> R2_rect.empty
 ;;
 
-let clip_edge (a : R2_point.t) (b : R2_point.t) (clip : R2_rect.t) : clipped_uv option =
+let clip_edge (a : R2_point.t) (b : R2_point.t) (clip : R2_rect.t) : Clipped_uv.Option.t =
   let open Float_u.O in
   let bound = R2_rect.from_point_pair a b in
   match%optional_u.R2_rect.Option clip_edge_bound a b clip bound with
-  | None -> None
+  | None -> Clipped_uv.Option.none
   | Some bound ->
     let ax = R2_point.x a in
     let ay = R2_point.y a in
@@ -495,5 +501,5 @@ let clip_edge (a : R2_point.t) (b : R2_point.t) (clip : R2_rect.t) : clipped_uv 
     let aj = if ay > by then 1 else 0 in
     let a_clip = R2_rect.get_vertex_ij bound ai aj in
     let b_clip = R2_rect.get_vertex_ij bound (Int.( - ) 1 ai) (Int.( - ) 1 aj) in
-    Some { a = a_clip; b = b_clip }
+    Clipped_uv.Option.some (Clipped_uv.create ~a:a_clip ~b:b_clip)
 ;;

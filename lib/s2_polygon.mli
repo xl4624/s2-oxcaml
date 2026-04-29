@@ -75,9 +75,9 @@ val loops : t -> S2_loop.t array
     [k + 1 .. last_descendant t k]. *)
 val loop : t -> int -> S2_loop.t
 
-(** [parent t k] returns [Some p] where [p] is the index of the enclosing loop, or [None]
-    if [loop t k] has depth [0]. *)
-val parent : t -> int -> int option
+(** [parent t k] returns the index of the enclosing loop, or [-1] if [loop t k] has depth
+    [0]. The [-1] sentinel matches the convention used by [last_descendant]. *)
+val parent : t -> int -> int
 
 (** [last_descendant t k] returns the index of the last loop contained (transitively) in
     [loop t k]. For [k < 0] returns [num_loops t - 1]. *)

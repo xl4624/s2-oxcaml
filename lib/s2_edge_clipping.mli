@@ -83,21 +83,23 @@ val get_face_segments : S2_point.t -> S2_point.t -> face_segment list
 [@@zero_alloc ignore]
 
 (** A clipped edge in (u, v) coordinates on some cube face. *)
-type clipped_uv =
-  { a : R2_point.t
-  ; b : R2_point.t
-  }
-[@@deriving sexp_of]
+module Clipped_uv : sig
+  type t : (float64 & float64) & (float64 & float64)
+  [@@deriving sexp_of, unboxed_option { sentinel = true }]
 
-val sexp_of_clipped_uv : clipped_uv -> Sexp.t [@@zero_alloc ignore]
+  val sexp_of_t : t -> Sexp.t [@@zero_alloc ignore]
+  val create : a:R2_point.t -> b:R2_point.t -> t
+  val a : t -> R2_point.t
+  val b : t -> R2_point.t
+end
 
-(** [clip_to_face a b face] returns [Some { a; b }] giving the (u, v) coordinates on
-    [face] of the portion of the spherical edge [a]->[b] that hits that face, or [None] if
-    the edge misses the face entirely. The face-intersection test is exact: a result of
-    [None] definitively means no intersection. When [Some] is returned, the clipped
-    vertices lie within [[-1,1]x[-1,1]] and within {!face_clip_error_uv_dist} of the exact
-    line AB, but may differ slightly from the pieces produced by {!get_face_segments}. *)
-val clip_to_face : S2_point.t -> S2_point.t -> int -> clipped_uv option
+(** [clip_to_face a b face] returns the (u, v) coordinates on [face] of the portion of the
+    spherical edge [a]->[b] that hits that face, or [Clipped_uv.Option.none] if the edge
+    misses the face entirely. The face-intersection test is exact: a result of [none]
+    definitively means no intersection. When a clipped pair is returned, both vertices lie
+    within [[-1,1]x[-1,1]] and within {!face_clip_error_uv_dist} of the exact line AB, but
+    may differ slightly from the pieces produced by {!get_face_segments}. *)
+val clip_to_face : S2_point.t -> S2_point.t -> int -> Clipped_uv.Option.t
 [@@zero_alloc ignore]
 
 (** [clip_to_padded_face a b face ~padding] is like {!clip_to_face} but clips against the
@@ -108,7 +110,7 @@ val clip_to_padded_face
   -> S2_point.t
   -> int
   -> padding:float#
-  -> clipped_uv option
+  -> Clipped_uv.Option.t
 [@@zero_alloc ignore]
 
 (** {1 Rectangle clipping} *)
@@ -120,10 +122,10 @@ val clip_to_padded_face
     [rect] is within or only slightly outside [[-1,1]x[-1,1]]. *)
 val intersects_rect : R2_point.t -> R2_point.t -> R2_rect.t -> bool
 
-(** [clip_edge a b clip] returns [Some { a; b }] giving the two endpoints of the portion
-    of the segment [a]->[b] that lies inside [clip], or [None] if the segment does not
-    meet the rectangle. Coordinates are accurate to {!edge_clip_error_uv_coord}. *)
-val clip_edge : R2_point.t -> R2_point.t -> R2_rect.t -> clipped_uv option
+(** [clip_edge a b clip] returns the two endpoints of the portion of the segment [a]->[b]
+    that lies inside [clip], or [Clipped_uv.Option.none] if the segment does not meet the
+    rectangle. Coordinates are accurate to {!edge_clip_error_uv_coord}. *)
+val clip_edge : R2_point.t -> R2_point.t -> R2_rect.t -> Clipped_uv.Option.t
 [@@zero_alloc ignore]
 
 (** [get_clipped_edge_bound a b clip] returns a tight axis-aligned bound of the portion of

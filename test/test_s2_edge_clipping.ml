@@ -112,15 +112,18 @@ let test_clip_to_padded_face () =
       let expected_ok = bool_of_json_exn (member "intersects" f) in
       let actual = S2_edge_clipping.clip_to_padded_face a b face ~padding in
       let label = sprintf "%s face %d" name face in
-      match actual, expected_ok with
-      | None, false -> ()
-      | Some _, false -> Alcotest.fail (label ^ ": expected no intersection")
-      | None, true -> Alcotest.fail (label ^ ": expected intersection")
-      | Some { a = a_uv; b = b_uv }, true ->
-        let exp_a = r2_point_of_json (member "a_uv" f) in
-        let exp_b = r2_point_of_json (member "b_uv" f) in
-        check_r2_point ~eps:1e-14 (label ^ " a_uv") ~expected:exp_a ~actual:a_uv;
-        check_r2_point ~eps:1e-14 (label ^ " b_uv") ~expected:exp_b ~actual:b_uv))
+      match%optional_u.S2_edge_clipping.Clipped_uv.Option actual with
+      | None -> if expected_ok then Alcotest.fail (label ^ ": expected intersection")
+      | Some clipped ->
+        if not expected_ok
+        then Alcotest.fail (label ^ ": expected no intersection")
+        else (
+          let a_uv = S2_edge_clipping.Clipped_uv.a clipped in
+          let b_uv = S2_edge_clipping.Clipped_uv.b clipped in
+          let exp_a = r2_point_of_json (member "a_uv" f) in
+          let exp_b = r2_point_of_json (member "b_uv" f) in
+          check_r2_point ~eps:1e-14 (label ^ " a_uv") ~expected:exp_a ~actual:a_uv;
+          check_r2_point ~eps:1e-14 (label ^ " b_uv") ~expected:exp_b ~actual:b_uv)))
 ;;
 
 (* ---------- clip_edge / get_clipped_edge_bound / intersects_rect ---------- *)
@@ -137,15 +140,18 @@ let test_clip_edge () =
     let expected_ir = bool_of_json_exn (member "intersects_rect" c) in
     let bound_is_empty = bool_of_json_exn (member "bound_is_empty" c) in
     let actual = S2_edge_clipping.clip_edge a b clip in
-    (match actual, expected_ok with
-     | None, false -> ()
-     | Some _, false -> Alcotest.fail (name ^ ": expected clip_edge = None")
-     | None, true -> Alcotest.fail (name ^ ": expected clip_edge = Some")
-     | Some { a = a_clip; b = b_clip }, true ->
-       let exp_a = r2_point_of_json (member "a_clipped" c) in
-       let exp_b = r2_point_of_json (member "b_clipped" c) in
-       check_r2_point ~eps:1e-14 (name ^ " clip a") ~expected:exp_a ~actual:a_clip;
-       check_r2_point ~eps:1e-14 (name ^ " clip b") ~expected:exp_b ~actual:b_clip);
+    (match%optional_u.S2_edge_clipping.Clipped_uv.Option actual with
+     | None -> if expected_ok then Alcotest.fail (name ^ ": expected clip_edge = Some")
+     | Some clipped ->
+       if not expected_ok
+       then Alcotest.fail (name ^ ": expected clip_edge = None")
+       else (
+         let a_clip = S2_edge_clipping.Clipped_uv.a clipped in
+         let b_clip = S2_edge_clipping.Clipped_uv.b clipped in
+         let exp_a = r2_point_of_json (member "a_clipped" c) in
+         let exp_b = r2_point_of_json (member "b_clipped" c) in
+         check_r2_point ~eps:1e-14 (name ^ " clip a") ~expected:exp_a ~actual:a_clip;
+         check_r2_point ~eps:1e-14 (name ^ " clip b") ~expected:exp_b ~actual:b_clip));
     let actual_bound = S2_edge_clipping.get_clipped_edge_bound a b clip in
     check_bool
       (name ^ " bound empty")

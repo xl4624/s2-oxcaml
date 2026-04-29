@@ -47,11 +47,15 @@ let%expect_test "get_face_segments_crossing_faces" =
 let%expect_test "clip_to_face_intersect_and_miss" =
   let a = pt #1.0 #0.1 #0.1 in
   let b = pt #1.0 #0.2 #0.0 in
-  (match S2.S2_edge_clipping.clip_to_face a b 0 with
+  (match%optional_u.S2.S2_edge_clipping.Clipped_uv.Option
+     S2.S2_edge_clipping.clip_to_face a b 0
+   with
    | None -> printf "face0=none\n"
    | Some s ->
-     printf "face0=%s\n" (Sexp.to_string [%sexp (s : S2.S2_edge_clipping.clipped_uv)]));
-  (match S2.S2_edge_clipping.clip_to_face a b 3 with
+     printf "face0=%s\n" (Sexp.to_string [%sexp (s : S2.S2_edge_clipping.Clipped_uv.t)]));
+  (match%optional_u.S2.S2_edge_clipping.Clipped_uv.Option
+     S2.S2_edge_clipping.clip_to_face a b 3
+   with
    | None -> printf "face3=none\n"
    | Some _ -> printf "face3=some\n");
   [%expect {|
@@ -67,10 +71,12 @@ let%expect_test "intersects_rect_and_clip_edge" =
   let a = S2.R2_point.create ~x:(-#0.5) ~y:#0.5 in
   let b = S2.R2_point.create ~x:#0.5 ~y:#0.5 in
   printf "intersects=%b\n" (S2.S2_edge_clipping.intersects_rect a b rect);
-  (match S2.S2_edge_clipping.clip_edge a b rect with
+  (match%optional_u.S2.S2_edge_clipping.Clipped_uv.Option
+     S2.S2_edge_clipping.clip_edge a b rect
+   with
    | None -> printf "clip=none\n"
    | Some c ->
-     printf "clip=%s\n" (Sexp.to_string [%sexp (c : S2.S2_edge_clipping.clipped_uv)]));
+     printf "clip=%s\n" (Sexp.to_string [%sexp (c : S2.S2_edge_clipping.Clipped_uv.t)]));
   [%expect {|
     intersects=true
     clip=((a((x 0)(y 0.5)))(b((x 0.5)(y 0.5))))

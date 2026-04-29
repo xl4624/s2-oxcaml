@@ -97,7 +97,10 @@ module Point_buffer = struct
   let length t = t.len
 
   let get t i =
-    if i < 0 || i >= t.len then invalid_arg "Point_buffer.get";
+    if i < 0 || i >= t.len
+    then
+      raise_s
+        [%message "Point_buffer.get: index out of range" (i : int) ~len:(t.len : int)];
     t.arr.(i)
   ;;
 

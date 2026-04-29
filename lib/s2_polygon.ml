@@ -45,13 +45,13 @@ let cell_union_bound t = S2_latlng_rect.cell_union_bound t.bound
 let parent t k =
   let depth = S2_loop.depth t.loops.(k) in
   if depth = 0
-  then None
+  then -1
   else (
     let mutable j = k - 1 in
     while j >= 0 && S2_loop.depth t.loops.(j) >= depth do
       j <- j - 1
     done;
-    Some j)
+    j)
 ;;
 
 let last_descendant t k =
@@ -508,10 +508,15 @@ let boundary_approx_intersects_cell t cell =
       let e = S2_loop.edge l i in
       let v0 = e.#v0 in
       let v1 = e.#v1 in
-      (match S2_edge_clipping.clip_to_padded_face v0 v1 face ~padding with
+      (match%optional_u.S2_edge_clipping.Clipped_uv.Option
+         S2_edge_clipping.clip_to_padded_face v0 v1 face ~padding
+       with
        | None -> ()
        | Some clipped ->
-         if S2_edge_clipping.intersects_rect clipped.a clipped.b cell_bound
+         if S2_edge_clipping.intersects_rect
+              (S2_edge_clipping.Clipped_uv.a clipped)
+              (S2_edge_clipping.Clipped_uv.b clipped)
+              cell_bound
          then hit <- true);
       i <- i + 1
     done;

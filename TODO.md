@@ -598,17 +598,14 @@ on the result type, or a sentinel-style API rewrite.
       sentinel since `shape_id = -1` is unused). Failing that, expose a
       sentinel-checking accessor (e.g., `find_clipped_or_empty`) so callers
       can branch without an `option` wrapper.
-- [ ] `S2_edge_clipping.clip_to_face` and `S2_edge_clipping.clip_edge`
-      return `clipped_uv option`. `clipped_uv` is a boxed two-`R2_point.t`
-      record - the boxing is unnecessary, and the `option` adds another
-      indirection. Convert `clipped_uv` to an unboxed product
-      (`#{ a : R2_point.t; b : R2_point.t }`) and derive `unboxed_option`
-      with the empty-rectangle sentinel.
-- [ ] `S2_polygon.parent : t -> int -> int option`. The boxed `Some n`
-      allocates per call. Pick a sentinel (e.g., `-1`, mirroring the
-      "k < 0" convention already used by `last_descendant`) and return
-      plain `int`, or expose a `parent_unboxed` companion using a
-      `Packed_int_option`-style helper if we add one.
+- [x] `S2_edge_clipping.clip_to_face` and `S2_edge_clipping.clip_edge`
+      now return `Clipped_uv.Option.t`. `Clipped_uv` lives as a submodule of
+      `S2_edge_clipping`, with `t = #{ a : R2_point.t; b : R2_point.t }` and
+      `[@@deriving sexp_of, unboxed_option { sentinel = true }]`. Callers
+      branch via `match%optional_u.S2_edge_clipping.Clipped_uv.Option`.
+- [x] `S2_polygon.parent : t -> int -> int option`. Now returns plain
+      `int`, with `-1` for "no parent" (depth-0 loops), matching the
+      convention `last_descendant` already uses for "k < 0".
 
 ### Hashtbl / Hash_set on unboxed keys
 
@@ -647,12 +644,12 @@ Current usages key by `int` or a value-layout wrapper. A bits64-keyed or
 Small, mechanical fixes that don't fit anywhere above. Tracked here so we
 don't lose track of them; pick up whenever touching the affected file.
 
-- [ ] Replace the three remaining `failwith` call sites in `lib/` with
-      `raise_s [%message ...]` per AGENTS.md ("Prefer `Core.raise_s` over
-      `failwith` or `invalid_arg`"):
-      - `lib/s2_shape_index.ml:30` (`Index_cell.clipped` index check)
-      - `lib/s2_shape_index.ml:754` (`Iterator.index_cell` end check)
-      - `lib/util/binary_heap.ml:62` (`pop_exn` empty heap)
+- [x] Replace the remaining `failwith` / `invalid_arg` call sites in
+      `lib/` with `raise_s [%message ...]` per AGENTS.md ("Prefer
+      `Core.raise_s` over `failwith` or `invalid_arg`"). The three
+      previously-listed sites in `s2_shape_index` and `binary_heap` already
+      use `raise_s`; the last holdout was
+      `lib/s2_builder.ml:100` (`Point_buffer.get` index check).
 - Naming note: `S2_pointutil.approx_equals` and
   `S2_loop.boundary_approx_equals` use the plural `_equals` suffix
   whereas `R1_interval.approx_equal`, `R2_rect.approx_equal`,
