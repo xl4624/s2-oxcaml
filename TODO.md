@@ -109,10 +109,21 @@ pulls them out as first-class ports so callers can use them directly.
   - Deps: `s2_shape_index`, `s2_contains_point_query`,
     `s2_shapeutil_contains_brute_force`
 
-- [ ] **s2_shapeutil_visit_crossing_edge_pairs** - `S2_shapeutil.visit_crossing_edge_pairs`
-      (needed by `S2_polygon` validation and `S2_validation_query`)
+- [x] **s2_shapeutil_visit_crossing_edge_pairs** -
+      `S2_shapeutil_visit_crossing_edge_pairs` (`visit_crossing_edge_pairs`,
+      `visit_crossing_edge_pairs_two`, `find_self_intersection`). The
+      single-index walk mirrors C++ exactly (per-cell buffer, drop-one
+      adjacent-neighbour optimisation when [need_adjacent = false]). The
+      two-index walk uses a simpler "iterate edges of A, query B with
+      `S2_crossing_edge_query.get_candidates`" strategy instead of the
+      upstream cell-range pipeline; result set is identical, runtime is
+      slightly worse on inputs where many A-edges share a B-cell footprint.
+      `find_self_intersection` reproduces the upstream
+      `FindSelfIntersection`/`FindCrossingError` error messages.
   - C++: `s2shapeutil_visit_crossing_edge_pairs.h`, `.cc`
-  - Deps: `s2_shape_index`, `s2_crossing_edge_query`
+  - Deps: `s2_shape_index`, `s2_crossing_edge_query`,
+    `s2_shapeutil_shape_edge`, `s2_shapeutil_edge_iterator`,
+    `s2_edge_crosser`, `s2_wedge_relations`
 
 ## Tier 10 - Shape-index measures and regions
 
