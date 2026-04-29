@@ -13,10 +13,10 @@ let shape_to_points (shape : S2_shape.t) =
     out)
 ;;
 
-(* Returns the [num_vertices] of [chain_id] in [shape]: [chain.length] for
-   dimension 0 or 2 (closed), and [chain.length + 1] for dimension 1 (open).
-   The vertex sequence walks the chain edges in order, taking [v0] of each edge
-   plus the final [v1] when the chain is open. *)
+(* Returns the [num_vertices] of [chain_id] in [shape]: [chain.length] for dimension 0 or
+   2 (closed), and [chain.length + 1] for dimension 1 (open). The vertex sequence walks
+   the chain edges in order, taking [v0] of each edge plus the final [v1] when the chain
+   is open. *)
 let chain_vertices (shape : S2_shape.t) chain_id =
   let chain = shape.#chain chain_id in
   let len : int = chain.#length in
@@ -25,8 +25,8 @@ let chain_vertices (shape : S2_shape.t) chain_id =
   if num_vertices = 0
   then [||]
   else (
-    (* Seed with the first vertex so we can size the array. For [len = 0] in
-       dimension other than 1 the case above already returned. *)
+    (* Seed with the first vertex so we can size the array. For [len = 0] in dimension
+       other than 1 the case above already returned. *)
     let first = (shape.#chain_edge chain_id 0).#v0 in
     let out = Array.create ~len:num_vertices first in
     for i = 1 to len - 1 do

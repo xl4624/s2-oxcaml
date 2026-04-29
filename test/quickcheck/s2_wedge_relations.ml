@@ -31,8 +31,8 @@ module Wedge_pair = struct
     loop ()
   ;;
 
-  (* Wedge endpoints must be distinct from the shared vertex; draw until the
-     simple equality check passes. *)
+  (* Wedge endpoints must be distinct from the shared vertex; draw until the simple
+     equality check passes. *)
   let gen_distinct rnd ~from =
     let rec loop () =
       let p = gen_unit_point rnd in
@@ -66,8 +66,8 @@ let%test_unit "relation_exhaustive" =
     (module Wedge_pair)
     ~config:qc_config
     ~f:(fun { Wedge_pair.a0; ab1; a2; b0; b2 } ->
-      (* Any call must return one of the five relations; pattern matching
-         exhausts the tags so the match itself is the proof. *)
+      (* Any call must return one of the five relations; pattern matching exhausts the
+         tags so the match itself is the proof. *)
       match S2.S2_wedge_relations.get_wedge_relation ~a0 ~ab1 ~a2 ~b0 ~b2 with
       | Equals
       | Properly_contains

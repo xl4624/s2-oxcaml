@@ -139,10 +139,10 @@ let[@inline] [@zero_alloc] smallest_component t =
   if ax < ay then if ax < az then 0 else 2 else if ay < az then 1 else 2
 ;;
 
-(* Pick an auxiliary axis rotated away from [t]'s dominant component so the cross
-   product has large magnitude and the normalization step is well-conditioned. Choosing
-   the axis opposite the largest component instead of a fixed one avoids the
-   near-zero cross product when [t] happens to align with a coordinate axis. *)
+(* Pick an auxiliary axis rotated away from [t]'s dominant component so the cross product
+   has large magnitude and the normalization step is well-conditioned. Choosing the axis
+   opposite the largest component instead of a fixed one avoids the near-zero cross
+   product when [t] happens to align with a coordinate axis. *)
 let[@inline] [@zero_alloc] ortho t =
   let ov =
     match largest_abs_component t with

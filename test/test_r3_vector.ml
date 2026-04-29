@@ -1,19 +1,20 @@
-(* Reference: no dedicated r3vector_test.cc; R3Vector is Vector3<double> (util/math/vector.h).
-   Golden vectors from test/gen/r3vector.cc. Alcotest case names (TEST-style labels):
+(* Reference: no dedicated r3vector_test.cc; R3Vector is Vector3<double>
+   (util/math/vector.h). Golden vectors from test/gen/r3vector.cc. Alcotest case names
+   (TEST-style labels):
 
-   -  TEST(Vector3Golden, Constructors) - constructors
-   -  TEST(Vector3Golden, Accessors) - accessors
-   -  TEST(Vector3Golden, Arithmetic) - arithmetic
-   -  TEST(Vector3Golden, ComponentWise) - component_wise
-   -  TEST(Vector3Golden, Normalization) - normalization
-   -  TEST(Vector3Golden, Ortho) - ortho
-   -  TEST(Vector3Golden, ApproxEquals) - approx_equal
-   -  TEST(Vector3Golden, CompareEqual) - compare_equal
+   - TEST(Vector3Golden, Constructors) - constructors
+   - TEST(Vector3Golden, Accessors) - accessors
+   - TEST(Vector3Golden, Arithmetic) - arithmetic
+   - TEST(Vector3Golden, ComponentWise) - component_wise
+   - TEST(Vector3Golden, Normalization) - normalization
+   - TEST(Vector3Golden, Ortho) - ortho
+   - TEST(Vector3Golden, ApproxEquals) - approx_equal
+   - TEST(Vector3Golden, CompareEqual) - compare_equal
 
    Deliberately omitted (no OCaml equivalent or not part of this port’s API):
-   -  Cast, Set, operator[], mutable Data(), Clear
-   -  ComponentOrder, Floor, Ceil, FRound, IRound, Sqrt
-   -  IsNaN, NaN(), stream formatting (covered only in broader C++ tests) *)
+   - Cast, Set, operator[], mutable Data(), Clear
+   - ComponentOrder, Floor, Ceil, FRound, IRound, Sqrt
+   - IsNaN, NaN(), stream formatting (covered only in broader C++ tests) *)
 
 open Core
 open Test_helpers

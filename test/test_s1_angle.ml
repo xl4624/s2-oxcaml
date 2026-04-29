@@ -1,23 +1,24 @@
 (* C++ test parity: s2geometry/src/s2/s1angle_test.cc
-   -  TEST(S1Angle, DefaultConstructor)            - full parity (constructors)
-   -  TEST(S1Angle, Infinity)                      - full parity (special_values)
-   -  TEST(S1Angle, Zero)                          - full parity (special_values)
-   -  TEST(S1Angle, PiRadiansExactly180Degrees)    - full parity (constructors)
-   -  TEST(S1Angle, E5E6E7Representations)         - full parity (constructors + to_e5_e6_e7)
-   -  TEST(S1Angle, E6E7RepresentationsUnsigned)   - full parity (constructors)
-   -  TEST(S1Angle, NormalizeCorrectlyCanonicalizesAngles) - full parity (normalized)
-   -  TEST(S1Angle, ArithmeticOperationsOnAngles)  - full parity (arithmetic)
-   -  TEST(S1Angle, Trigonometry)                  - full parity (trigonometry + sin_cos)
-   -  TEST(S1Angle, DegreesVsE6)                   - full parity (degrees_vs_e6)
-   -  TEST(S1Angle, DegreesVsE7)                   - full parity (degrees_vs_e7)
-   -  TEST(S1Angle, E6VsE7)                        - full parity (e6_vs_e7, PRNG seed 12345)
-   -  TEST(S1Angle, DegreesVsRadians)              - full parity (degrees_vs_radians)
+   - TEST(S1Angle, DefaultConstructor) - full parity (constructors)
+   - TEST(S1Angle, Infinity) - full parity (special_values)
+   - TEST(S1Angle, Zero) - full parity (special_values)
+   - TEST(S1Angle, PiRadiansExactly180Degrees) - full parity (constructors)
+   - TEST(S1Angle, E5E6E7Representations) - full parity (constructors + to_e5_e6_e7)
+   - TEST(S1Angle, E6E7RepresentationsUnsigned) - full parity (constructors)
+   - TEST(S1Angle, NormalizeCorrectlyCanonicalizesAngles) - full parity (normalized)
+   - TEST(S1Angle, ArithmeticOperationsOnAngles) - full parity (arithmetic)
+   - TEST(S1Angle, Trigonometry) - full parity (trigonometry + sin_cos)
+   - TEST(S1Angle, DegreesVsE6) - full parity (degrees_vs_e6)
+   - TEST(S1Angle, DegreesVsE7) - full parity (degrees_vs_e7)
+   - TEST(S1Angle, E6VsE7) - full parity (e6_vs_e7, PRNG seed 12345)
+   - TEST(S1Angle, DegreesVsRadians) - full parity (degrees_vs_radians)
 
    Deliberately omitted (other modules / I/O / benchmarks):
-   -  TEST(S1Angle, ConstructorsThatMeasureAngles) - [S2Point] / [S2LatLng]; use [R3_vector]
-   -  TEST(S1Angle, TestFormatting), TEST(S1Angle, RoundtripEncodingSucceeds),
-      TEST(S1Angle, DecodeFailsWithTruncatedBuffer)
-   -  BM_E6ToRadians, BM_RadiansToE6 in [s1angle_test.cc] *)
+   - TEST(S1Angle, ConstructorsThatMeasureAngles) - [S2Point] / [S2LatLng]; use
+     [R3_vector]
+   - TEST(S1Angle, TestFormatting), TEST(S1Angle, RoundtripEncodingSucceeds),
+     TEST(S1Angle, DecodeFailsWithTruncatedBuffer)
+   - BM_E6ToRadians, BM_RadiansToE6 in [s1angle_test.cc] *)
 
 open Core
 open Test_helpers

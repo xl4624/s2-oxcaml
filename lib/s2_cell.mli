@@ -191,5 +191,5 @@ val uv_coord_of_edge : t -> int -> float#
 val ij_coord_of_edge : t -> int -> int
 
 (* The latitude-longitude bounding rectangle of an [S2_cell.t] is computed by
-   {!S2_latlng_rect.from_cell}, which lives in [s2_latlng_rect] to avoid a
-   dependency cycle between [s2_cell] and [s2_latlng_rect]. *)
+   {!S2_latlng_rect.from_cell}, which lives in [s2_latlng_rect] to avoid a dependency
+   cycle between [s2_cell] and [s2_latlng_rect]. *)

@@ -48,11 +48,10 @@ let[@inline] level t = t.#level
 let[@inline] orientation t = t.#orientation
 let[@inline] bound t = t.#bound
 
-(* For a top-level face the (u, v) bound is exactly [-(1+p), 1+p]^2 and the
-   middle is [-p, p]^2, so we can fill both fields directly. For inner levels
-   the middle is derived from the cell's snapped (si, ti) coordinates, which
-   is more expensive; we defer that work to [middle] and leave the field
-   empty here. *)
+(* For a top-level face the (u, v) bound is exactly [-(1+p), 1+p]^2 and the middle is
+   [-p, p]^2, so we can fill both fields directly. For inner levels the middle is derived
+   from the cell's snapped (si, ti) coordinates, which is more expensive; we defer that
+   work to [middle] and leave the field empty here. *)
 let create id ~padding =
   if S2_cell_id.is_face id
   then (
@@ -106,11 +105,11 @@ let create id ~padding =
      })
 ;;
 
-(* Lazy [middle] accessor. Because [t] is an unboxed record we cannot mutate
-   the cached field in place; callers that re-read [middle] repeatedly should
-   snapshot the result into a local let-binding. The sentinel "not yet
-   computed" value is [R2_rect.empty], which never occurs as a real middle
-   because real middles are centered around the cell's (u, v) center. *)
+(* Lazy [middle] accessor. Because [t] is an unboxed record we cannot mutate the cached
+   field in place; callers that re-read [middle] repeatedly should snapshot the result
+   into a local let-binding. The sentinel "not yet computed" value is [R2_rect.empty],
+   which never occurs as a real middle because real middles are centered around the cell's
+   (u, v) center. *)
 let middle t =
   if R2_rect.is_empty t.#middle
   then (
@@ -138,10 +137,9 @@ let child_ij parent ~i ~j =
   let i_lo = parent.#i_lo + (i * ij_size) in
   let j_lo = parent.#j_lo + (j * ij_size) in
   let orientation = parent.#orientation lxor Internal.pos_to_orientation.(pos) in
-  (* A child's bound is the union of a parent-corner rectangle and the
-     parent's middle rectangle: one (u, v)-extent is inherited from the
-     parent's outer bound, the other from the parent's middle. Snapshot
-     [middle] once to avoid recomputing it per axis. *)
+  (* A child's bound is the union of a parent-corner rectangle and the parent's middle
+     rectangle: one (u, v)-extent is inherited from the parent's outer bound, the other
+     from the parent's middle. Snapshot [middle] once to avoid recomputing it per axis. *)
   let mid = middle parent in
   let parent_x = R2_rect.x parent.#bound in
   let parent_y = R2_rect.y parent.#bound in
@@ -199,11 +197,10 @@ let exit_vertex t =
     (S2_coords.face_si_ti_to_xyz (S2_cell_id.face t.#id) (2 * i) (2 * j))
 ;;
 
-(* The extra 1.5 * epsilon compensates for roundoff error in [uv_to_st], so
-   that an (i, j) index we compute from a (u, v) coordinate never rounds
-   into the wrong sibling cell. The initial quick_reject handles the common
-   case where [rect] straddles the cell center (or the face origin, for
-   level 0) and no shrinking is possible. *)
+(* The extra 1.5 * epsilon compensates for roundoff error in [uv_to_st], so that an (i, j)
+   index we compute from a (u, v) coordinate never rounds into the wrong sibling cell. The
+   initial quick_reject handles the common case where [rect] straddles the cell center (or
+   the face origin, for level 0) and no shrinking is possible. *)
 let shrink_to_fit t rect =
   let ij_size = S2_cell_id.size_ij t.#level in
   let rect_x = R2_rect.x rect in
@@ -236,8 +233,8 @@ let shrink_to_fit t rect =
     let j_min, j_xor =
       shrink t.#j_lo (R1_interval.lo padded_y) (R1_interval.hi padded_y)
     in
-    (* [level_msb] is positive. We compute the bit width with an explicit
-       iterative count rather than a clz intrinsic. *)
+    (* [level_msb] is positive. We compute the bit width with an explicit iterative count
+       rather than a clz intrinsic. *)
     let level_msb = ((i_xor lor j_xor) lsl 1) + 1 in
     let bit_width n =
       let rec loop n acc = if n = 0 then acc else loop (n lsr 1) (acc + 1) in

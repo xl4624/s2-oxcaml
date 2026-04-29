@@ -5,9 +5,8 @@
    - TEST(GetCrossingEdgePairs, EdgeGridOneIndex)
    - TEST(GetCrossingEdgePairs, NoIntersectionsTwoIndexes)
    - TEST(GetCrossingEdgePairs, EdgeGridTwoIndexes)
-   - TEST(FindSelfIntersection, Basic) - replayed for every cyclic
-     permutation of every loop, mirroring the upstream
-     TestHasCrossingPermutations driver. *)
+   - TEST(FindSelfIntersection, Basic) - replayed for every cyclic permutation of every
+     loop, mirroring the upstream TestHasCrossingPermutations driver. *)
 
 open Core
 open Test_helpers
@@ -91,9 +90,9 @@ let pair_of_json j =
 
 let pairs_of_json j = to_list j |> List.map ~f:pair_of_json
 
-(* Runs [V.visit_crossing_edge_pairs] (or the two-index variant) against
-   [index], collects each visited pair, sorts and dedups it (matching the
-   canonical comparison style used by the upstream test). *)
+(* Runs [V.visit_crossing_edge_pairs] (or the two-index variant) against [index], collects
+   each visited pair, sorts and dedups it (matching the canonical comparison style used by
+   the upstream test). *)
 let collect_one_index_pairs index ~crossing_type =
   let acc = ref [] in
   let _completed =

@@ -1,31 +1,27 @@
 (* Golden data produced by test/gen/s2builder.cc.
 
    Upstream C++ tests mirrored (s2builder_test.cc):
-   - (custom) unit_square, triangle, two_nested_squares - standard polygon
-     construction with zero snap radius; exercise the
-     [S2_builder] + [S2_polygon_layer] pipeline.
+   - (custom) unit_square, triangle, two_nested_squares - standard polygon construction
+     with zero snap radius; exercise the [S2_builder] + [S2_polygon_layer] pipeline.
    - IdempotencySnapsIdenticalVerticesWithZeroSnapRadius (idempotency_zero_snap)
-     - duplicate vertices in an input loop are merged (the duplicate edge
-       becomes degenerate and is discarded by the polygon layer).
+     - duplicate vertices in an input loop are merged (the duplicate edge becomes
+       degenerate and is discarded by the polygon layer).
 
-   Plus a standalone smoke test that adds unit-square edges directly
-   from OCaml and checks [num_loops] and loop vertex count.
+   Plus a standalone smoke test that adds unit-square edges directly from OCaml and checks
+   [num_loops] and loop vertex count.
 
    Deliberately omitted (deferred by this port):
-   - SimpleVertexMerging and all other nonzero-snap-radius tests: the OCaml
-     port uses a simplified cluster-merge for snap_radius > 0, not the
-     Voronoi site-selection algorithm that C++ uses. Topology is preserved
-     but canonical site choice may differ.
-   - MaxEdgeDeviation, Topology*, Snapping*, MinEdgeVertex* : rely on the
-     full Voronoi site selection (s2builder.cc:888-1160) which is not yet
-     implemented.
+   - SimpleVertexMerging and all other nonzero-snap-radius tests: the OCaml port uses a
+     simplified cluster-merge for snap_radius > 0, not the Voronoi site-selection
+     algorithm that C++ uses. Topology is preserved but canonical site choice may differ.
+   - MaxEdgeDeviation, Topology*, Snapping*, MinEdgeVertex* : rely on the full Voronoi
+     site selection (s2builder.cc:888-1160) which is not yet implemented.
    - UNDIRECTED edge variants.
-   - [IntLatLngSnapFunction] and [S2CellIdSnapFunction] based tests (stubs
-     raise).
+   - [IntLatLngSnapFunction] and [S2CellIdSnapFunction] based tests (stubs raise).
    - [ForceVertex], labels, [simplify_edge_chains] tests.
    - Memory tracker tests.
-   - [LaxPolygonLayer], [S2PolylineLayer], [S2PolylineVectorLayer],
-     [S2PointVectorLayer] tests (layer types deferred). *)
+   - [LaxPolygonLayer], [S2PolylineLayer], [S2PolylineVectorLayer], [S2PointVectorLayer]
+     tests (layer types deferred). *)
 
 open Core
 open Test_helpers
@@ -48,8 +44,8 @@ let points_of_json j =
     arr)
 ;;
 
-(* Decomposed edge input: parallel arrays of v0 and v1 points. Tuples can't
-   hold S2_point.t because it has an unboxed layout. *)
+(* Decomposed edge input: parallel arrays of v0 and v1 points. Tuples can't hold
+   S2_point.t because it has an unboxed layout. *)
 let edges_of_json j =
   let xs = to_list j in
   let n = List.length xs in
@@ -117,8 +113,8 @@ let check_polygon_matches name case polygon =
     expected_is_empty
     (S2.S2_polygon.is_empty polygon);
   check bool (sprintf "%s: is_full" name) expected_is_full (S2.S2_polygon.is_full polygon);
-  (* Vertex sets must match per loop, but cyclic order may differ. Check
-     that each expected vertex appears somewhere in the corresponding loop. *)
+  (* Vertex sets must match per loop, but cyclic order may differ. Check that each
+     expected vertex appears somewhere in the corresponding loop. *)
   let loops_json = to_list (member "loops" expected) in
   List.iteri loops_json ~f:(fun li loop_json ->
     let expected_pts = points_of_json loop_json in
@@ -167,9 +163,9 @@ let unit_square_vertices () =
 ;;
 
 let test_smoke_unit_square () =
-  (* Build a unit-square loop directly from OCaml (no fixture). Checks that
-     the full pipeline from [S2_builder.create] through [S2_polygon_layer]
-     produces a single 4-vertex loop. *)
+  (* Build a unit-square loop directly from OCaml (no fixture). Checks that the full
+     pipeline from [S2_builder.create] through [S2_polygon_layer] produces a single
+     4-vertex loop. *)
   let vs = unit_square_vertices () in
   let options = B.Options.default () in
   let builder = B.create options in
@@ -184,8 +180,8 @@ let test_smoke_unit_square () =
 ;;
 
 let test_smoke_validate_ok () =
-  (* With [validate:true] on a well-formed polygon, the layer must report ok
-     and still populate [output]. *)
+  (* With [validate:true] on a well-formed polygon, the layer must report ok and still
+     populate [output]. *)
   let vs = unit_square_vertices () in
   let builder = B.create (B.Options.default ()) in
   let output = L.create_output () in

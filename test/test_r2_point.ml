@@ -1,16 +1,16 @@
 (* Reference: no dedicated r2point_test.cc upstream; Vector2<double> (util/math/vector.h).
    Go coverage in r2/rect_test.go (Alcotest case names mirror these where applicable):
-   -  TEST(Go, TestOrtho)      - ortho
-   -  TEST(Go, TestDot)        - arithmetic (dot)
-   -  TEST(Go, TestCross)      - arithmetic (cross)
-   -  TEST(Go, TestNorm)       - norm
-   -  TEST(Go, TestNormalize)  - normalize
+   - TEST(Go, TestOrtho) - ortho
+   - TEST(Go, TestDot) - arithmetic (dot)
+   - TEST(Go, TestCross) - arithmetic (cross)
+   - TEST(Go, TestNorm) - norm
+   - TEST(Go, TestNormalize) - normalize
 
    Golden-only (no direct Go/C++ macro); Alcotest case name in parentheses:
-   -  GoldenConstructors - constructors (zero, create, negative-zero)
-   -  GoldenMul, GoldenDiv, GoldenNeg - mul, div, neg
-   -  GoldenAngle, GoldenFabs, GoldenEquality - angle, fabs, equality
-   -  SexpOf_t - sexp *)
+   - GoldenConstructors - constructors (zero, create, negative-zero)
+   - GoldenMul, GoldenDiv, GoldenNeg - mul, div, neg
+   - GoldenAngle, GoldenFabs, GoldenEquality - angle, fabs, equality
+   - SexpOf_t - sexp *)
 
 open Core
 open Test_helpers

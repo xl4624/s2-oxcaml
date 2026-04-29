@@ -24,8 +24,7 @@
    - TEST(S2PolylineShape, EmptyPolyline) -> shapes fixture (empty)
 
    Deliberately omitted:
-   - TEST(S2Polyline, NearlyCovers): NearlyCovers is not part of the OCaml
-     port surface.
+   - TEST(S2Polyline, NearlyCovers): NearlyCovers is not part of the OCaml port surface.
    - EncodeDecode / S2CoderWorks / RoundtripEncoding: encoding is not ported.
    - TEST(S2Polyline, InitToSnapped) / InitToSimplified: snapping/simplifying
      initialisation is not ported.
@@ -73,8 +72,7 @@ let int_pair_of_json j =
      | (_ : Nothing.t) -> .)
 ;;
 
-(* polylines: per-case scalar accessors plus length / centroid / cap_bound /
-   rect_bound. *)
+(* polylines: per-case scalar accessors plus length / centroid / cap_bound / rect_bound. *)
 let test_polylines () =
   List.iter
     (to_list (get "polylines"))

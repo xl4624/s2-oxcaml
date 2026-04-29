@@ -26,9 +26,9 @@ let[@inline] ilogb x =
 ;;
 
 (* [get_level_for_max_value] and [get_level_for_min_value] avoid any division or log:
-   [ilogb] extracts the IEEE exponent, and the arithmetic shift by [dim - 1] folds
-   in the 2x cost of a level step for area metrics. See s2metrics.h:168-200 for the
-   DCHECK'd invariants on the resulting level. *)
+   [ilogb] extracts the IEEE exponent, and the arithmetic shift by [dim - 1] folds in the
+   2x cost of a level step for area metrics. See s2metrics.h:168-200 for the DCHECK'd
+   invariants on the resulting level. *)
 let get_level_for_max_value t value =
   if not Float_u.O.(value > #0.0)
   then max_cell_level
@@ -52,9 +52,9 @@ let get_closest_level t value =
   get_level_for_max_value t Float_u.O.(x * value)
 ;;
 
-(* Constants for the quadratic cell projection. All values were derived by hand
-   analysis plus Mathematica in the upstream library; see s2metrics.cc for the
-   alternative linear and tangent projection constants, which we do not expose. *)
+(* Constants for the quadratic cell projection. All values were derived by hand analysis
+   plus Mathematica in the upstream library; see s2metrics.cc for the alternative linear
+   and tangent projection constants, which we do not expose. *)
 
 let min_angle_span = #{ dim = 1; deriv = Float_u.O.(#4.0 / #3.0) }
 let max_angle_span = #{ dim = 1; deriv = #1.704897179199218452 }

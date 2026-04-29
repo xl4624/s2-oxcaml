@@ -1,14 +1,13 @@
 (* C++ test parity: s2geometry/src/s2/s2edge_crosser_test.cc
-   -  TEST(S2, Crossings): 12 crossing cases, exercising CrossingSign,
-      EdgeOrVertexCrossing, SignedEdgeOrVertexCrossing.
-   -  Chain sequences that drive the stateful crosser through several
-      successive edges (RestartAt + ChainCrossingSign / ChainEdgeOrVertex /
-      ChainSignedEdgeOrVertex).
-   -  TEST(S2, CollinearEdgesThatDontTouch) - static deterministic variant
-      using fixed great-circle interpolations.
+   - TEST(S2, Crossings): 12 crossing cases, exercising CrossingSign,
+     EdgeOrVertexCrossing, SignedEdgeOrVertexCrossing.
+   - Chain sequences that drive the stateful crosser through several successive edges
+     (RestartAt + ChainCrossingSign / ChainEdgeOrVertex / ChainSignedEdgeOrVertex).
+   - TEST(S2, CollinearEdgesThatDontTouch) - static deterministic variant using fixed
+     great-circle interpolations.
 
    Omitted:
-   -  RandomCrossings: random-seeded stress case from upstream. *)
+   - RandomCrossings: random-seeded stress case from upstream. *)
 
 open Core
 open Test_helpers
@@ -16,12 +15,11 @@ open Alcotest
 
 let fixture = load_fixture "s2edge_crosser.json"
 
-(* ---------- One-shot CrossingSign / EdgeOrVertex ----------
-   Cases labeled "barely_cross_end", "separated_1e640", "barely_cross_2000bits",
-   and "separated_1e640_variant" require > double precision arithmetic
-   (symbolic perturbations / >2000-bit exact arithmetic) to disambiguate. The
-   OCaml s2_edge_crossings has only the stable-sign path, so these cases are
-   skipped. *)
+(* ---------- One-shot CrossingSign / EdgeOrVertex ---------- Cases labeled
+   "barely_cross_end", "separated_1e640", "barely_cross_2000bits", and
+   "separated_1e640_variant" require > double precision arithmetic (symbolic perturbations
+   / >2000-bit exact arithmetic) to disambiguate. The OCaml s2_edge_crossings has only the
+   stable-sign path, so these cases are skipped. *)
 
 let exact_arith_only = function
   | "barely_cross_end"
@@ -69,9 +67,8 @@ let test_chains () =
     let b = r3_vector_of_json (member "b" g) in
     let chain = to_list (member "chain" g) in
     let steps = to_list (member "steps" g) in
-    (* Drive a single crosser through all steps, mirroring the upstream loop.
-       Use a for loop (not List.iter) so the mutable crosser binding is not
-       captured by a closure. *)
+    (* Drive a single crosser through all steps, mirroring the upstream loop. Use a for
+       loop (not List.iter) so the mutable crosser binding is not captured by a closure. *)
     let first = point_at_index chain 0 in
     let mutable crosser = S2.S2_edge_crosser.create ~a ~b in
     crosser <- S2.S2_edge_crosser.restart_at crosser first;
@@ -90,8 +87,8 @@ let test_chains () =
         (sprintf "%s[%d->%d] crossing_sign" name c_index d_index)
         expected_cs
         result.#sign;
-      (* Recompute edge_or_vertex and signed_crossing via fresh crossers so
-         the primary [crosser] keeps rolling through crossing_sign calls. *)
+      (* Recompute edge_or_vertex and signed_crossing via fresh crossers so the primary
+         [crosser] keeps rolling through crossing_sign calls. *)
       let c = point_at_index chain c_index in
       let eov_crosser = S2.S2_edge_crosser.create_with_chain ~a ~b ~c in
       let eov_result = S2.S2_edge_crosser.chain_edge_or_vertex_crossing eov_crosser d in

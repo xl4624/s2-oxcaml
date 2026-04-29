@@ -37,8 +37,8 @@ let%expect_test "full_predicates" =
   [%expect {| valid: true empty: false full: true point: false |}]
 ;;
 
-(* A hand-crafted rectangle over central Europe, roughly [40, 55] lat x
-   [0, 20] lng (degrees). *)
+(* A hand-crafted rectangle over central Europe, roughly [40, 55] lat x [0, 20] lng
+   (degrees). *)
 let europe () =
   S2.S2_latlng_rect.of_lo_hi
     ~lo:(S2.S2_latlng.of_degrees ~lat:#40.0 ~lng:#0.0)

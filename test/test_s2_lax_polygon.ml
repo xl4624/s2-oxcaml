@@ -9,20 +9,20 @@
    - TEST(S2LaxPolygonShape, DegenerateLoops)
    - TEST(S2LaxPolygonShape, InvertedLoops)
 
-   The "full" case is constructed in the generator as a single zero-vertex loop,
-   which is the representation S2LaxPolygonShape uses internally for a full
-   polygon. The upstream test builds it through the S2Polygon constructor, but
-   the resulting S2LaxPolygonShape state is identical.
+   The "full" case is constructed in the generator as a single zero-vertex loop, which is
+   the representation S2LaxPolygonShape uses internally for a full polygon. The upstream
+   test builds it through the S2Polygon constructor, but the resulting S2LaxPolygonShape
+   state is identical.
 
    Deliberately omitted:
    - Move: OCaml values are immutable at this level.
    - MultiLoopS2Polygon: depends on S2Polygon, which is not ported.
    - ManyLoopPolygon: random, not amenable to fixture-based testing.
    - CompareToS2Loop: depends on S2Loop and fractal testing.
-   - Encoding tests (S2CoderWorks, InsufficientDataInEncoder, etc.): encoding
-     is not ported.
-   - ChainIteratorWorks / ChainVertexIteratorWorks: iterators are not part of
-     the OCaml shape API.
+   - Encoding tests (S2CoderWorks, InsufficientDataInEncoder, etc.): encoding is not
+     ported.
+   - ChainIteratorWorks / ChainVertexIteratorWorks: iterators are not part of the OCaml
+     shape API.
 *)
 
 open Core

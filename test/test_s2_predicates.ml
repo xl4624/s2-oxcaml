@@ -1,21 +1,21 @@
-(* C++ test parity: s2geometry/src/s2/s2predicates_test.cc
-   Golden data from test/gen/s2predicates.cc.
+(* C++ test parity: s2geometry/src/s2/s2predicates_test.cc Golden data from
+   test/gen/s2predicates.cc.
 
    Covered:
-   -  TEST(Sign, StableSignUnderflow)
-   -  TEST(Sign, CollinearPoints) - collinear_tangent and proportional triples
-   -  TEST(Sign, SymbolicPerturbationCodeCoverage) - all 13 M1..M13 cases
-   -  TEST(CompareDistances, Coverage) - triage, exact, and symbolic paths
-   -  TEST(CompareDistance, Coverage)  - triage and exact paths
-   -  TEST(SignDotProd, Orthogonal / NearlyOrthogonal) - triage and exact
-   -  Basic Sign and OrderedCCW cases.
+   - TEST(Sign, StableSignUnderflow)
+   - TEST(Sign, CollinearPoints) - collinear_tangent and proportional triples
+   - TEST(Sign, SymbolicPerturbationCodeCoverage) - all 13 M1..M13 cases
+   - TEST(CompareDistances, Coverage) - triage, exact, and symbolic paths
+   - TEST(CompareDistance, Coverage) - triage and exact paths
+   - TEST(SignDotProd, Orthogonal / NearlyOrthogonal) - triage and exact
+   - Basic Sign and OrderedCCW cases.
 
    Deliberately omitted:
-   -  TEST(CompareDistances, Consistency) / TEST(CompareDistance, Consistency)
-      - randomized cross-precision consistency tests.
-   -  TEST(CircleEdgeIntersectionOrdering) - C++-only predicate, not ported.
-   -  TEST(CompareEdgeDistance) / CompareEdgePairDistance / CompareEdgeDirections
-   -  TEST(EdgeCircumcenterSign) / VoronoiSiteExclusion *)
+   - TEST(CompareDistances, Consistency) / TEST(CompareDistance, Consistency)
+     - randomized cross-precision consistency tests.
+   - TEST(CircleEdgeIntersectionOrdering) - C++-only predicate, not ported.
+   - TEST(CompareEdgeDistance) / CompareEdgePairDistance / CompareEdgeDirections
+   - TEST(EdgeCircumcenterSign) / VoronoiSiteExclusion *)
 
 open Core
 open Test_helpers
@@ -55,8 +55,8 @@ let test_sign_section section_name () =
         label
         expected_sign
         actual_sign;
-    (* Consistency: rotating the arguments preserves the sign, reversing
-       flips it.  Every fixture case must satisfy this. *)
+    (* Consistency: rotating the arguments preserves the sign, reversing flips it. Every
+       fixture case must satisfy this. *)
     let sign_rot =
       S2.S2_predicates.Direction.to_int (S2.S2_predicates.robust_sign b c_pt a)
     in
@@ -77,9 +77,9 @@ let test_sign_symbolic () = test_sign_section "sign_symbolic" ()
 (* Verify the low-level entry points compose into [robust_sign]:
    - [triage_sign_with_cross] matches [triage_sign] when fed [V.cross a b].
    - [triage_sign] then [expensive_sign ~perturb:true] reproduces [robust_sign].
-   - [unperturbed_sign] matches [robust_sign] for cases where no symbolic
-     perturbation is required (i.e. [robust_sign] returned a non-zero value
-     via the triage or stable tier rather than via Edelsbrunner-Muecke). *)
+   - [unperturbed_sign] matches [robust_sign] for cases where no symbolic perturbation is
+     required (i.e. [robust_sign] returned a non-zero value via the triage or stable tier
+     rather than via Edelsbrunner-Muecke). *)
 let test_low_level_sign_section section_name () =
   let cases = to_list (member section_name (Lazy.force fixture)) in
   List.iter cases ~f:(fun c ->
@@ -119,8 +119,8 @@ let test_low_level_sign_section section_name () =
     let robust_int = S2.S2_predicates.Direction.to_int robust in
     let unperturbed_int = S2.S2_predicates.Direction.to_int unperturbed in
     (* When robust_sign returns a non-zero value via triage or stable tiers,
-       unperturbed_sign returns the same; in the symbolic-perturbation cases
-       it returns 0 instead. So unperturbed must equal either robust or 0. *)
+       unperturbed_sign returns the same; in the symbolic-perturbation cases it returns 0
+       instead. So unperturbed must equal either robust or 0. *)
     if Int.( <> ) unperturbed_int 0 && Int.( <> ) unperturbed_int robust_int
     then
       Alcotest.failf

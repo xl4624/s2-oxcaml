@@ -1,17 +1,17 @@
 (* C++ test parity: s2geometry/src/s2/s2cell_union_test.cc
-   - TEST(S2CellUnion, WholeSphere)                       - whole_sphere
-   - TEST(S2CellUnion, IsNormalized)                      - is_normalized
-   - TEST(S2CellUnion, Normalize)                         - normalize (via create)
-   - TEST(S2CellUnion, ContainsCellID/IntersectsCellID)   - contains_intersects
-   - TEST(S2CellUnion, Contains/Intersects S2CellUnion)   - contains_intersects_union
-   - TEST(S2CellUnion, Union/Intersection/Difference)     - boolean_ops
-   - TEST(S2CellUnion, IntersectionWithCellId)            - intersection_with_cell_id
-   - TEST(S2CellUnion, FromMinMax)                        - from_min_max
-   - TEST(S2CellUnion, FromBeginEnd)                      - from_begin_end
-   - TEST(S2CellUnion, Denormalize)                       - denormalize
-   - TEST(S2CellUnion, LeafCellsCovered)                  - leaf_cells_covered
-   - TEST(S2CellUnion, Area)                              - area (average_based, approx, exact)
-   - TEST(S2CellUnion, EmptyAndNonEmptyBooleanOps)        - empty_ops
+   - TEST(S2CellUnion, WholeSphere) - whole_sphere
+   - TEST(S2CellUnion, IsNormalized) - is_normalized
+   - TEST(S2CellUnion, Normalize) - normalize (via create)
+   - TEST(S2CellUnion, ContainsCellID/IntersectsCellID) - contains_intersects
+   - TEST(S2CellUnion, Contains/Intersects S2CellUnion) - contains_intersects_union
+   - TEST(S2CellUnion, Union/Intersection/Difference) - boolean_ops
+   - TEST(S2CellUnion, IntersectionWithCellId) - intersection_with_cell_id
+   - TEST(S2CellUnion, FromMinMax) - from_min_max
+   - TEST(S2CellUnion, FromBeginEnd) - from_begin_end
+   - TEST(S2CellUnion, Denormalize) - denormalize
+   - TEST(S2CellUnion, LeafCellsCovered) - leaf_cells_covered
+   - TEST(S2CellUnion, Area) - area (average_based, approx, exact)
+   - TEST(S2CellUnion, EmptyAndNonEmptyBooleanOps) - empty_ops
 
    Extra coverage:
    - equal

@@ -37,13 +37,13 @@ let default_coverer =
   S2_region_coverer.create ~min_level:0 ~max_level:30 ~level_mod:1 ~max_cells:8 ()
 ;;
 
-(* Precompute [num_regions] regions, then cycle through them per benchmarked call.
-   Mirrors Go's StopTimer/StartTimer pattern to exclude setup from the measurement.
+(* Precompute [num_regions] regions, then cycle through them per benchmarked call. Mirrors
+   Go's StopTimer/StartTimer pattern to exclude setup from the measurement.
 
    The region arrays are unboxed, so we fill with a for-loop instead of [Array.init]. *)
 
-(* S2_cap.t, S2_cell.t, S2_cell_id.t are all unboxed-product types, and OxCaml arrays
-   of such types are restricted. We pre-generate the raw inputs (floats, cell ids) into
+(* S2_cap.t, S2_cell.t, S2_cell_id.t are all unboxed-product types, and OxCaml arrays of
+   such types are restricted. We pre-generate the raw inputs (floats, cell ids) into
    primitive arrays and reconstruct the region on each call. The reconstruction cost is
    small (~10-30ns for [of_coords] + [of_center_area] or [of_cell_id]) compared to the
    coverage work being measured. *)

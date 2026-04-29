@@ -142,9 +142,9 @@ module Target = struct
 end
 
 (* Brute-force index-size thresholds per target type. Values come from the
-   benchmark-derived constants in s2closest_edge_query.cc:36-63. Below these
-   sizes, scanning every edge of the indexed geometry beats the priority-queue
-   descent in the general case. *)
+   benchmark-derived constants in s2closest_edge_query.cc:36-63. Below these sizes,
+   scanning every edge of the indexed geometry beats the priority-queue descent in the
+   general case. *)
 let max_brute_force_index_size = function
   | Target.Point _ -> 120
   | Target.Edge _ -> 60
@@ -152,9 +152,9 @@ let max_brute_force_index_size = function
   | Target.Shape_index _ -> 25
 ;;
 
-(* TODO: port VisitClosestEdges / VisitClosestShapes visitor-style enumeration
-   and the ShapeFilter parameter from s2closest_edge_query.h:270-289. The
-   current implementation always returns a materialized result list. *)
+(* TODO: port VisitClosestEdges / VisitClosestShapes visitor-style enumeration and the
+   ShapeFilter parameter from s2closest_edge_query.h:270-289. The current implementation
+   always returns a materialized result list. *)
 
 let target_uses_max_error = function
   | Target.Point _ | Edge _ | Cell _ -> false
@@ -234,12 +234,11 @@ let visit_containing_shape_ids (target : Target.t) query_index ~f =
     !continue_
 ;;
 
-(* Min-heap of cell frontier entries keyed on lower-bound distance. Stored as
-   three parallel arrays rather than an array of records so that S1_chord_angle
-   (a float#) and S2_cell_id (int64#) slots stay tightly packed, and so that
-   the [Index_cell.t option] slot is only written when an indexed cell is
-   known. Standard binary-heap layout: children of index i are at 2i+1 and
-   2i+2. *)
+(* Min-heap of cell frontier entries keyed on lower-bound distance. Stored as three
+   parallel arrays rather than an array of records so that S1_chord_angle (a float#) and
+   S2_cell_id (int64#) slots stay tightly packed, and so that the [Index_cell.t option]
+   slot is only written when an indexed cell is known. Standard binary-heap layout:
+   children of index i are at 2i+1 and 2i+2. *)
 module Cell_queue = struct
   type entry =
     #{ distance : S1_chord_angle.t
@@ -404,14 +403,13 @@ type ctx =
   ; mutable avoid_duplicates : bool
   ; mutable result_singleton : Result.t
   ; mutable result_vector : Result.t list
-      (* [result_set]: kept sorted in ascending [Result.compare] order, with
-         length at most [opts.max_results].  Used when [max_results] is both
-         > 1 and < max_value. *)
+      (* [result_set]: kept sorted in ascending [Result.compare] order, with length at
+         most [opts.max_results]. Used when [max_results] is both > 1 and < max_value. *)
   ; mutable result_set : Result.t list
-      (* [tested_edges] deduplicates (shape_id, edge_id) lookups when the target
-       may re-enqueue the same edge across multiple cells. Only populated when
-       [avoid_duplicates] is set, which happens for [Shape_index] targets with
-       [max_results > 1] and a non-zero [max_error]. *)
+      (* [tested_edges] deduplicates (shape_id, edge_id) lookups when the target may
+         re-enqueue the same edge across multiple cells. Only populated when
+         [avoid_duplicates] is set, which happens for [Shape_index] targets with
+         [max_results > 1] and a non-zero [max_error]. *)
   ; tested_edges : (int * int, unit) Hashtbl.t
   ; queue : Cell_queue.t
   }
@@ -462,11 +460,10 @@ let add_result ctx (r : Result.t) =
       ctx.distance_limit <- S1_chord_angle.sub last.distance ctx.opts.max_error))
 ;;
 
-(* Clone an iterator by position. S2_shape_index.Iterator is mutable and does
-   not expose a copy operation, so to snapshot a position we build a fresh
-   iterator and seek it to the target cell id. Used during initial-covering
-   construction, where we need a second cursor without disturbing the main
-   one. *)
+(* Clone an iterator by position. S2_shape_index.Iterator is mutable and does not expose a
+   copy operation, so to snapshot a position we build a fresh iterator and seek it to the
+   target cell id. Used during initial-covering construction, where we need a second
+   cursor without disturbing the main one. *)
 let clone_iter_at index cur_id =
   let it = S2_shape_index.iterator index in
   S2_shape_index.Iterator.seek it cur_id;

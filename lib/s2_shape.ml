@@ -124,10 +124,10 @@ let[@inline] [@zero_alloc] is_full t =
 ;;
 
 (* Given a candidate vertex [vtest], run every incident edge through
-   {!S2_contains_vertex_query} (edges arriving at [vtest] count as direction
-   [-1], edges leaving as [+1]). Returns [0] when all incidences cancel
-   (balanced: can't decide containment here), positive when [vtest] is
-   contained by the shape, negative when it is not. *)
+   {!S2_contains_vertex_query} (edges arriving at [vtest] count as direction [-1], edges
+   leaving as [+1]). Returns [0] when all incidences cancel (balanced: can't decide
+   containment here), positive when [vtest] is contained by the shape, negative when it is
+   not. *)
 let contains_sign_at_vertex ~vtest ~num_edges ~edge =
   let q = S2_contains_vertex_query.create vtest in
   for e = 0 to num_edges - 1 do
@@ -147,11 +147,10 @@ let get_reference_point ~num_edges ~num_chains ~edge ~chain =
     if first_sign <> 0
     then Reference_point.create ~point:first_v0 ~contained:(first_sign > 0)
     else (
-      (* [first_v0] is balanced, meaning every edge at it has a sibling going
-         the other way. Find a vertex that isn't balanced by sorting [edges]
-         and [rev_edges] and walking them in lockstep: positions where one
-         list has an entry the other lacks point at an unbalanced edge, whose
-         starting vertex is a usable reference. *)
+      (* [first_v0] is balanced, meaning every edge at it has a sibling going the other
+         way. Find a vertex that isn't balanced by sorting [edges] and [rev_edges] and
+         walking them in lockstep: positions where one list has an entry the other lacks
+         point at an unbalanced edge, whose starting vertex is a usable reference. *)
       let edges = Array.create ~len:num_edges (edge 0) in
       let rev_edges = Array.create ~len:num_edges (Edge.reversed edges.(0)) in
       for i = 0 to num_edges - 1 do
@@ -189,11 +188,10 @@ let get_reference_point ~num_edges ~num_chains ~edge ~chain =
       if found_sign <> 0
       then Reference_point.create ~point:found_point ~contained:(found_sign > 0)
       else (
-        (* Every vertex is balanced. All edges cancel in sibling pairs, so
-           there's no "inside" to detect from crossings. The shape is either
-           empty (no geometry at all) or full (a zero-edge chain marks the
-           full polygon); only the presence of a zero-length chain can
-           distinguish the two. *)
+        (* Every vertex is balanced. All edges cancel in sibling pairs, so there's no
+           "inside" to detect from crossings. The shape is either empty (no geometry at
+           all) or full (a zero-edge chain marks the full polygon); only the presence of a
+           zero-length chain can distinguish the two. *)
         let mutable any_empty_chain = false in
         for i = 0 to num_chains - 1 do
           let #{ start = _; length } : Chain.t = chain i in

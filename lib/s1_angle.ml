@@ -16,8 +16,8 @@ let[@zero_alloc ignore] to_string t = Float_u.to_string t
 let zero = #0.0
 let infinity = Float_u.infinity
 
-(* TODO: port the S2Point and S2LatLng two-argument constructors from s1angle.h once
-   the corresponding OCaml modules exist. *)
+(* TODO: port the S2Point and S2LatLng two-argument constructors from s1angle.h once the
+   corresponding OCaml modules exist. *)
 (* TODO: port the S1Angle::Coder serialization interface from s1angle.h. *)
 let[@inline] [@zero_alloc] of_radians r = r
 let[@inline] [@zero_alloc] of_degrees d = Float_u.O.(Float_u.pi / #180.0 * d)
@@ -67,8 +67,8 @@ module Int_option = struct
 end
 
 (* [Float_u.iround_nearest] returns a boxed [int option] that would force allocation.
-   Unpacking into the unboxed [Int_option.t] (with [Int.min_value] as the none
-   sentinel) keeps [e5]/[e6]/[e7] zero-alloc. *)
+   Unpacking into the unboxed [Int_option.t] (with [Int.min_value] as the none sentinel)
+   keeps [e5]/[e6]/[e7] zero-alloc. *)
 let[@inline] [@zero_alloc] iround_nearest_sentinel v =
   match Float_u.iround_nearest v with
   | None -> Int_option.none
@@ -143,7 +143,7 @@ let[@inline] [@zero_alloc] normalized t =
   let two_pi = #2.0 * Float_u.pi in
   let n = Float_u.round_nearest_half_to_even (t / two_pi) in
   let r = t - (n * two_pi) in
-  if r <= Float_u.neg (Float_u.pi) then Float_u.pi else r
+  if r <= Float_u.neg Float_u.pi then Float_u.pi else r
 ;;
 
 let[@inline] [@zero_alloc] compare a b = Float_u.compare (radians a) (radians b)

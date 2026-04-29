@@ -1,10 +1,10 @@
 (* C++ test parity: s2geometry/src/s2/s2padded_cell_test.cc
-   -  TEST(S2PaddedCell, S2CellMethods)          - s2cell_methods, child_construction,
-      GetChildIJ, GetCenter
-   -  TEST(S2PaddedCell, GetEntryExitVertices)   - entry_exit_vertices (padding
-      independence, next_wrap coincidence, child entry/exit coincidence)
-   -  TEST(S2PaddedCell, ShrinkToFit)            - shrink_to_fit (deterministic
-      hand-picked cases mirroring the randomized upstream test) *)
+   - TEST(S2PaddedCell, S2CellMethods) - s2cell_methods, child_construction, GetChildIJ,
+     GetCenter
+   - TEST(S2PaddedCell, GetEntryExitVertices) - entry_exit_vertices (padding independence,
+     next_wrap coincidence, child entry/exit coincidence)
+   - TEST(S2PaddedCell, ShrinkToFit) - shrink_to_fit (deterministic hand-picked cases
+     mirroring the randomized upstream test) *)
 
 open Core
 open Test_helpers

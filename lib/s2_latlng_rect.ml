@@ -66,8 +66,8 @@ let[@inline] [@zero_alloc] size t =
 ;;
 
 let[@inline] [@zero_alloc] vertex t k =
-  (* Select CCW vertex (lower-left, lower-right, upper-right, upper-left) by
-     deriving the (i, j) bits from [k]: i = (k >> 1) ^ 1, j = i ^ (k & 1). *)
+  (* Select CCW vertex (lower-left, lower-right, upper-right, upper-left) by deriving the
+     (i, j) bits from [k]: i = (k >> 1) ^ 1, j = i ^ (k & 1). *)
   let i = (k lsr 1) land 1 in
   let j = i lxor (k land 1) in
   let lat_val = if i = 0 then R1_interval.lo t.#lat else R1_interval.hi t.#lat in
@@ -206,8 +206,8 @@ let[@inline] [@zero_alloc] cap_bound t =
     let mutable pole_angle = (Float_u.pi / #2.0) - R1_interval.lo t.#lat in
     if R1_interval.lo t.#lat + R1_interval.hi t.#lat < #0.0
     then (
-      (* The latitudes are skewed south; centering at the south pole yields the
-         smaller cap. *)
+      (* The latitudes are skewed south; centering at the south pole yields the smaller
+         cap. *)
       pole_z <- -#1.0;
       pole_angle <- (Float_u.pi / #2.0) + R1_interval.hi t.#lat);
     let pole_angle_with_err = (#1.0 + (#2.0 * Float_u.epsilon_float)) * pole_angle in
@@ -216,9 +216,8 @@ let[@inline] [@zero_alloc] cap_bound t =
         (S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:pole_z)
         (S1_angle.of_radians pole_angle_with_err)
     in
-    (* For longitude spans <= 180 degrees the tightest "mid-cap" is attained at
-       one of the four rectangle vertices, so we seed with the center and add
-       each vertex. *)
+    (* For longitude spans <= 180 degrees the tightest "mid-cap" is attained at one of the
+       four rectangle vertices, so we seed with the center and add each vertex. *)
     if S1_interval.length t.#lng <= Float_u.pi
     then (
       let mutable mid_cap = S2_cap.of_point (S2_latlng.to_point (center t)) in
@@ -241,7 +240,7 @@ let[@inline] [@zero_alloc] from_cap c =
     let mutable all_longitudes = false in
     let mutable lat_lo = S1_angle.radians (S2_latlng.lat center_ll) - cap_angle in
     let mutable lat_hi = S1_angle.radians (S2_latlng.lat center_ll) + cap_angle in
-    let mutable lng_lo = Float_u.neg (Float_u.pi) in
+    let mutable lng_lo = Float_u.neg Float_u.pi in
     let mutable lng_hi = Float_u.pi in
     if lat_lo <= Float_u.neg (Float_u.pi / #2.0)
     then (
@@ -271,12 +270,11 @@ let pole_min_lat =
   Float_u.asin (Float_u.sqrt (#1.0 / #3.0)) - (#0.5 * Float_u.epsilon_float)
 ;;
 
-(* For levels > 0 we build the bound from the four corners of the cell's
-   (u, v) rectangle, picking the pair of corners whose lat/lng extrema are
-   extremal. For level 0 each face has a canonical hard-coded bound, extended
-   to near-polar faces using [pole_min_lat] (which accounts for rounding in
-   [uv_to_xyz]). The result is expanded by two units of epsilon to swallow
-   projection rounding and then run through [polar_closure]. *)
+(* For levels > 0 we build the bound from the four corners of the cell's (u, v) rectangle,
+   picking the pair of corners whose lat/lng extrema are extremal. For level 0 each face
+   has a canonical hard-coded bound, extended to near-polar faces using [pole_min_lat]
+   (which accounts for rounding in [uv_to_xyz]). The result is expanded by two units of
+   epsilon to swallow projection rounding and then run through [polar_closure]. *)
 let[@zero_alloc] from_cell cell =
   let level = S2_cell.level cell in
   let face = S2_cell.face cell in
@@ -353,27 +351,26 @@ let[@zero_alloc] from_cell cell =
          ; lng = S1_interval.full
          }
     in
-    let one_eps_ll = S2_latlng.of_radians ~lat:(Float_u.epsilon_float) ~lng:#0.0 in
+    let one_eps_ll = S2_latlng.of_radians ~lat:Float_u.epsilon_float ~lng:#0.0 in
     expanded bound one_eps_ll
 ;;
 
 let[@zero_alloc] contains_cell t cell = contains t (from_cell cell)
 
-(* NOTE: This is the cheap lat/lng-rectangle test used by MayIntersect. It is
-   conservative (never reports disjoint when the cell actually intersects) but
-   may return true for cells whose spherical geometry does not intersect [t].
-   A tighter test (matching the C++ Intersects(S2Cell)) would require checking
-   each cell edge against the rectangle boundary.
-   TODO: port exact S2LatLngRect::Intersects(const S2Cell&) from
+(* NOTE: This is the cheap lat/lng-rectangle test used by MayIntersect. It is conservative
+   (never reports disjoint when the cell actually intersects) but may return true for
+   cells whose spherical geometry does not intersect [t]. A tighter test (matching the C++
+   Intersects(S2Cell)) would require checking each cell edge against the rectangle
+   boundary. TODO: port exact S2LatLngRect::Intersects(const S2Cell&) from
    s2latlng_rect.cc. *)
 let[@zero_alloc] intersects_cell t cell = intersects t (from_cell cell)
 let[@zero_alloc ignore] cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
 
 (* Distance helpers used by [distance] and [hausdorff_distance] below. *)
 
-(* Minimum distance from a point to the great-circle arc (a, b). If the foot
-   of the perpendicular is inside the arc we return |asin(d/|n|)|; otherwise
-   the closer endpoint wins. *)
+(* Minimum distance from a point to the great-circle arc (a, b). If the foot of the
+   perpendicular is inside the arc we return |asin(d/|n|)|; otherwise the closer endpoint
+   wins. *)
 let[@zero_alloc] point_to_segment_distance p a b =
   let open Float_u.O in
   (* Cross product n = a x b (normal to the great circle). *)
@@ -385,11 +382,11 @@ let[@zero_alloc] point_to_segment_distance p a b =
   else (
     (* Project p onto the great circle plane. *)
     let d = R3_vector.dot p n / Float_u.sqrt n2 in
-    (* The closest point on the great circle is the projection, but we need to
-       check whether it lies within the arc from a to b. *)
+    (* The closest point on the great circle is the projection, but we need to check
+       whether it lies within the arc from a to b. *)
     let proj = R3_vector.sub p (R3_vector.mul n (d / n2)) in
-    (* Check whether proj is in the interior of the arc.
-       The point is in the arc if (a x proj) . n >= 0 and (proj x b) . n >= 0. *)
+    (* Check whether proj is in the interior of the arc. The point is in the arc if (a x
+       proj) . n >= 0 and (proj x b) . n >= 0. *)
     let a_cross_proj = R3_vector.cross a proj in
     let proj_cross_b = R3_vector.cross proj b in
     if R3_vector.dot a_cross_proj n >= #0.0 && R3_vector.dot proj_cross_b n >= #0.0
@@ -491,9 +488,8 @@ let[@zero_alloc] distance t other =
 
 (* Directed Hausdorff distance helpers. *)
 
-(* Max distance from a point b to the segment spanning latitude range a_lat on
-   longitude 0, if the max occurs in the interior of a_lat. Otherwise returns
-   a negative value. *)
+(* Max distance from a point b to the segment spanning latitude range a_lat on longitude
+   0, if the max occurs in the interior of a_lat. Otherwise returns a negative value. *)
 let[@zero_alloc] interior_max_distance a_lat b =
   let open Float_u.O in
   if R1_interval.is_empty a_lat || R3_vector.x b >= #0.0
@@ -512,8 +508,8 @@ let[@zero_alloc] interior_max_distance a_lat b =
     else S1_angle.of_radians (-#1.0))
 ;;
 
-(* Intersection of longitude 0 with the bisector of an edge on longitude lng
-   spanning latitude range lat. *)
+(* Intersection of longitude 0 with the bisector of an edge on longitude lng spanning
+   latitude range lat. *)
 let[@zero_alloc] bisector_intersection lat_interval lng_val =
   let open Float_u.O in
   let lng_abs = Float_u.abs lng_val in
@@ -595,7 +591,7 @@ let[@zero_alloc] directed_hausdorff_distance t other =
   if is_empty t
   then S1_angle.of_radians #0.0
   else if is_empty other
-  then S1_angle.of_radians (Float_u.pi)
+  then S1_angle.of_radians Float_u.pi
   else (
     let lng_diff = S1_interval.directed_hausdorff_distance t.#lng other.#lng in
     directed_hausdorff_distance_helper lng_diff t.#lat other.#lat)

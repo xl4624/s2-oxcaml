@@ -1,7 +1,7 @@
-(* S2Shape is an abstract base class in the upstream C++ library, so there is no
-   dedicated s2shape_test.cc. This file exercises the concrete value types defined
-   on S2Shape (Edge, Chain, ChainPosition, ReferencePoint) and its type-tag
-   constants against golden data produced by test/gen/s2shape.cc.
+(* S2Shape is an abstract base class in the upstream C++ library, so there is no dedicated
+   s2shape_test.cc. This file exercises the concrete value types defined on S2Shape (Edge,
+   Chain, ChainPosition, ReferencePoint) and its type-tag constants against golden data
+   produced by test/gen/s2shape.cc.
 
    Coverage:
    - Edge.reversed / is_degenerate / incoming / outgoing / incident_on / compare / equal
@@ -10,9 +10,9 @@
    - Type_tag constants
 
    Deliberately omitted:
-   - is_empty / is_full: these are trivially derived from a shape's num_edges,
-     dimension, and num_chains. They are covered by concrete shape modules
-     (s2_lax_polyline, s2_lax_polygon, ...) as they come online. *)
+   - is_empty / is_full: these are trivially derived from a shape's num_edges, dimension,
+     and num_chains. They are covered by concrete shape modules (s2_lax_polyline,
+     s2_lax_polygon, ...) as they come online. *)
 
 open Core
 open Test_helpers

@@ -1,18 +1,17 @@
-(* Go test parity: geo/earth/earth_test.go
-   Golden data from test/gen/earth.cc (computed via C++ S2Earth, which uses the
-   same 6371010 m mean radius as Go's earth.Radius).
+(* Go test parity: geo/earth/earth_test.go Golden data from test/gen/earth.cc (computed
+   via C++ S2Earth, which uses the same 6371010 m mean radius as Go's earth.Radius).
 
    Covered:
-   -  TestAngleFromLength                                    - angle_length_roundtrip
-   -  TestLengthFromAngle                                    - angle_length_roundtrip
-   -  TestLengthFromPoints                                   - length_from_points
-   -  TestLengthFromLatLngs                                  - length_from_latlngs
-   -  TestAreaFromSteradians                                 - steradian_area_roundtrip
-   -  TestSteradiansFromArea                                 - steradian_area_roundtrip
-   -  TestInitialBearingFromLatLngs                          - initial_bearing
-   -  TestInitialBearingFromLatLngsUndefinedResultDoesNotCrash
-                                                              - initial_bearing_degenerate
-   -  Constants (Radius, LowestAltitude, HighestAltitude)    - constants *)
+   - TestAngleFromLength - angle_length_roundtrip
+   - TestLengthFromAngle - angle_length_roundtrip
+   - TestLengthFromPoints - length_from_points
+   - TestLengthFromLatLngs - length_from_latlngs
+   - TestAreaFromSteradians - steradian_area_roundtrip
+   - TestSteradiansFromArea - steradian_area_roundtrip
+   - TestInitialBearingFromLatLngs - initial_bearing
+   - TestInitialBearingFromLatLngsUndefinedResultDoesNotCrash
+     - initial_bearing_degenerate
+   - Constants (Radius, LowestAltitude, HighestAltitude) - constants *)
 
 open Core
 open Test_helpers
@@ -85,9 +84,9 @@ let test_length_from_points () =
     let b = point_of_list (member "b" c) in
     let expected = float_u_of_json_exn (member "length_meters" c) in
     let actual = S2.Earth.length_from_points a b in
-    (* C++ S2Point::Angle uses a numerically stable formula that may
-       differ by a couple of ulps from a single atan2-based Go
-       [s2.Point.Distance]. Allow a small relative tolerance in meters. *)
+    (* C++ S2Point::Angle uses a numerically stable formula that may differ by a couple of
+       ulps from a single atan2-based Go [s2.Point.Distance]. Allow a small relative
+       tolerance in meters. *)
     check_float_u ~eps:1e-6 "length_from_points" ~expected ~actual)
 ;;
 

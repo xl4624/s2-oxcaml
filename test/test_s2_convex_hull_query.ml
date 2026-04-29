@@ -12,8 +12,7 @@
    - TEST(S2ConvexHullQuery, LoopsAroundNorthPole) (a small sample of radii)
 
    Deliberately omitted:
-   - PointsInsideHull: randomized test; not needed once the direct cases
-     above are green. *)
+   - PointsInsideHull: randomized test; not needed once the direct cases above are green. *)
 
 open Core
 open Test_helpers
@@ -77,8 +76,8 @@ let run_case case =
     (name ^ " is_normalized")
     (bool_of_json_exn (member "is_normalized" case))
     (S2.S2_loop.is_normalized hull);
-  (* Every point in [must_contain] must either be a hull vertex or be
-     contained by the hull. *)
+  (* Every point in [must_contain] must either be a hull vertex or be contained by the
+     hull. *)
   let expected_vertices = vertices_of_json (member "hull_vertices" case) in
   let must_contain = vertices_of_json (member "must_contain" case) in
   for k = 0 to Array.length must_contain - 1 do

@@ -1,13 +1,13 @@
 (* C++ test parity: s2geometry/src/s2/s2centroids_test.cc
-   -  TEST(PlanarCentroid, SemiEquator)            - full parity
-   -  TEST(TriangleTrueCentroid, SmallTriangles)   - partial (deterministic subset)
-   -  TEST(EdgeTrueCentroid, SemiEquator)           - full parity
-   -  TEST(EdgeTrueCentroid, GreatCircles)          - omitted (random, verified by property)
+   - TEST(PlanarCentroid, SemiEquator) - full parity
+   - TEST(TriangleTrueCentroid, SmallTriangles) - partial (deterministic subset)
+   - TEST(EdgeTrueCentroid, SemiEquator) - full parity
+   - TEST(EdgeTrueCentroid, GreatCircles) - omitted (random, verified by property)
 
    Extra coverage:
-   -  planar_centroid_cases (unit_axes, same_point)
-   -  edge_true_centroid_cases (same_point, antipodal, short_edge, ninety_degrees)
-   -  triangle_true_centroid degenerate cases (same_point, collinear) *)
+   - planar_centroid_cases (unit_axes, same_point)
+   - edge_true_centroid_cases (same_point, antipodal, short_edge, ninety_degrees)
+   - triangle_true_centroid degenerate cases (same_point, collinear) *)
 
 open Core
 open Test_helpers

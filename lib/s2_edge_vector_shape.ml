@@ -3,10 +3,9 @@ open Core
 let default_capacity = 8
 let zero_point = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#0.0
 
-(* Two parallel growable arrays of [S2_point.t] rather than a single
-   [S2_shape.Edge.t] array: [S2_shape.Edge.t] is an unboxed product, but
-   maintaining one buffer per endpoint sidesteps the missing kind-polymorphic
-   [Array.blit] over products when growing. *)
+(* Two parallel growable arrays of [S2_point.t] rather than a single [S2_shape.Edge.t]
+   array: [S2_shape.Edge.t] is an unboxed product, but maintaining one buffer per endpoint
+   sidesteps the missing kind-polymorphic [Array.blit] over products when growing. *)
 type t =
   { mutable v0s : S2_point.t array
   ; mutable v1s : S2_point.t array

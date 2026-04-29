@@ -1,26 +1,21 @@
 (* C++ test parity: s2geometry/src/s2/s2cell_test.cc
-   -  TEST(S2Cell, TestFaces)                           - face constructors, accessors,
-      bound_uv, center, center_raw, vertices, edges
-   -  TEST(S2Cell, TestSubdivide)                       - child ids, face/level/orientation,
-      bound_uv
-   -  TEST(S2Cell, GetDistanceToPoint)                  - distance_to_point,
-      boundary_distance_to_point, max_distance_to_point, contains_point
-   -  TEST(S2Cell, GetUVCoordOfEdge)                    - full parity (edge_coords.uv_coords)
-   -  TEST(S2Cell, GetSizeIJAgreesWithCellId)           - full parity (edge_coords.size_ij)
-   -  TEST(S2Cell, GetIJCoordOfEdge)                    - full parity (edge_coords.ij_coords)
-   -  TEST(S2Cell, ConsistentWithS2CellIdFromPointExample1) - full parity
-      (contains_examples[0])
-   -  TEST(S2CellId, AmbiguousContainsPoint)            - full parity
-      (contains_examples[1])
+   - TEST(S2Cell, TestFaces) - face constructors, accessors, bound_uv, center, center_raw,
+     vertices, edges
+   - TEST(S2Cell, TestSubdivide) - child ids, face/level/orientation, bound_uv
+   - TEST(S2Cell, GetDistanceToPoint) - distance_to_point, boundary_distance_to_point,
+     max_distance_to_point, contains_point
+   - TEST(S2Cell, GetUVCoordOfEdge) - full parity (edge_coords.uv_coords)
+   - TEST(S2Cell, GetSizeIJAgreesWithCellId) - full parity (edge_coords.size_ij)
+   - TEST(S2Cell, GetIJCoordOfEdge) - full parity (edge_coords.ij_coords)
+   - TEST(S2Cell, ConsistentWithS2CellIdFromPointExample1) - full parity
+     (contains_examples[0])
+   - TEST(S2CellId, AmbiguousContainsPoint) - full parity (contains_examples[1])
 
    Extra coverage:
-   - Areas                                              - exact_area, approx_area,
-      average_area against C++ golden data
+   - Areas - exact_area, approx_area, average_area against C++ golden data
 
-   -  TEST(S2Cell, GetDistanceToEdge)                  - distance_to_edge,
-      max_distance_to_edge
-   -  TEST(S2Cell, GetDistanceToCell)                   - distance_to_cell,
-      max_distance_to_cell
+   - TEST(S2Cell, GetDistanceToEdge) - distance_to_edge, max_distance_to_edge
+   - TEST(S2Cell, GetDistanceToCell) - distance_to_cell, max_distance_to_cell
 
    Deliberately omitted:
    - GetRectBound / GetCapBound / CellUnionBound / EncodeDecode *)

@@ -1,7 +1,7 @@
 open Core
 
-(* No error-path snapshot: [S2_projections] exposes no [_exn] functions and
-   does not raise on any input. *)
+(* No error-path snapshot: [S2_projections] exposes no [_exn] functions and does not raise
+   on any input. *)
 
 let%expect_test "plate_carree_sexp" =
   Stdlib.print_endline

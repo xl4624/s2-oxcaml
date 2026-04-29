@@ -17,8 +17,8 @@ type t =
   ; num_edges : int
   ; cumulative_edges : int array
       (* [cumulative_edges.(i)] is the running sum of edge counts for loops [0..i-1].
-         Populated only when [num_loops > max_linear_search_loops]; for small polygons
-         a linear scan over the loops is faster than a prefix-sum lookup. *)
+         Populated only when [num_loops > max_linear_search_loops]; for small polygons a
+         linear scan over the loops is faster than a prefix-sum lookup. *)
   ; bound : S2_latlng_rect.t
   ; subregion_bound : S2_latlng_rect.t
   ; mutable index_state : index_state
@@ -102,8 +102,8 @@ let compute_cumulative loops =
   else [||]
 ;;
 
-(* Shape interface implementation. We return a shape record that forwards to the
-   polygon's loops. *)
+(* Shape interface implementation. We return a shape record that forwards to the polygon's
+   loops. *)
 
 let rec to_shape t : S2_shape.t =
   #{ num_edges = t.num_edges
@@ -140,8 +140,8 @@ and chain t chain_id =
       done;
       acc)
   in
-  (* S2_loop represents a full loop with a single vertex, but the shape interface
-     reports a chain of zero edges for full loops. *)
+  (* S2_loop represents a full loop with a single vertex, but the shape interface reports
+     a chain of zero edges for full loops. *)
   let length = if num_vertices_in_loop = 1 then 0 else num_vertices_in_loop in
   S2_shape.Chain.create ~start ~length
 
@@ -242,8 +242,8 @@ let full () = make_full_polygon ()
 
 (* --- Nesting hierarchy --------------------------------------------------- *)
 
-(* [loop_map] records immediate children in the nesting hierarchy. We key it on
-   physical identity (by loop index into a table). *)
+(* [loop_map] records immediate children in the nesting hierarchy. We key it on physical
+   identity (by loop index into a table). *)
 
 module Loop_entry = struct
   type t =
@@ -255,8 +255,7 @@ end
 let insert_into_nesting ~entries ~root_index ~new_loop_index =
   let new_loop = (entries.(new_loop_index) : Loop_entry.t).loop in
   let new_loop = Option.value_exn new_loop in
-  (* Descend until we find a parent whose children do not transitively contain
-     new_loop. *)
+  (* Descend until we find a parent whose children do not transitively contain new_loop. *)
   let parent_ix = ref root_index in
   let done_ = ref false in
   while not !done_ do
@@ -274,8 +273,8 @@ let insert_into_nesting ~entries ~root_index ~new_loop_index =
     | Some ix -> parent_ix := ix
     | None -> done_ := true
   done;
-  (* Now examine the parent's existing children: any that are nested in new_loop
-     become its children instead. *)
+  (* Now examine the parent's existing children: any that are nested in new_loop become
+     its children instead. *)
   let parent_entry = (entries.(!parent_ix) : Loop_entry.t) in
   let kept = ref [] in
   let stolen = ref [] in
@@ -366,8 +365,8 @@ let rec of_oriented_loops loops =
           polygon_contains_origin <- not polygon_contains_origin;
           origin_loop_idx <- i)
       done;
-      (* Find which slot of [normalised] matches this loop by physical identity,
-         then look up the pre-normalisation origin-containment of that slot. *)
+      (* Find which slot of [normalised] matches this loop by physical identity, then look
+         up the pre-normalisation origin-containment of that slot. *)
       let origin_loop = loop p origin_loop_idx in
       let mutable idx = 0 in
       for j = 0 to n - 1 do
@@ -398,8 +397,8 @@ and centroid t =
   sum
 
 and compare_loops_for_invert a b =
-  (* Total ordering on loops that is independent of cyclic rotation / direction.
-     Used to break ties when several loops have the same turning angle. *)
+  (* Total ordering on loops that is independent of cyclic rotation / direction. Used to
+     break ties when several loops have the same turning angle. *)
   let na = S2_loop.num_vertices a in
   let nb = S2_loop.num_vertices b in
   if na <> nb
@@ -449,8 +448,8 @@ and invert t =
     let _ = have_angle in
     let inverted_best = S2_loop.invert t.loops.(best) in
     let last_best = last_descendant t best in
-    (* Build a fresh vertex-sharing copy of each loop so that mutating the new
-       polygon's depths does not disturb [t]'s depth state. *)
+    (* Build a fresh vertex-sharing copy of each loop so that mutating the new polygon's
+       depths does not disturb [t]'s depth state. *)
     let new_loops = Array.create ~len:n inverted_best in
     let idx = ref 1 in
     for i = 0 to n - 1 do
@@ -558,11 +557,10 @@ let to_region t : S2_region.t =
 
 (* --- Polygon relations --------------------------------------------------- *)
 
-(* Contains / Intersects route through S2_boolean_operation so that the
-   shared-boundary semantics (shells touch but do not cross each other,
-   holes handled as inverted shells) match the canonical implementation
-   in s2polygon.cc:1003-1126. The single-loop fast path stays direct for
-   speed; all other cases go through the boolean-operation predicate. *)
+(* Contains / Intersects route through S2_boolean_operation so that the shared-boundary
+   semantics (shells touch but do not cross each other, holes handled as inverted shells)
+   match the canonical implementation in s2polygon.cc:1003-1126. The single-loop fast path
+   stays direct for speed; all other cases go through the boolean-operation predicate. *)
 let boolean_input t =
   let state = get_or_build_index t in
   S2_boolean_operation.Polygon_input.create
@@ -674,6 +672,5 @@ let is_valid t = Option.is_none (find_validation_error t)
    ApproxIntersectWithPolyline) from s2polygon.cc:2362-2454. *)
 (* TODO: port distance queries (GetDistance, GetDistanceToBoundary, Project) from
    s2polygon.cc:1543-1606. *)
-(* TODO: port ApproxContains / ApproxDisjoint / BoundaryNear from
-   s2polygon.cc:1128-1180. *)
+(* TODO: port ApproxContains / ApproxDisjoint / BoundaryNear from s2polygon.cc:1128-1180. *)
 (* TODO: port Encode / Decode from s2polygon.cc:1608-1804. *)

@@ -113,10 +113,9 @@ let%test_unit "robust_sign_never_indeterminate" =
     (module S2_point_triple)
     ~config:qc_config
     ~f:(fun { S2_point_triple.a; b; c } ->
-      (* Random unit points generated from independent coordinates will never
-         be exactly equal (the only case where robust_sign returns
-         Indeterminate).  Skip the vanishingly unlikely collision case
-         defensively. *)
+      (* Random unit points generated from independent coordinates will never be exactly
+         equal (the only case where robust_sign returns Indeterminate). Skip the
+         vanishingly unlikely collision case defensively. *)
       if S2.S2_point.equal a b || S2.S2_point.equal b c || S2.S2_point.equal a c
       then ()
       else (
@@ -131,10 +130,10 @@ let%test_unit "sign_agrees_with_robust_sign" =
     (module S2_point_triple)
     ~config:qc_config
     ~f:(fun { S2_point_triple.a; b; c } ->
-      (* For non-degenerate triples, [sign] and [robust_sign] must agree: the
-         boolean returns true iff robust_sign is Counter_clockwise.  Skip
-         near-collinear triples where the plain-float determinant sign is
-         unreliable; those are exercised by the fixture-driven tests. *)
+      (* For non-degenerate triples, [sign] and [robust_sign] must agree: the boolean
+         returns true iff robust_sign is Counter_clockwise. Skip near-collinear triples
+         where the plain-float determinant sign is unreliable; those are exercised by the
+         fixture-driven tests. *)
       let det = S2.R3_vector.dot (S2.R3_vector.cross a b) c in
       if Float_u.O.(Float_u.abs det < #1e-10)
       then ()
@@ -158,8 +157,8 @@ let%test_unit "ordered_ccw_cyclic" =
     (module S2_point_quad)
     ~config:qc_config
     ~f:(fun { S2_point_quad.a; b; c; o } ->
-      (* ordered_ccw is cyclic in its first three arguments: the same three
-         points in a cyclic permutation yield the same answer. *)
+      (* ordered_ccw is cyclic in its first three arguments: the same three points in a
+         cyclic permutation yield the same answer. *)
       let abc = S2.S2_predicates.ordered_ccw a b c o in
       let bca = S2.S2_predicates.ordered_ccw b c a o in
       let cab = S2.S2_predicates.ordered_ccw c a b o in
@@ -172,15 +171,12 @@ let%test_unit "ordered_ccw_definition" =
     (module S2_point_quad)
     ~config:qc_config
     ~f:(fun { S2_point_quad.a; b; c; o } ->
-      (* Cross-check ordered_ccw against its definition in terms of
-         robust_sign.  The Go reference:
-            sum := 0
-            if robustSign(b, o, a) != Clockwise { sum++ }
-            if robustSign(c, o, b) != Clockwise { sum++ }
-            if robustSign(a, o, c) == CounterClockwise { sum++ }
-            return sum >= 2
-         This test is a tautology against the current implementation but
-         protects against accidental regressions that swap arguments. *)
+      (* Cross-check ordered_ccw against its definition in terms of robust_sign. The Go
+         reference: sum := 0 if robustSign(b, o, a) != Clockwise [{ sum++ }] if
+         robustSign(c, o, b) != Clockwise [{ sum++ }] if robustSign(a, o, c) ==
+         CounterClockwise [{ sum++ }] return sum >= 2 This test is a tautology against the
+         current implementation but protects against accidental regressions that swap
+         arguments. *)
       let nonneg x y z =
         match S2.S2_predicates.robust_sign x y z with
         | Clockwise -> 0

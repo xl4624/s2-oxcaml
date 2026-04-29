@@ -22,8 +22,8 @@ let gen_unit_point rnd =
   loop ()
 ;;
 
-(* Draw a point that is not too close to [prev] or its antipode, to avoid
-   degenerate consecutive edges. *)
+(* Draw a point that is not too close to [prev] or its antipode, to avoid degenerate
+   consecutive edges. *)
 let gen_distinct_point rnd ~prev =
   let rec loop () =
     let p = gen_unit_point rnd in
@@ -165,9 +165,8 @@ let%test_unit "cap_bound_expanded_contains_vertices" =
     ~f:(fun { Polyline_gen.vertices } ->
       let pl = S2.S2_polyline.of_vertices vertices in
       let cap = S2.S2_polyline.cap_bound pl in
-      (* cap_bound is a conservative bound but floating-point roundoff in
-         [contains_point] can reject vertices that lie on the boundary; a
-         tiny expansion closes that gap. *)
+      (* cap_bound is a conservative bound but floating-point roundoff in [contains_point]
+         can reject vertices that lie on the boundary; a tiny expansion closes that gap. *)
       let cap = S2.S2_cap.expanded_exn cap (S2.S1_angle.of_radians #1e-14) in
       for i = 0 to Array.length vertices - 1 do
         assert (S2.S2_cap.contains_point cap vertices.(i))

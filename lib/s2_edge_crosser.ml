@@ -1,14 +1,12 @@
 open Core
 
-(* Performance strategy.  The fast path of [chain_crossing_sign] is a
-   single call to [triage_sign] on triangle ABD: if the cached
-   orientation of ACB disagrees with ABD (both non-zero), CD cannot
-   cross AB and we are done.  When triage is ambiguous we compute the
-   outward tangents at A and B once (see [ensure_tangents]) and use
-   them to reject AB-vs-CD pairs that sit entirely outside the
-   hemispheres defined by A and B.  Only pairs that survive both stages
-   fall through to [expensive_sign] plus the full four-triangle
-   orientation check.  See s2edge_crosser.h:261-279. *)
+(* Performance strategy. The fast path of [chain_crossing_sign] is a single call to
+   [triage_sign] on triangle ABD: if the cached orientation of ACB disagrees with ABD
+   (both non-zero), CD cannot cross AB and we are done. When triage is ambiguous we
+   compute the outward tangents at A and B once (see [ensure_tangents]) and use them to
+   reject AB-vs-CD pairs that sit entirely outside the hemispheres defined by A and B.
+   Only pairs that survive both stages fall through to [expensive_sign] plus the full
+   four-triangle orientation check. See s2edge_crosser.h:261-279. *)
 
 type t =
   #{ a : R3_vector.t
@@ -32,11 +30,9 @@ type with_bool =
    ; crossing : bool
    }
 
-(* Upper bound on the rounding error of a tangent-dot-product.  Any
-   dot product with magnitude less than this is treated as
-   indeterminate and the slow path is taken.  The constant
-   (1.5 + 1/sqrt(3)) * DBL_EPSILON is derived in
-   s2edge_crossings_internal.h. *)
+(* Upper bound on the rounding error of a tangent-dot-product. Any dot product with
+   magnitude less than this is treated as indeterminate and the slow path is taken. The
+   constant (1.5 + 1/sqrt(3)) * DBL_EPSILON is derived in s2edge_crossings_internal.h. *)
 let tangent_error =
   Float_u.O.((#1.5 + (#1.0 / Float_u.sqrt #3.0)) * #2.220446049250313e-16)
 ;;
@@ -55,10 +51,9 @@ let[@inline] create ~a ~b =
 ;;
 
 let[@inline] init t ~a ~b =
-  (* [bda] is a scratch field only read inside a single call to
-     [chain_crossing_sign]; we propagate the old value solely to keep
-     the unboxed record layout stable and to avoid an unnecessary zero
-     store. *)
+  (* [bda] is a scratch field only read inside a single call to [chain_crossing_sign]; we
+     propagate the old value solely to keep the unboxed record layout stable and to avoid
+     an unnecessary zero store. *)
   #{ a
    ; b
    ; a_cross_b = R3_vector.cross a b
@@ -90,12 +85,11 @@ let[@inline] restart_at t c =
 
 let[@inline] create_with_chain ~a ~b ~c = restart_at (create ~a ~b) c
 
-(* Compute outward-facing tangents at A and B the first time they are
-   needed.  Once populated, [have_tangents = 1] prevents recomputation
-   for the lifetime of this fixed edge.  The tangents are orthogonal to
-   the great circle AB and rotated 90 degrees outward from A and B
-   respectively; they define the two hemispheres that must contain
-   either C or D for a crossing to be possible. *)
+(* Compute outward-facing tangents at A and B the first time they are needed. Once
+   populated, [have_tangents = 1] prevents recomputation for the lifetime of this fixed
+   edge. The tangents are orthogonal to the great circle AB and rotated 90 degrees outward
+   from A and B respectively; they define the two hemispheres that must contain either C
+   or D for a crossing to be possible. *)
 let[@inline] ensure_tangents t =
   if Int.equal t.#have_tangents 1
   then t
@@ -113,13 +107,12 @@ let[@inline] ensure_tangents t =
      })
 ;;
 
-(* Slow path of [chain_crossing_sign]: runs only when the cheap triage
-   fails.  Precondition: [t.#bda] already holds the triage sign of
-   triangle ABD.  The function may populate the tangents, promote
-   [acb]/[bda] from 0 to an exact sign via [expensive_sign], and
-   finally check the remaining two triangles (CBD and DAC).  All four
-   triangles ACB, CBD, BDA, DAC must share the same orientation for AB
-   to actually cross CD.  See s2edge_crosser.cc:40-152. *)
+(* Slow path of [chain_crossing_sign]: runs only when the cheap triage fails.
+   Precondition: [t.#bda] already holds the triage sign of triangle ABD. The function may
+   populate the tangents, promote [acb]/[bda] from 0 to an exact sign via
+   [expensive_sign], and finally check the remaining two triangles (CBD and DAC). All four
+   triangles ACB, CBD, BDA, DAC must share the same orientation for AB to actually cross
+   CD. See s2edge_crosser.cc:40-152. *)
 let crossing_sign_internal t d =
   let t = ensure_tangents t in
   let open Float_u.O in
@@ -171,10 +164,9 @@ let crossing_sign_internal t d =
         else #{ state = t; sign = 1 })))
 ;;
 
-(* Finalize a chain step.  After computing the crossing sign for edge
-   CD, the *next* C is D and the *next* orientation of ACB is the
-   negation of the old BDA (since ACB rotates to DAB = -ABD = -BDA).
-   Writing both fields together keeps the unboxed layout coherent for
+(* Finalize a chain step. After computing the crossing sign for edge CD, the *next* C is D
+   and the *next* orientation of ACB is the negation of the old BDA (since ACB rotates to
+   DAB = -ABD = -BDA). Writing both fields together keeps the unboxed layout coherent for
    the next call. *)
 let[@inline] commit_chain_step t ~new_c ~new_acb =
   #{ a = t.#a
@@ -190,11 +182,10 @@ let[@inline] commit_chain_step t ~new_c ~new_acb =
 ;;
 
 let chain_crossing_sign t d =
-  (* Fast path: if ACB and BDA have opposite non-zero orientations, C
-     and D lie on opposite sides of the great circle through AB but
-     rotated in opposite senses, so CD cannot cross AB.  Note that
-     [triage_sign] is invariant under cyclic rotation of its arguments,
-     so ABD has the same sign as BDA. *)
+  (* Fast path: if ACB and BDA have opposite non-zero orientations, C and D lie on
+     opposite sides of the great circle through AB but rotated in opposite senses, so CD
+     cannot cross AB. Note that [triage_sign] is invariant under cyclic rotation of its
+     arguments, so ABD has the same sign as BDA. *)
   let bda = S2_edge_crossings.triage_sign t.#a t.#b d in
   if Int.equal t.#acb (-bda) && not (Int.equal bda 0)
   then (
@@ -224,9 +215,8 @@ let[@inline] crossing_sign t c d =
 ;;
 
 let chain_edge_or_vertex_crossing t d =
-  (* [chain_crossing_sign] advances the chain vertex to d, so we snapshot
-     the pre-call C before running it; the vertex-crossing test below
-     still needs the original C. *)
+  (* [chain_crossing_sign] advances the chain vertex to d, so we snapshot the pre-call C
+     before running it; the vertex-crossing test below still needs the original C. *)
   let c_prev = t.#c in
   let #{ state; sign } = chain_crossing_sign t d in
   match sign with
@@ -241,11 +231,10 @@ let[@inline] edge_or_vertex_crossing t c d =
 ;;
 
 let[@inline] last_interior_crossing_sign t =
-  (* When AB crosses CD, the signed crossing direction equals
-     Sign(ABC).  We don't store that directly, but the cached
-     orientation of the *next* triangle ACB - written just before we
-     return +1 from [chain_crossing_sign] - has exactly the same sign
-     by cyclic rotation. *)
+  (* When AB crosses CD, the signed crossing direction equals Sign(ABC). We don't store
+     that directly, but the cached orientation of the *next* triangle ACB - written just
+     before we return +1 from [chain_crossing_sign] - has exactly the same sign by cyclic
+     rotation. *)
   t.#acb
 ;;
 

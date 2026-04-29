@@ -297,12 +297,11 @@ let intersects a b =
     hit)
 ;;
 
-(* Worker for [subsample_vertices]. Returns the maximal end index such that the
-   geodesic from [vertices.(start)] to [vertices.(end)] passes within [tolerance]
-   of every interior vertex, in order. The implementation tracks a shrinking
-   angular "wedge" of feasible directions around [origin]; as soon as a
-   candidate direction falls outside the wedge or the per-step distance
-   condition is violated the scan stops. See s2polyline.cc:425-492. *)
+(* Worker for [subsample_vertices]. Returns the maximal end index such that the geodesic
+   from [vertices.(start)] to [vertices.(end)] passes within [tolerance] of every interior
+   vertex, in order. The implementation tracks a shrinking angular "wedge" of feasible
+   directions around [origin]; as soon as a candidate direction falls outside the wedge or
+   the per-step distance condition is violated the scan stops. See s2polyline.cc:425-492. *)
 let find_end_vertex (vertices : S2_point.t array) tolerance start =
   let n = Array.length vertices in
   let origin = vertices.(start) in

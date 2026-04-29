@@ -1,25 +1,23 @@
-(* C++ test parity: s2geometry/src/s2/s2closest_edge_query_test.cc (selected
-   tests) and extra coverage.  Golden data from
-   test/gen/s2closest_edge_query.cc.
+(* C++ test parity: s2geometry/src/s2/s2closest_edge_query_test.cc (selected tests) and
+   extra coverage. Golden data from test/gen/s2closest_edge_query.cc.
 
    Covered:
-   -  Empty index: GetDistance returns infinity / FindClosestEdge returns
-      empty.
-   -  Small point shape (brute-force path): closest edge, top-k, distance
-      limit, predicate helpers.
-   -  Polygon interior: include_interiors affects whether targets inside a
-      polygon have distance zero and edge_id == -1.
-   -  Edge target against a polyline index.
-   -  Cell target against a loop index.
-   -  Shape_index target: both nearby and far indices.
-   -  Regular 64-gon loop exercising the optimized cell-descent path and
-      conservative/inclusive distance limits.
+   - Empty index: GetDistance returns infinity / FindClosestEdge returns empty.
+   - Small point shape (brute-force path): closest edge, top-k, distance limit, predicate
+     helpers.
+   - Polygon interior: include_interiors affects whether targets inside a polygon have
+     distance zero and edge_id == -1.
+   - Edge target against a polyline index.
+   - Cell target against a loop index.
+   - Shape_index target: both nearby and far indices.
+   - Regular 64-gon loop exercising the optimized cell-descent path and
+     conservative/inclusive distance limits.
 
    Not covered (deferred):
-   -  VisitClosestEdges / VisitClosestShapes visitor APIs (our module does
-      not expose them).
-   -  ShapeFilter predicate (not exposed in our API).
-   -  Randomized fuzz tests (would require matching random generation). *)
+   - VisitClosestEdges / VisitClosestShapes visitor APIs (our module does not expose
+     them).
+   - ShapeFilter predicate (not exposed in our API).
+   - Randomized fuzz tests (would require matching random generation). *)
 
 open Core
 open Alcotest
@@ -38,14 +36,13 @@ let build_shape j : S2.S2_shape.t =
   | "polyline" -> S2.S2_polyline.to_shape (S2.S2_polyline.of_vertices vs)
   | "loop" -> S2.S2_loop.to_shape (S2.S2_loop.of_vertices vs)
   | "points" ->
-    (* Build a degenerate "shape" from a list of points by treating each
-       point as an edge with v0 = v1.  S2_polyline handles degenerate
-       points poorly, so we synthesize a lax_polyline with repeated
-       vertices.  The S2 library uses S2PointVectorShape for this; we
-       emulate it by threading a lax_polyline where each point is both an
-       edge start and end.  Alternatively, we build an [S2_shape.t]
-       directly with [num_edges = length vs], [dimension = 0], and the
-       edge accessor returning each point twice. *)
+    (* Build a degenerate "shape" from a list of points by treating each point as an edge
+       with v0 = v1. S2_polyline handles degenerate points poorly, so we synthesize a
+       lax_polyline with repeated vertices. The S2 library uses S2PointVectorShape for
+       this; we emulate it by threading a lax_polyline where each point is both an edge
+       start and end. Alternatively, we build an [S2_shape.t] directly with
+       [num_edges = length vs], [dimension = 0], and the edge accessor returning each
+       point twice. *)
     let num_edges = Array.length vs in
     let dimension = 0 in
     let num_chains = num_edges in

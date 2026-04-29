@@ -145,8 +145,8 @@ let xyz_to_face_si_ti (p : R3_vector.t) =
     if R3_vector.equal p center then #(face, si, ti, level) else #(face, si, ti, -1))
 ;;
 
-(* For each face (outer index), the three unit vectors that form the right-handed
-   (u, v, w) basis, as [\[x; y; z\]] triples.  The inner axis index is 0=u, 1=v, 2=w. *)
+(* For each face (outer index), the three unit vectors that form the right-handed (u,
+   v, w) basis, as [[x; y; z]] triples. The inner axis index is 0=u, 1=v, 2=w. *)
 let k_face_uvw_axes =
   [| [| [| #0.; #1.; #0. |]; [| #0.; #0.; #1. |]; [| #1.; #0.; #0. |] |]
    ; [| [| -#1.; #0.; #0. |]; [| #0.; #0.; #1. |]; [| #0.; #1.; #0. |] |]
@@ -186,9 +186,9 @@ let[@inline] [@zero_alloc] get_v_norm face v : R3_vector.t =
   | _ -> R3_vector.create ~x:#1.0 ~y:#0.0 ~z:v
 ;;
 
-(* Face neighbours in the (u, v, w) frame.  Outer index is the origin face; the
-   middle index selects the axis (0=u, 1=v, 2=w); the inner index is direction
-   (0=negative, 1=positive). *)
+(* Face neighbours in the (u, v, w) frame. Outer index is the origin face; the middle
+   index selects the axis (0=u, 1=v, 2=w); the inner index is direction (0=negative,
+   1=positive). *)
 let k_face_uvw_faces =
   [| [| [| 4; 1 |]; [| 5; 2 |]; [| 3; 0 |] |]
    ; [| [| 0; 3 |]; [| 5; 2 |]; [| 4; 1 |] |]

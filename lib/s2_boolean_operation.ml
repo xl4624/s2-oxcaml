@@ -1,36 +1,44 @@
 open Core
 
-(* Implementation note: this port replaces the C++ CrossingProcessor state
-   machine (s2boolean_operation.cc:1095-2009, ~1,500 lines) with a much
-   simpler per-edge containment test that works for the polygon-polygon
-   SEMI_OPEN predicate case only. Completing parity with the reference
-   library means porting CrossingProcessor; the features that would unlock
-   and their C++ entry points are:
+(* Implementation note: this port replaces the C++ CrossingProcessor state machine
+   (s2boolean_operation.cc:1095-2009, ~1,500 lines) with a much simpler per-edge
+   containment test that works for the polygon-polygon SEMI_OPEN predicate case only.
+   Completing parity with the reference library means porting CrossingProcessor; the
+   features that would unlock and their C++ entry points are:
 
-   - Set-operation output via an S2Builder layer: BuildOpType (cc:2282),
-     AddBoundary (cc:2028), ProcessEdge / ProcessEdge{0,1,2} dispatching on
-     a_dimension_ (cc:1416, 1449, 1546, 1678), EdgeClippingLayer (cc:730),
-     AddEdge / AddPointEdge (cc:1215-1264).
-   - Polyline inputs: ProcessEdge1 (cc:1546), IsPolylineVertexInside /
-     IsPolylineEdgeInside (cc:1616, 1636).
-   - Point inputs: ProcessEdge0 (cc:1449), ProcessPointCrossings (cc:1485).
-   - Open / Closed polygon boundary models: the per-branch model checks in
-     ProcessEdge2 (cc:1771-1823) and the degenerate-point paths in
-     ProcessEdge0 (cc:1461).
-   - Open / SEMI_OPEN / Closed polyline boundary models: PolylineModel
-     plumbing in StartBoundary (cc:1383) and ProcessEdge1.
-   - Mixed-dimension operands: the dimension dispatch in ProcessEdge plus
-     IsPolylineEdgeInside for polyline-in-polygon tests.
-   - Two-pass sibling-pair handling for shared-edge degeneracies:
-     emit_shared (cc:1712) and is_degenerate_hole_ (cc:1741).
-   - Early-exit optimisation via ProcessIncidentEdges (cc:2143).
-   - AreRegionsIdentical fast path (cc:2509) for DIFFERENCE and
-     SYMMETRIC_DIFFERENCE.
+   {ul
+    {- Set-operation output via an S2Builder layer: BuildOpType (cc:2282), AddBoundary
+       (cc:2028), ProcessEdge / ProcessEdge
 
-   Separately, is_full_polygon_result below uses a coarse face-mask + area
-   heuristic; the symmetric-difference branch's hemisphere tolerance
-   (cc:2476-2505) is approximated conservatively. Porting that heuristic
-   accurately requires the snap-radius plumbing tracked in s2_builder. *)
+      ,1,2
+
+      dispatching on a_dimension_ (cc:1416, 1449, 1546, 1678), EdgeClippingLayer (cc:730),
+      AddEdge / AddPointEdge (cc:1215-1264).
+   }
+    {- Polyline inputs: ProcessEdge1 (cc:1546), IsPolylineVertexInside /
+       IsPolylineEdgeInside (cc:1616, 1636).
+   }
+    {- Point inputs: ProcessEdge0 (cc:1449), ProcessPointCrossings (cc:1485). }
+    {- Open / Closed polygon boundary models: the per-branch model checks in ProcessEdge2
+       (cc:1771-1823) and the degenerate-point paths in ProcessEdge0 (cc:1461).
+   }
+    {- Open / SEMI_OPEN / Closed polyline boundary models: PolylineModel plumbing in
+       StartBoundary (cc:1383) and ProcessEdge1.
+   }
+    {- Mixed-dimension operands: the dimension dispatch in ProcessEdge plus
+       IsPolylineEdgeInside for polyline-in-polygon tests.
+   }
+    {- Two-pass sibling-pair handling for shared-edge degeneracies: emit_shared (cc:1712)
+       and is_degenerate_hole_ (cc:1741).
+   }
+    {- Early-exit optimisation via ProcessIncidentEdges (cc:2143). }
+    {- AreRegionsIdentical fast path (cc:2509) for DIFFERENCE and SYMMETRIC_DIFFERENCE. }
+   }
+
+   Separately, is_full_polygon_result below uses a coarse face-mask + area heuristic; the
+   symmetric-difference branch's hemisphere tolerance (cc:2476-2505) is approximated
+   conservatively. Porting that heuristic accurately requires the snap-radius plumbing
+   tracked in s2_builder. *)
 
 module Op_type = struct
   type t =
@@ -68,9 +76,8 @@ end
 
 (* --- Directed edge membership ------------------------------------------- *)
 
-(* Encode a directed edge as three int64 bit patterns so it can key an OCaml
-   [Hashtbl] (S2_point.t is an unboxed product and can't key polymorphic
-   hashes directly). *)
+(* Encode a directed edge as three int64 bit patterns so it can key an OCaml [Hashtbl]
+   (S2_point.t is an unboxed product and can't key polymorphic hashes directly). *)
 
 type edge_key =
   { x0 : int64
@@ -97,8 +104,8 @@ module Edge_table = Hashtbl.Make (struct
     type t = edge_key [@@deriving compare, hash, sexp]
   end)
 
-(* Build a hashtable of the directed boundary edges of a polygon shape. The
-   shape is assumed to expose oriented edges (interior on the left). *)
+(* Build a hashtable of the directed boundary edges of a polygon shape. The shape is
+   assumed to expose oriented edges (interior on the left). *)
 let build_edge_table (shape : S2_shape.t) =
   let t = Edge_table.create () in
   let n = shape.#num_edges in
@@ -110,8 +117,8 @@ let build_edge_table (shape : S2_shape.t) =
   t
 ;;
 
-(* Iterate directed boundary edges, stopping early when [f] returns false.
-   Returns [true] iff iteration ran to completion. *)
+(* Iterate directed boundary edges, stopping early when [f] returns false. Returns [true]
+   iff iteration ran to completion. *)
 let iter_boundary_edges (shape : S2_shape.t) ~f =
   let n = shape.#num_edges in
   let keep_going = ref true in
@@ -127,10 +134,10 @@ let iter_boundary_edges (shape : S2_shape.t) ~f =
 
 (* Does polygon [p] contain the directed edge (v0, v1) under SEMI_OPEN?
    - If (v0, v1) is an oriented edge of [p]: yes.
-   - If (v1, v0) is an oriented edge of [p]: no (the reversed edge belongs
-     to the neighbouring polygon).
-   - Otherwise: the edge is strictly interior or strictly exterior; test the
-     midpoint with [S2_contains_point_query]. *)
+   - If (v1, v0) is an oriented edge of [p]: no (the reversed edge belongs to the
+     neighbouring polygon).
+   - Otherwise: the edge is strictly interior or strictly exterior; test the midpoint with
+     [S2_contains_point_query]. *)
 let polygon_contains_directed_edge ~edges ~pq ~shape_id v0 v1 =
   if S2_point.equal v0 v1
   then S2_contains_point_query.shape_contains pq ~shape_id v0
@@ -145,9 +152,8 @@ let polygon_contains_directed_edge ~edges ~pq ~shape_id v0 v1 =
 
 (* --- Crossing detection ------------------------------------------------- *)
 
-(* True iff any edge of [a_shape] has an interior crossing with any edge in
-   [b_index]. Any interior crossing is a proof of a non-empty result for
-   any of the four boolean ops. *)
+(* True iff any edge of [a_shape] has an interior crossing with any edge in [b_index]. Any
+   interior crossing is a proof of a non-empty result for any of the four boolean ops. *)
 let has_interior_crossing (a_shape : S2_shape.t) b_index =
   let ceq = S2_crossing_edge_query.create b_index in
   let found = ref false in
@@ -240,10 +246,9 @@ let is_full_polygon_symmetric_difference (a : Polygon_input.t) (b : Polygon_inpu
     let sum = a_area +. b_area in
     let min_area = Float.max diff (Float.max 0.0 (sum -. four_pi_f)) in
     let max_area = Float.min sum (four_pi_f -. diff) in
-    (* When the sym-diff area brackets 2pi we'd need the snap-tolerance
-       hemisphere heuristic (s2boolean_operation.cc:2476-2505). For the
-       simplified port we conservatively return false in the ambiguous
-       range. *)
+    (* When the sym-diff area brackets 2pi we'd need the snap-tolerance hemisphere
+       heuristic (s2boolean_operation.cc:2476-2505). For the simplified port we
+       conservatively return false in the ambiguous range. *)
     Float.O.(min_area > four_pi_f -. max_area))
 ;;
 
@@ -333,9 +338,8 @@ let raw_is_empty op_type (a : Polygon_input.t) (b : Polygon_input.t) =
       let b_has_edge_in_a = any_edge_inside ~source:b ~target:a in
       not (a_has_edge_in_b || b_has_edge_in_a))
   | Difference ->
-    (* DIFFERENCE(a, b) = a - b, empty iff a ⊆ b. Note that [Contains]
-       swaps arguments so [is_empty Difference b a] evaluates "b - a is
-       empty" = "a contains b". *)
+    (* DIFFERENCE(a, b) = a - b, empty iff a ⊆ b. Note that [Contains] swaps arguments so
+       [is_empty Difference b a] evaluates "b - a is empty" = "a contains b". *)
     if a.is_empty
     then true
     else if b.is_full

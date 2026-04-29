@@ -4,8 +4,8 @@
    - TEST(S2WrappedShape, Coverage) - the three-loop lax polygon case.
 
    Extra coverage:
-   - An empty polygon (no loops) exercises the zero-edge / full-polygon
-     decision in GetReferencePoint via the wrapper.
+   - An empty polygon (no loops) exercises the zero-edge / full-polygon decision in
+     GetReferencePoint via the wrapper.
    - A multi-loop polygon (outer shell + hole) exercises multi-chain dispatch.
 
    Deliberately omitted:

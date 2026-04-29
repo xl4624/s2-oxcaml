@@ -1,7 +1,7 @@
 (* C++ test parity: s2geometry/src/s2/r1interval_test.cc
-   -  TEST(R1Interval, TestBasic)  - constructors, accessors, contains_point,
-      interval_ops, add_point, project, expanded, expanded_chain, equal
-   -  TEST(R1Interval, ApproxEquals) - approx_equal, approx_equal_custom
+   - TEST(R1Interval, TestBasic) - constructors, accessors, contains_point, interval_ops,
+     add_point, project, expanded, expanded_chain, equal
+   - TEST(R1Interval, ApproxEquals) - approx_equal, approx_equal_custom
 
    Deliberately omitted (C++-only mutable API, no OCaml equivalent):
    - set_hi, operator[], bounds(), mutable_bounds()
@@ -125,7 +125,8 @@ let test_interval_ops fixture () =
     let ei = r1_interval_of_json (member "intersection" c) in
     let ai = S2.R1_interval.intersection x y in
     check_r1_interval_exact (label ^ " intersection") ~expected:ei ~actual:ai;
-    (* C++ TestIntervalOps: Contains(y) <=> Union(x,y)==x; Intersects <=> non-empty intersection. *)
+    (* C++ TestIntervalOps: Contains(y) <=> Union(x,y)==x; Intersects <=> non-empty
+       intersection. *)
     (check bool)
       (label ^ " invariant contains_interval/union")
       (bool_of_json_exn (member "contains" c))
@@ -220,7 +221,7 @@ let test_approx_equal fixture () =
          (S2.R1_interval.to_string x)
          (S2.R1_interval.to_string y))
       expected
-      (S2.R1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.none) x y))
+      (S2.R1_interval.approx_equal ~max_error:Packed_float_option.Unboxed.none x y))
 ;;
 
 let test_approx_equal_custom fixture () =

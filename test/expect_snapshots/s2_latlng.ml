@@ -73,9 +73,8 @@ let%expect_test "approx_equal" =
 ;;
 
 let%expect_test "exn_path" =
-  (* [of_eN_exn] requires the decoded latitude to lie in [-90, 90] degrees.
-     Picking encoded latitudes well above that range forces each variant to
-     raise. *)
+  (* [of_eN_exn] requires the decoded latitude to lie in [-90, 90] degrees. Picking
+     encoded latitudes well above that range forces each variant to raise. *)
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.S2_latlng.of_e5_exn ~lat:10_000_000 ~lng:0 : S2.S2_latlng.t));
   [%expect

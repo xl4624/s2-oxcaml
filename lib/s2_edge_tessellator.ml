@@ -1,23 +1,21 @@
 open Core
 
-(* The error between a geodesic edge and its projected counterpart is
-   bounded by a convex combination of two worst-case shapes:
+(* The error between a geodesic edge and its projected counterpart is bounded by a convex
+   combination of two worst-case shapes:
 
-     E1(x) = 1 - x^2                  (maximal at the midpoint x = 0)
-     E2(x) = x (1 - x^2) (scaled)     (zero at the midpoint, off-center)
+   E1(x) = 1 - x^2 (maximal at the midpoint x = 0) E2(x) = x (1 - x^2) (scaled) (zero at
+   the midpoint, off-center)
 
-   We pick the interpolation parameter x0 where E1(x0) = E2(x0) and
-   evaluate the actual error at both x0 and -x0. Their max, divided by
-   E1(x0), is a conservative upper bound on the error anywhere in [-1, 1].
-   Equivalently, we can scale the tolerance by [scale_factor = E1(x0)]
-   instead of dividing the error. *)
+   We pick the interpolation parameter x0 where E1(x0) = E2(x0) and evaluate the actual
+   error at both x0 and -x0. Their max, divided by E1(x0), is a conservative upper bound
+   on the error anywhere in [-1, 1]. Equivalently, we can scale the tolerance by
+   [scale_factor = E1(x0)] instead of dividing the error. *)
 
 let interpolation_fraction : float# = #0.31215691082248312
 let scale_factor : float# = #0.83829992569888509
 
-(* Less than a micrometer on Earth's surface, but still far larger than
-   the projection and interpolation errors we inherit from double
-   precision. *)
+(* Less than a micrometer on Earth's surface, but still far larger than the projection and
+   interpolation errors we inherit from double precision. *)
 let min_tolerance = S1_angle.of_radians #1e-13
 
 type t =
@@ -44,10 +42,10 @@ let[@inline] [@zero_alloc] create ~projection ~tolerance =
   #{ projection; scaled_tolerance }
 ;;
 
-(* Parametric error estimate: max distance between the two edges at
-   the two sampling points [t1 = x0] and [t2 = 1 - x0]. Edges longer
-   than roughly 90 degrees (a . b < -1e-14) are always subdivided
-   because the two-sample approximation is not robust at that scale. *)
+(* Parametric error estimate: max distance between the two edges at the two sampling
+   points [t1 = x0] and [t2 = 1 - x0]. Edges longer than roughly 90 degrees (a . b <
+   -1e-14) are always subdivided because the two-sample approximation is not robust at
+   that scale. *)
 let[@inline] [@zero_alloc] estimate_max_error t ~pa ~a ~pb ~b =
   if Float_u.O.(R3_vector.dot a b < -#1e-14)
   then S1_chord_angle.infinity
@@ -84,9 +82,8 @@ Unboxed_vec.Make [@kind (float64 & float64 & float64) mod external_] (struct
     let default = R3_vector.zero
   end)
 
-(* Given a geodesic edge a->b with projections pa and pb_in (pb_in not yet
-   wrapped relative to pa), subdivide and push the projected vertices (all
-   except pa) to [out]. *)
+(* Given a geodesic edge a->b with projections pa and pb_in (pb_in not yet wrapped
+   relative to pa), subdivide and push the projected vertices (all except pa) to [out]. *)
 let rec append_projected_rec t ~pa ~a ~pb_in ~b ~out =
   let pb = S2_projections.wrap_destination t.#projection ~a:pa ~b:pb_in in
   let err = estimate_max_error t ~pa ~a ~pb ~b in

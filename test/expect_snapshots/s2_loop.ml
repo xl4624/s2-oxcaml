@@ -58,8 +58,8 @@ let%expect_test "too_few_vertices_raises" =
 ;;
 
 let%expect_test "invalid_two_vertex_loop_raises" =
-  (* A two-vertex loop is not allowed; loops need the two special
-     single-vertex sentinels or at least three real vertices. *)
+  (* A two-vertex loop is not allowed; loops need the two special single-vertex sentinels
+     or at least three real vertices. *)
   let a = p #1.0 #0.0 #0.0 in
   let b = p #0.0 #1.0 #0.0 in
   Expect_test_helpers_core.show_raise (fun () ->

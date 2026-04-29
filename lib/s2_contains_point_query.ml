@@ -44,14 +44,14 @@ let shape_contains_cell
       !found
     | Open | Semi_open -> false)
   else (
-    (* 2D shape. Start from [contains_center] - the parity of [cell_id]'s center
-       with respect to this clipped shape - and draw a segment from the cell
-       center to [p]. Each interior edge crossing flips the parity, giving the
-       answer for [p]. When [crossing_sign] returns 0 we are at a shared vertex:
-       if [p] matches an edge endpoint the Open and Closed models can answer
-       immediately without completing the scan (Open: outside, Closed: inside);
-       otherwise we defer to [vertex_crossing], which implements the Semi_open
-       tie-breaking rule required for exactly-one-polygon-wins behaviour. *)
+    (* 2D shape. Start from [contains_center] - the parity of [cell_id]'s center with
+       respect to this clipped shape - and draw a segment from the cell center to [p].
+       Each interior edge crossing flips the parity, giving the answer for [p]. When
+       [crossing_sign] returns 0 we are at a shared vertex: if [p] matches an edge
+       endpoint the Open and Closed models can answer immediately without completing the
+       scan (Open: outside, Closed: inside); otherwise we defer to [vertex_crossing],
+       which implements the Semi_open tie-breaking rule required for
+       exactly-one-polygon-wins behaviour. *)
     let center_pt = S2_cell_id.to_point cell_id in
     let mutable crosser = S2_edge_crosser.create ~a:center_pt ~b:p in
     let mutable inside = inside in

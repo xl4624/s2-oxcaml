@@ -7,21 +7,19 @@ module V = R3_vector
    registers with no record-header allocation. *)
 
 module Bigint = struct
-  (* Signed-magnitude arbitrary-precision integers in little-endian
-     base 2^30. Storing 30 bits per limb keeps the product of two
-     limbs within OCaml's 63-bit native int.
+  (* Signed-magnitude arbitrary-precision integers in little-endian base 2^30. Storing 30
+     bits per limb keeps the product of two limbs within OCaml's 63-bit native int.
 
-     Each [t] owns a fixed-capacity local [int array] of length [capacity].
-     Only the first [len] limbs are meaningful; the rest are zero.
+     Each [t] owns a fixed-capacity local [int array] of length [capacity]. Only the first
+     [len] limbs are meaningful; the rest are zero.
 
      [capacity = 64] gives 1920 bits of headroom. The worst offender is
-     [exact_compare_distances]'s degree-6 polynomial: when one input
-     coordinate is very small (e.g. 7e-101 in the fixture), the
-     [Dyadic.add] inside [Exact_vec.norm2] must shift the larger summand
-     left by ~560 bits (~19 limbs) to align exponents, and subsequent
-     squaring and cross-multiplication push the largest intermediate to
-     ~35 limbs. 64 leaves comfortable margin for the IEEE-corner case
-     where coordinates approach the smallest normal double. *)
+     [exact_compare_distances]'s degree-6 polynomial: when one input coordinate is very
+     small (e.g. 7e-101 in the fixture), the [Dyadic.add] inside [Exact_vec.norm2] must
+     shift the larger summand left by ~560 bits (~19 limbs) to align exponents, and
+     subsequent squaring and cross-multiplication push the largest intermediate to ~35
+     limbs. 64 leaves comfortable margin for the IEEE-corner case where coordinates
+     approach the smallest normal double. *)
   let base_bits = 30
   let base = 1 lsl base_bits
   let mask = base - 1
@@ -160,8 +158,8 @@ module Bigint = struct
         let mutable carry = 0 in
         let ai = ad.(i) in
         for j = 0 to lb - 1 do
-          (* ai, bd.(j) < 2^30 so ai*bd.(j) < 2^60. Adding r.(i+j) < 2^30
-               and carry < 2^31 keeps s < 2^61, within OCaml's 63-bit int. *)
+          (* ai, bd.(j) < 2^30 so ai*bd.(j) < 2^60. Adding r.(i+j) < 2^30 and carry < 2^31
+             keeps s < 2^61, within OCaml's 63-bit int. *)
           let s = r.(i + j) + (ai * bd.(j)) + carry in
           r.(i + j) <- s land mask;
           carry <- s lsr base_bits
@@ -210,8 +208,8 @@ module Bigint = struct
         #{ sign = a.#sign; len; digits = r }))
   ;;
 
-  (* Number of bits in the binary representation of |m|. Returns 0 when m = 0,
-     otherwise [floor(log2 |m|) + 1]. *)
+  (* Number of bits in the binary representation of |m|. Returns 0 when m = 0, otherwise
+     [floor(log2 |m|) + 1]. *)
   let[@zero_alloc] bit_length (t @ local) =
     if t.#sign = 0
     then 0
@@ -223,19 +221,19 @@ module Bigint = struct
         (Int.( + ) (Int.floor_log2 top) 1))
   ;;
 
-  (* Convert to a double. If |m| has more than 53 bits of precision, low-order
-     bits are lost (the high 53 bits are preserved). If the magnitude exceeds
-     the double range, returns +/-inf. Zero-alloc but only approximate for
-     large magnitudes; this is fine for direction-preserving uses like
-     [S2_point.robust_cross_prod] where the caller rescales via [ldexp]. *)
+  (* Convert to a double. If |m| has more than 53 bits of precision, low-order bits are
+     lost (the high 53 bits are preserved). If the magnitude exceeds the double range,
+     returns +/-inf. Zero-alloc but only approximate for large magnitudes; this is fine
+     for direction-preserving uses like [S2_point.robust_cross_prod] where the caller
+     rescales via [ldexp]. *)
   let[@zero_alloc] to_float_approx (t @ local) =
     if t.#sign = 0
     then #0.0
     else (
-      (* Horner evaluation of [sum_i digits.(i) * 2^(30 * i)] from top down.
-         Each step multiplies by [2^30] and adds the next limb. Intermediate
-         values only overflow for inputs whose magnitude already exceeds
-         [~2^1023], at which point the result is correctly [+inf]. *)
+      (* Horner evaluation of [sum_i digits.(i) * 2^(30 * i)] from top down. Each step
+         multiplies by [2^30] and adds the next limb. Intermediate values only overflow
+         for inputs whose magnitude already exceeds [~2^1023], at which point the result
+         is correctly [+inf]. *)
       let mutable acc = #0.0 in
       for i = Int.( - ) t.#len 1 downto 0 do
         acc <- Float_u.O.((acc * #0x1p30) + Float_u.of_int t.#digits.(i))
@@ -245,9 +243,9 @@ module Bigint = struct
 end
 
 module Dyadic = struct
-  (* Dyadic rational m * 2^exp where m is a stack-local Bigint. Closed under
-     +, -, * on IEEE-754 double inputs, which is enough for the polynomial
-     sign tests used by the exact predicates. *)
+  (* Dyadic rational m * 2^exp where m is a stack-local Bigint. Closed under +, -, * on
+     IEEE-754 double inputs, which is enough for the polynomial sign tests used by the
+     exact predicates. *)
   type t =
     #{ m : Bigint.t
      ; exp : int
@@ -257,8 +255,8 @@ module Dyadic = struct
   let[@inline] [@zero_alloc] sign (t @ local) = Bigint.sign t.#m
   let[@zero_alloc] neg (t @ local) = exclave_ #{ m = Bigint.neg t.#m; exp = t.#exp }
 
-  (* Decode the IEEE-754 bit pattern of [x] into a signed integer mantissa
-     and an exponent so that [x = im * 2^exp] exactly. *)
+  (* Decode the IEEE-754 bit pattern of [x] into a signed integer mantissa and an exponent
+     so that [x = im * 2^exp] exactly. *)
   let[@zero_alloc] of_float (x : float#) = exclave_
     if Float_u.O.(x = #0.0)
     then zero ()
@@ -300,21 +298,21 @@ module Dyadic = struct
 
   let[@zero_alloc] sub (a @ local) (b @ local) = exclave_ add a (neg b)
 
-  (* Position of the most significant bit of the exact value, i.e. [e] such
-     that [2^(e-1) <= |value| < 2^e]. Returns [Int.min_value] when the value
-     is exactly zero (sentinel). *)
+  (* Position of the most significant bit of the exact value, i.e. [e] such that
+     [2^(e-1) <= |value| < 2^e]. Returns [Int.min_value] when the value is exactly zero
+     (sentinel). *)
   let[@zero_alloc] true_exp (t @ local) =
     if Bigint.sign t.#m = 0
     then Int.min_value
     else Int.( + ) (Bigint.bit_length t.#m) t.#exp
   ;;
 
-  (* Convert to a double scaled by [2^(-exp_offset)]. That is, returns the
-     IEEE double closest to [m * 2^(exp - exp_offset)]. Overflows to +/-inf
-     and underflows to 0 at the IEEE limits. Precision loss for [|m|] wider
-     than 53 bits is absorbed via [Bigint.to_float_approx]; for cross products
-     of double inputs this loses bits well below the result's top 53 and has
-     no effect on the direction returned by [normalizable_from_exact]. *)
+  (* Convert to a double scaled by [2^(-exp_offset)]. That is, returns the IEEE double
+     closest to [m * 2^(exp - exp_offset)]. Overflows to +/-inf and underflows to 0 at the
+     IEEE limits. Precision loss for [|m|] wider than 53 bits is absorbed via
+     [Bigint.to_float_approx]; for cross products of double inputs this loses bits well
+     below the result's top 53 and has no effect on the direction returned by
+     [normalizable_from_exact]. *)
   let[@zero_alloc] to_float_scaled (t @ local) ~exp_offset =
     if Bigint.sign t.#m = 0
     then #0.0

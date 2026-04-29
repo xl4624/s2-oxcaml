@@ -3,7 +3,8 @@
    Upstream C++ tests covered (s2loop_test.cc):
    - TEST_F(S2LoopTestBase, GetRectBound) -> loops fixture (rect_bound)
    - TEST_F(S2LoopTestBase, GetCapBound) -> loops fixture (cap_bound)
-   - TEST_F(S2LoopTestBase, AreaConsistentWithCurvature) -> loops fixture (area, curvature)
+   - TEST_F(S2LoopTestBase, AreaConsistentWithCurvature) -> loops fixture (area,
+     curvature)
    - TEST_F(S2LoopTestBase, GetCurvature) -> loops fixture
    - TEST_F(S2LoopTestBase, GetCentroid) -> loops fixture
    - TEST_F(S2LoopTestBase, IsValid_NoIndex) -> loops fixture (is_valid)
@@ -21,13 +22,11 @@
    - TEST(S2Loop, FindValidationError) -> validation fixture
 
    Deliberately omitted:
-   - Tests requiring an S2ShapeIndex (Contains(loop), Intersects(loop),
-     CompareBoundary, BoundaryNear, Project, ProjectToBoundary, GetDistance,
-     GetDistanceToBoundary): the OCaml port defers index-driven operations until
-     S2_shape_index is available.
+   - Tests requiring an S2ShapeIndex (Contains(loop), Intersects(loop), CompareBoundary,
+     BoundaryNear, Project, ProjectToBoundary, GetDistance, GetDistanceToBoundary): the
+     OCaml port defers index-driven operations until S2_shape_index is available.
    - EncodeDecode / EncodeCompressed: encoding is not ported.
-   - MakeRegularLoop / RegularLoopForFrame: helper not exposed in the OCaml
-     port surface. *)
+   - MakeRegularLoop / RegularLoopForFrame: helper not exposed in the OCaml port surface. *)
 
 open Core
 open Test_helpers
@@ -70,9 +69,9 @@ let int_pair_of_json j =
 
 let make_loop vertices = S2.S2_loop.of_vertices ~validate:false vertices
 
-(* Per-loop scalar properties. Geometry comparisons use the standard
-   1e-15 epsilon for centroid/area/curvature, while the rect-bound
-   tolerance is the same one S2LatLngRectBounder advertises. *)
+(* Per-loop scalar properties. Geometry comparisons use the standard 1e-15 epsilon for
+   centroid/area/curvature, while the rect-bound tolerance is the same one
+   S2LatLngRectBounder advertises. *)
 let test_loops () =
   let rect_eps =
     S2.S1_angle.radians
@@ -366,15 +365,14 @@ let test_approx_equality_perturbed () =
     ~expected:(bool_of_json_exn (member "approx_equal_tight" case))
     ~actual:
       (S2.S2_loop.boundary_approx_equals
-         ~max_error:(Packed_float_option.Unboxed.none)
+         ~max_error:Packed_float_option.Unboxed.none
          la
          lb)
 ;;
 
-(* [depth] / [set_depth] / [is_hole] / [sign] / [oriented_vertex] are
-   OCaml-only mutations not exercised by the C++ fixture. A hole-depth loop
-   must iterate its vertices in reverse so that the interior stays on the
-   left side of each edge. *)
+(* [depth] / [set_depth] / [is_hole] / [sign] / [oriented_vertex] are OCaml-only mutations
+   not exercised by the C++ fixture. A hole-depth loop must iterate its vertices in
+   reverse so that the interior stays on the left side of each edge. *)
 let test_depth_and_oriented_vertex () =
   let vertices =
     vertices_of_json

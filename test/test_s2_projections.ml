@@ -1,8 +1,8 @@
 (* C++ test parity: s2geometry/src/s2/s2projections_test.cc
-   -  TEST(PlateCarreeProjection, Interpolate)
-   -  TEST(PlateCarreeProjection, ProjectUnproject)
-   -  TEST(MercatorProjection, ProjectUnproject)
-   -  Additional WrapDestination, wrap_distance, and alternate-scale cases. *)
+   - TEST(PlateCarreeProjection, Interpolate)
+   - TEST(PlateCarreeProjection, ProjectUnproject)
+   - TEST(MercatorProjection, ProjectUnproject)
+   - Additional WrapDestination, wrap_distance, and alternate-scale cases. *)
 
 open Core
 open Test_helpers
@@ -10,8 +10,8 @@ open Alcotest
 
 let fixture = load_fixture "s2projections.json"
 
-(* The generator encodes +/-inf as the tagged strings "inf" / "-inf" so we can
-   round-trip polar Mercator samples. *)
+(* The generator encodes +/-inf as the tagged strings "inf" / "-inf" so we can round-trip
+   polar Mercator samples. *)
 let float_u_or_inf = function
   | `String "inf" -> Float_u.infinity
   | `String "-inf" -> Float_u.neg_infinity

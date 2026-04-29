@@ -1,14 +1,14 @@
 (* Golden data produced by test/gen/s2shapeutil_count_edges.cc.
 
    Upstream C++ tests covered:
-   - TEST(CountEdgesUpTo, StopsEarly) - replayed as the "stops_early" case
-     with the same four shapes and thresholds 1, 5, 6, 8.
+   - TEST(CountEdgesUpTo, StopsEarly) - replayed as the "stops_early" case with the same
+     four shapes and thresholds 1, 5, 6, 8.
 
    Extra coverage:
    - "empty" pins the behaviour on an index with no shapes.
-   - "threshold_zero" confirms that [max_edges <= 0] on a non-empty index
-     returns the first shape's edge count (matching C++ where the bound
-     check runs after the first add). *)
+   - "threshold_zero" confirms that [max_edges <= 0] on a non-empty index returns the
+     first shape's edge count (matching C++ where the bound check runs after the first
+     add). *)
 
 open Core
 open Test_helpers

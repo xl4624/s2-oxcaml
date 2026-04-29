@@ -49,13 +49,13 @@ module Index_cell = struct
   ;;
 end
 
-(* Boxed wrapper so [S2_shape.t] (an unboxed record) can live inside arrays
-   and other containers that require a [value] layout. *)
+(* Boxed wrapper so [S2_shape.t] (an unboxed record) can live inside arrays and other
+   containers that require a [value] layout. *)
 type shape_box = { shape : S2_shape.t }
 
-(* Boxed (cell_id, cell) pair so that bits64-layout cell ids can participate
-   in the intermediate list used while the build is in progress. The sorted
-   arrays produced by [rebuild_cell_ids] drop this wrapper. *)
+(* Boxed (cell_id, cell) pair so that bits64-layout cell ids can participate in the
+   intermediate list used while the build is in progress. The sorted arrays produced by
+   [rebuild_cell_ids] drop this wrapper. *)
 type build_entry =
   { cell_id : S2_cell_id.t
   ; cell : Index_cell.t
@@ -91,21 +91,19 @@ type index =
 
 type t = index
 
-(* Padding applied to each cell when clipping edges to cell boundaries.
-   Matches [MutableS2ShapeIndex::kCellPadding] so that small numerical errors
-   in clip coordinates do not drop an edge from the cells it actually
-   crosses. *)
+(* Padding applied to each cell when clipping edges to cell boundaries. Matches
+   [MutableS2ShapeIndex::kCellPadding] so that small numerical errors in clip coordinates
+   do not drop an edge from the cells it actually crosses. *)
 let cell_padding = S2_edge_clipping.shape_index_cell_padding
 
-(* A well-defined "outside" point used by the interior-tracking crosser so
-   that parity flips are counted from a consistent reference. Any point far
-   from the shapes works; we use face 0's lower-left corner. *)
+(* A well-defined "outside" point used by the interior-tracking crosser so that parity
+   flips are counted from a consistent reference. Any point far from the shapes works; we
+   use face 0's lower-left corner. *)
 let tracker_origin () = R3_vector.normalize (S2_coords.face_uv_to_xyz 0 (-#1.0) (-#1.0))
 
-(* Ray-cast from the shape's reference point to [p], counting crossings.
-   Used during indexing to establish whether the tracker's focus point lies
-   inside a newly added shape. O(num_edges); not intended for use in hot
-   query paths. *)
+(* Ray-cast from the shape's reference point to [p], counting crossings. Used during
+   indexing to establish whether the tracker's focus point lies inside a newly added
+   shape. O(num_edges); not intended for use in hot query paths. *)
 let contains_brute_force (shape : S2_shape.t) p =
   if shape.#dimension <> 2
   then false
@@ -150,10 +148,9 @@ type tracker =
   ; mutable shape_ids : int list
   }
 
-(* Maintain a sorted list of shape ids by toggling membership: present ids
-   are removed, absent ids are inserted in order. Used by the interior
-   tracker to track "which polygons currently contain the focus point" as
-   it sweeps along the Hilbert curve. *)
+(* Maintain a sorted list of shape ids by toggling membership: present ids are removed,
+   absent ids are inserted in order. Used by the interior tracker to track "which polygons
+   currently contain the focus point" as it sweeps along the Hilbert curve. *)
 let rec toggle_sorted id = function
   | [] -> [ id ]
   | x :: xs ->
@@ -209,11 +206,10 @@ let tracker_test_edge t fe =
     if crossing then t.shape_ids <- toggle_sorted fe.shape_id t.shape_ids)
 ;;
 
-(* Clip a face edge to each of the 6 cube faces it may cross, padding the
-   face bounds by [cell_padding]. If both endpoints lie strictly inside one
-   face (with room for padding) we take the fast path and skip the 6-way
-   clip. The resulting (per-face) lists drive the face-by-face recursive
-   subdivision in [update_face_edges]. *)
+(* Clip a face edge to each of the 6 cube faces it may cross, padding the face bounds by
+   [cell_padding]. If both endpoints lie strictly inside one face (with room for padding)
+   we take the fast path and skip the 6-way clip. The resulting (per-face) lists drive the
+   face-by-face recursive subdivision in [update_face_edges]. *)
 let add_face_edge (fe : face_edge) (all_edges : face_edge list array) =
   let v0 = fe.v0 in
   let v1 = fe.v1 in
@@ -404,12 +400,11 @@ let clip_v_axis edge middle_y =
   else `Both (clip_v_bound edge ~v_end:1 ~v:y_hi, clip_v_bound edge ~v_end:0 ~v:y_lo)
 ;;
 
-(* Attempt to emit [pcell] as a leaf index cell. Returns [true] if the cell
-   was accepted (either because it has few enough "long" edges relative to
-   [max_edges_per_cell] or because it is empty with no tracked shapes), and
-   [false] to request further subdivision by [update_edges]. When accepted,
-   the tracker is advanced through the cell so that per-cell [contains_center]
-   flags reflect the correct set of interior shapes. *)
+(* Attempt to emit [pcell] as a leaf index cell. Returns [true] if the cell was accepted
+   (either because it has few enough "long" edges relative to [max_edges_per_cell] or
+   because it is empty with no tracked shapes), and [false] to request further subdivision
+   by [update_edges]. When accepted, the tracker is advanced through the cell so that
+   per-cell [contains_center] flags reflect the correct set of interior shapes. *)
 let make_index_cell (t : index) pcell edges tracker : bool =
   match edges, tracker.shape_ids with
   | [], [] -> true
@@ -554,10 +549,9 @@ and update_edges t pcell edges tracker ~disjoint_from_index:_ =
           push c11 b));
     for pos = 0 to 3 do
       let #(i, j) = S2_padded_cell.child_ij_of_pos pcell ~pos in
-      (* Edges are pushed onto [c00/c01/c10/c11] via cons, so reversing now
-         restores the original (shape_id, edge_id) ascending order used to
-         build [clipped_edges] at the face level. Cells emit edges in that
-         order. *)
+      (* Edges are pushed onto [c00/c01/c10/c11] via cons, so reversing now restores the
+         original (shape_id, edge_id) ascending order used to build [clipped_edges] at the
+         face level. Cells emit edges in that order. *)
       let lst =
         match i, j with
         | 0, 0 -> List.rev !c00
@@ -616,12 +610,11 @@ let update_face_edges (t : index) face face_edges tracker ~is_first_update =
     else update_edges t pcell clipped_edges tracker ~disjoint_from_index)
 ;;
 
-(* Main indexing entry point. Discards any previous cell map, projects every
-   shape's edges onto the 6 cube faces, then recursively subdivides each face
-   until every leaf cell has at most [max_edges_per_cell] non-long edges.
-   Interior tracking happens in a single sweep along the Hilbert curve, so
-   containment flags for polygon shapes emerge naturally as the tracker's
-   focus crosses edges. *)
+(* Main indexing entry point. Discards any previous cell map, projects every shape's edges
+   onto the 6 cube faces, then recursively subdivides each face until every leaf cell has
+   at most [max_edges_per_cell] non-long edges. Interior tracking happens in a single
+   sweep along the Hilbert curve, so containment flags for polygon shapes emerge naturally
+   as the tracker's focus crosses edges. *)
 let apply_updates_internal (t : index) =
   t.build_entries <- [];
   t.cell_ids_sorted <- [||];
@@ -661,10 +654,9 @@ let add (t : index) shape =
   let box = { shape } in
   if id >= cap
   then (
-    (* Grow by doubling. [box] doubles as the fill value: slot [id] will be
-       overwritten with [box] below (a no-op), and the trailing unused slots
-       end up holding the same boxed reference until they are eventually
-       overwritten by a future [add]. *)
+    (* Grow by doubling. [box] doubles as the fill value: slot [id] will be overwritten
+       with [box] below (a no-op), and the trailing unused slots end up holding the same
+       boxed reference until they are eventually overwritten by a future [add]. *)
     let new_cap = if cap = 0 then 8 else cap * 2 in
     let new_shapes = Array.create ~len:new_cap box in
     for i = 0 to cap - 1 do
@@ -756,8 +748,7 @@ module Iterator = struct
   let index_cell it =
     match it.cur_cell with
     | Some c -> c
-    | None ->
-      raise_s [%message "S2_shape_index.Iterator.index_cell: iterator at end"]
+    | None -> raise_s [%message "S2_shape_index.Iterator.index_cell: iterator at end"]
   ;;
 
   let locate_point it p =

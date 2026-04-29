@@ -25,8 +25,8 @@ let%expect_test "two_vertex_sexp" =
 ;;
 
 let%expect_test "invalid_vertex_raises" =
-  (* Adjacent identical vertices are invalid for [S2_polyline]; use
-     [S2_lax_polyline] for that case. *)
+  (* Adjacent identical vertices are invalid for [S2_polyline]; use [S2_lax_polyline] for
+     that case. *)
   let v = p #1.0 #0.0 #0.0 in
   Expect_test_helpers_core.show_raise (fun () ->
     ignore (S2.S2_polyline.of_vertices [| v; v |] : S2.S2_polyline.t));

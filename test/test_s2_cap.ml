@@ -1,19 +1,18 @@
-(* C++ test parity: s2geometry/src/s2/s2cap_test.cc
-   Golden data from test/gen/s2cap.cc.
+(* C++ test parity: s2geometry/src/s2/s2cap_test.cc Golden data from test/gen/s2cap.cc.
 
    Covered:
-   -  TEST(S2Cap, Basic)
-   -  TEST(S2Cap, AddEmptyCapToNonEmptyCap) + AddNonEmptyCapToEmptyCap (via add_cap)
-   -  TEST(S2Cap, GetRectBound)
-   -  TEST(S2Cap, Expanded)
-   -  TEST(S2Cap, GetCentroid)
-   -  TEST(S2Cap, Union)
-   -  TEST(S2Cap, EncodeDecode)
+   - TEST(S2Cap, Basic)
+   - TEST(S2Cap, AddEmptyCapToNonEmptyCap) + AddNonEmptyCapToEmptyCap (via add_cap)
+   - TEST(S2Cap, GetRectBound)
+   - TEST(S2Cap, Expanded)
+   - TEST(S2Cap, GetCentroid)
+   - TEST(S2Cap, Union)
+   - TEST(S2Cap, EncodeDecode)
 
    Deliberately omitted:
-   -  TEST(S2Cap, S2CellMethods) — requires S2_cell
-   -  TEST(S2Cap, GetCellUnionBoundLevel1Radius) — requires S2_metrics / cell cover
-   -  TEST(S2Cap, S2CoderWorks) — legacy coder not ported *)
+   - TEST(S2Cap, S2CellMethods) — requires S2_cell
+   - TEST(S2Cap, GetCellUnionBoundLevel1Radius) — requires S2_metrics / cell cover
+   - TEST(S2Cap, S2CoderWorks) — legacy coder not ported *)
 
 open Core
 open Test_helpers
@@ -478,7 +477,7 @@ let test_expanded f () =
   (check bool)
     "expanded0_approx_cap50"
     true
-    (S2.S2_cap.approx_equal ~max_error:(Packed_float_option.Unboxed.none) exp0 cap50);
+    (S2.S2_cap.approx_equal ~max_error:Packed_float_option.Unboxed.none exp0 cap50);
   check_float_u
     "cap50_exp0_len2"
     ~expected:(float_u_of_json_exn (member "cap50_exp0_len2" e))

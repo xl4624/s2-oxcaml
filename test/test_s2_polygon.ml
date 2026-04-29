@@ -10,16 +10,16 @@
 
    Deliberately omitted:
    - EncodeDecode / CompressedEncoding: encoding is not ported.
-   - InitToIntersection/Union/Difference and snap/simplify variants: these
-     require S2_builder, which is a later tier.
-   - Polyline interop (IntersectWithPolyline, SubtractFromPolyline, ...):
-     not in scope until S2_builder is ported.
+   - InitToIntersection/Union/Difference and snap/simplify variants: these require
+     S2_builder, which is a later tier.
+   - Polyline interop (IntersectWithPolyline, SubtractFromPolyline, ...): not in scope
+     until S2_builder is ported.
    - Distance / projection queries.
 
-   TODO: the polygon_relations fixture currently restricts itself to
-   single-loop polygons. Once S2_builder and S2BooleanOperation land, the
-   generator can restore the multi-loop cases so we match C++ exactly for
-   shared-boundary inputs (see the note on S2_polygon.contains). *)
+   TODO: the polygon_relations fixture currently restricts itself to single-loop polygons.
+   Once S2_builder and S2BooleanOperation land, the generator can restore the multi-loop
+   cases so we match C++ exactly for shared-boundary inputs (see the note on
+   S2_polygon.contains). *)
 
 open Core
 open Test_helpers

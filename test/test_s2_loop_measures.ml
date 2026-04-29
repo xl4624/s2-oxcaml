@@ -1,17 +1,17 @@
 (* C++ test parity: s2geometry/src/s2/s2loop_measures_test.cc
-   -  TEST(PruneDegeneracies, CompletelyDegenerate)
-   -  TEST(PruneDegeneracies, PartiallyDegenerate)
-   -  TEST(GetCanonicalLoopOrder, AllDegeneracies)
-   -  TEST(GetPerimeter, Empty) / TEST(GetPerimeter, Octant) /
-      TEST(GetPerimeter, MoreThanTwoPi)
-   -  TEST(GetSignedArea, Underflow)
-   -  Subset of LoopTestBase: GetAreaConsistentWithCurvature, GetAreaAndCentroid,
-      GetCurvature, GetSurfaceIntegralGreaterThan4Pi (driven by the
-      "standard_loops" and "surface_integral_gt_4pi" fixtures).
+   - TEST(PruneDegeneracies, CompletelyDegenerate)
+   - TEST(PruneDegeneracies, PartiallyDegenerate)
+   - TEST(GetCanonicalLoopOrder, AllDegeneracies)
+   - TEST(GetPerimeter, Empty) / TEST(GetPerimeter, Octant) / TEST(GetPerimeter,
+     MoreThanTwoPi)
+   - TEST(GetSignedArea, Underflow)
+   - Subset of LoopTestBase: GetAreaConsistentWithCurvature, GetAreaAndCentroid,
+     GetCurvature, GetSurfaceIntegralGreaterThan4Pi (driven by the "standard_loops" and
+     "surface_integral_gt_4pi" fixtures).
 
    Omitted tests:
-   -  Random-loop numeric tests from LoopTestBase that depend on an RNG and
-      s2builder helpers. *)
+   - Random-loop numeric tests from LoopTestBase that depend on an RNG and s2builder
+     helpers. *)
 
 open Core
 open Test_helpers
@@ -118,15 +118,13 @@ let test_perimeter () =
     check_float_u ~eps:1e-14 (sprintf "perimeter(%s)" label) ~expected ~actual)
 ;;
 
-(* ---------- signed_area underflow ----------
-   TEST(GetSignedArea, Underflow): a 1e-88-scale square. At this scale the
-   double-precision cross product [(a - b) x (a + b)] is tiny (~1e-90) and
-   its squared norm underflows, which would make every turn angle collapse
-   to zero. [R3_vector.ensure_normalizable], applied inside
-   [S2_point.robust_cross_prod], scales the cross product up by a power of
-   two so the curvature sum lands at [2*pi - O(ulp)] and the tiny-positive
-   branch of [signed_area] returns [DBL_MIN] (matches the canonical C++
-   reference exactly). *)
+(* ---------- signed_area underflow ---------- TEST(GetSignedArea, Underflow): a
+   1e-88-scale square. At this scale the double-precision cross product
+   [(a - b) x (a + b)] is tiny (~1e-90) and its squared norm underflows, which would make
+   every turn angle collapse to zero. [R3_vector.ensure_normalizable], applied inside
+   [S2_point.robust_cross_prod], scales the cross product up by a power of two so the
+   curvature sum lands at [2*pi - O(ulp)] and the tiny-positive branch of [signed_area]
+   returns [DBL_MIN] (matches the canonical C++ reference exactly). *)
 
 let test_signed_area_underflow () =
   let c = member "signed_area_underflow" fixture in

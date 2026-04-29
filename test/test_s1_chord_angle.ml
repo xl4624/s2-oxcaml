@@ -1,30 +1,30 @@
 (* C++ test parity: s2geometry/src/s2/s1chord_angle_test.cc
-   -  TEST(S1ChordAngle, ToFromS1Angle)               - constructors
-   -  TEST(S1ChordAngle, FromLength2)                  - constructors
-   -  TEST(S1ChordAngle, Zero)                         - constructors
-   -  TEST(S1ChordAngle, Right)                        - constructors
-   -  TEST(S1ChordAngle, Straight)                     - constructors
-   -  TEST(S1ChordAngle, Infinity)                     - constructors
-   -  TEST(S1ChordAngle, Negative)                     - constructors
-   -  TEST(S1ChordAngle, Predicates)                   - predicates
-   -  TEST(S1ChordAngle, Successor)                    - successor_predecessor, successor_chain
-   -  TEST(S1ChordAngle, Predecessor)                  - successor_predecessor, predecessor_chain
-   -  TEST(S1ChordAngle, Arithmetic)                   - arithmetic
-   -  TEST(S1ChordAngle, Trigonometry)                 - trigonometry
-   -  TEST(S1ChordAngle, PlusError)                    - plus_error
-   -  TEST(S1ChordAngle, GetS2PointConstructorMaxError) - error_bounds
+   - TEST(S1ChordAngle, ToFromS1Angle) - constructors
+   - TEST(S1ChordAngle, FromLength2) - constructors
+   - TEST(S1ChordAngle, Zero) - constructors
+   - TEST(S1ChordAngle, Right) - constructors
+   - TEST(S1ChordAngle, Straight) - constructors
+   - TEST(S1ChordAngle, Infinity) - constructors
+   - TEST(S1ChordAngle, Negative) - constructors
+   - TEST(S1ChordAngle, Predicates) - predicates
+   - TEST(S1ChordAngle, Successor) - successor_predecessor, successor_chain
+   - TEST(S1ChordAngle, Predecessor) - successor_predecessor, predecessor_chain
+   - TEST(S1ChordAngle, Arithmetic) - arithmetic
+   - TEST(S1ChordAngle, Trigonometry) - trigonometry
+   - TEST(S1ChordAngle, PlusError) - plus_error
+   - TEST(S1ChordAngle, GetS2PointConstructorMaxError) - error_bounds
 
    Additional coverage beyond C++ tests:
-   -  comparison: explicit compare/equal checks
-   -  to_angle: explicit round-trip conversion checks
-   -  convenience: Radians, Degrees, E5, E6, E7 convenience constructors
+   - comparison: explicit compare/equal checks
+   - to_angle: explicit round-trip conversion checks
+   - convenience: Radians, Degrees, E5, E6, E7 convenience constructors
 
    Deliberately omitted (require S2Point or randomized testing):
-   -  TEST(S1ChordAngle, TwoPointConstructor)
-   -  TEST(S1ChordAngle, ArithmeticPrecision)
-   -  TEST(S1ChordAngle, ConstexprFunctionsWork)
-   -  TEST(S1ChordAngle, DefaultConstructor)
-   -  TEST(S1ChordAngle, GetS2PointConstructorMaxError) randomized loop *)
+   - TEST(S1ChordAngle, TwoPointConstructor)
+   - TEST(S1ChordAngle, ArithmeticPrecision)
+   - TEST(S1ChordAngle, ConstexprFunctionsWork)
+   - TEST(S1ChordAngle, DefaultConstructor)
+   - TEST(S1ChordAngle, GetS2PointConstructorMaxError) randomized loop *)
 
 open Core
 open Test_helpers

@@ -1,19 +1,17 @@
 open Core
 
 (* No error-path snapshot: [S2_cell_union] exposes no [_exn] functions in
-   [lib/s2_cell_union.mli]. Per-cell operations like [parent_exn],
-   [child_exn], and [from_face_exn] live on [S2_cell_id] and are covered
-   by [s2_cell_id.ml]. *)
+   [lib/s2_cell_union.mli]. Per-cell operations like [parent_exn], [child_exn], and
+   [from_face_exn] live on [S2_cell_id] and are covered by [s2_cell_id.ml]. *)
 
 (* Hand-crafted set operation examples for S2_cell_union.
 
    The building blocks below are:
-   - [face n]         : the nth face cell as an S2_cell_id.t
-   - [face0_child k]  : the kth level-1 child of face 0 as an S2_cell_id.t
+   - [face n] : the nth face cell as an S2_cell_id.t
+   - [face0_child k] : the kth level-1 child of face 0 as an S2_cell_id.t
 
-   These give us concrete normalized and non-normalized inputs to exercise
-   normalize, union, intersection, difference, contains_union, and
-   intersects_union. *)
+   These give us concrete normalized and non-normalized inputs to exercise normalize,
+   union, intersection, difference, contains_union, and intersects_union. *)
 
 let face n = S2.S2_cell_id.from_face_exn n
 let face0_child k = S2.S2_cell_id.child_exn (S2.S2_cell_id.from_face_exn 0) k

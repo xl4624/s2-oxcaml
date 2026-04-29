@@ -5,11 +5,10 @@ type t = R3_vector.t [@@deriving sexp_of, unboxed_option]
 let[@zero_alloc ignore] pp ppf t = R3_vector.pp ppf t
 let[@zero_alloc ignore] to_string t = R3_vector.to_string t
 
-(* A unit-length point far from the north/south poles and not on the boundary
-   of any low-level S2 cell, so it rarely collides with real edges during
-   point-in-polygon tests. The literal coordinates are written out explicitly
-   because the optimizer will not evaluate R3_vector.normalize at compile
-   time. *)
+(* A unit-length point far from the north/south poles and not on the boundary of any
+   low-level S2 cell, so it rarely collides with real edges during point-in-polygon tests.
+   The literal coordinates are written out explicitly because the optimizer will not
+   evaluate R3_vector.normalize at compile time. *)
 let origin =
   R3_vector.create
     ~x:(-#0.0099994664350250197)
@@ -34,11 +33,10 @@ let[@inline] [@zero_alloc] is_unit_length t =
   Float_u.abs (R3_vector.norm2 t - #1.0) <= #5.0 * Float_u.epsilon_float
 ;;
 
-(* Cross [a] with a scratch vector whose dominant component is set to 1 on
-   the axis opposite the largest absolute component of [a]. The small but
-   distinct perturbations in the other two components ensure the result
-   coordinates are unlikely to be exactly zero, which reduces downstream
-   degeneracies in predicates like S2::Sign. *)
+(* Cross [a] with a scratch vector whose dominant component is set to 1 on the axis
+   opposite the largest absolute component of [a]. The small but distinct perturbations in
+   the other two components ensure the result coordinates are unlikely to be exactly zero,
+   which reduces downstream degeneracies in predicates like S2::Sign. *)
 let[@inline] [@zero_alloc] ortho a =
   let k = R3_vector.largest_abs_component a - 1 in
   let k = if k < 0 then 2 else k in
@@ -68,13 +66,12 @@ let[@inline] [@zero_alloc] symbolic_cross_prod_sorted a b =
   else R3_vector.create ~x:#1.0 ~y:#0.0 ~z:#0.0
 ;;
 
-(* Arbitrary-precision fallback used when the double-precision
-   [(a + b) x (b - a)] underflows to exactly zero but [a <> b]. Evaluates the
-   cross product in the [Exact_arith.Dyadic] representation (no precision
-   loss), and if the exact result is nonzero, scales it back into the
-   normal double range via [normalizable_from_exact]. If the exact result
-   is also zero (i.e. [a] and [b] are truly collinear in the real numbers),
-   returns [R3_vector.zero] as a sentinel and the caller falls through to
+(* Arbitrary-precision fallback used when the double-precision [(a + b) x (b - a)]
+   underflows to exactly zero but [a <> b]. Evaluates the cross product in the
+   [Exact_arith.Dyadic] representation (no precision loss), and if the exact result is
+   nonzero, scales it back into the normal double range via [normalizable_from_exact]. If
+   the exact result is also zero (i.e. [a] and [b] are truly collinear in the real
+   numbers), returns [R3_vector.zero] as a sentinel and the caller falls through to
    symbolic perturbations. *)
 let[@inline] [@zero_alloc] exact_cross_prod a b =
   let xa = Exact_arith.Exact_vec.of_r3 a in
@@ -91,23 +88,22 @@ let[@inline] [@zero_alloc] robust_cross_prod a b =
   let cross = R3_vector.cross sum diff in
   if not (R3_vector.equal cross R3_vector.zero)
   then
-    (* Fast path: double-precision cross product is nonzero. Scale it up if
-       the magnitude is too small for safe downstream [norm2] / [atan2]
-       evaluation; magnitude is not part of this function's contract. *)
+    (* Fast path: double-precision cross product is nonzero. Scale it up if the magnitude
+       is too small for safe downstream [norm2] / [atan2] evaluation; magnitude is not
+       part of this function's contract. *)
     R3_vector.ensure_normalizable cross
   else if R3_vector.equal a b
   then ortho a
   else (
-    (* Double cross is exactly zero but [a <> b]. Either the true cross
-       product has underflowed (e.g. a, b differ only by a subnormal
-       perturbation) or [a] and [b] are truly collinear. Exact arithmetic
-       tells us which. *)
+    (* Double cross is exactly zero but [a <> b]. Either the true cross product has
+       underflowed (e.g. a, b differ only by a subnormal perturbation) or [a] and [b] are
+       truly collinear. Exact arithmetic tells us which. *)
     let xc = exact_cross_prod a b in
     if not (R3_vector.equal xc R3_vector.zero)
     then xc
-    else if (* Truly collinear in the real numbers. Wrap the sorted symbolic
-         perturbation in [ensure_normalizable] so callers can pass the result
-         through [atan2(|cross|, dot)] without fearing underflow. *)
+    else if (* Truly collinear in the real numbers. Wrap the sorted symbolic perturbation
+               in [ensure_normalizable] so callers can pass the result through
+               [atan2(|cross|, dot)] without fearing underflow. *)
             compare_lex a b < 0
     then R3_vector.ensure_normalizable (symbolic_cross_prod_sorted a b)
     else R3_vector.neg (R3_vector.ensure_normalizable (symbolic_cross_prod_sorted b a)))
@@ -177,7 +173,7 @@ let[@inline] [@zero_alloc] fround t =
 ;;
 
 let[@inline] [@zero_alloc] nan () =
-  R3_vector.create ~x:(Float_u.nan) ~y:(Float_u.nan) ~z:(Float_u.nan)
+  R3_vector.create ~x:Float_u.nan ~y:Float_u.nan ~z:Float_u.nan
 ;;
 
 let[@inline] [@zero_alloc] is_nan t =

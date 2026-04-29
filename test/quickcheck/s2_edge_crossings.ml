@@ -132,8 +132,8 @@ let%test_unit "crossing_sign_in_range" =
 (* --- Randomized tests ported from s2edge_crossings_test.cc --------------- *)
 
 (* Pair generator biased toward nearly-linearly-dependent points so the
-   [robust_cross_prod] exact and symbolic fallbacks are exercised. Mirrors
-   the distribution C++ [TEST(S2, RobustCrossProdError)] samples from. *)
+   [robust_cross_prod] exact and symbolic fallbacks are exercised. Mirrors the
+   distribution C++ [TEST(S2, RobustCrossProdError)] samples from. *)
 module Robust_cross_prod_pair = struct
   type t =
     { a : S2.S2_point.t
@@ -155,8 +155,8 @@ module Robust_cross_prod_pair = struct
           (Float.( / ) Float.pi 2.0)
           (Float.ldexp 1.0 (Int.of_float (Float.( * ) (-53.0) u)))
       in
-      (* 1/3 chance of making [r] vastly smaller to push the fallback deep
-         into subnormal territory. *)
+      (* 1/3 chance of making [r] vastly smaller to push the fallback deep into subnormal
+         territory. *)
       let coin = generate (int_uniform_inclusive 0 2) ~size:30 ~random:rnd in
       if Int.( = ) coin 0
       then (
@@ -181,11 +181,10 @@ let qc_config_large =
   { T.default_config with test_count = 1000; shrink_count = 50 }
 ;;
 
-(* C++ parity: the core invariant of [TEST(S2, RobustCrossProdError)]. For any
-   distinct [a], [b], [robust_cross_prod a b] points to the CCW side of the
-   oriented edge [a -> b]. This property is what makes [robust_cross_prod]
-   usable as the "reference normal" for [angle_contains_vertex] and the
-   containment tests. *)
+(* C++ parity: the core invariant of [TEST(S2, RobustCrossProdError)]. For any distinct
+   [a], [b], [robust_cross_prod a b] points to the CCW side of the oriented edge [a -> b].
+   This property is what makes [robust_cross_prod] usable as the "reference normal" for
+   [angle_contains_vertex] and the containment tests. *)
 let%test_unit "robust_cross_prod_ccw_consistent" =
   Base_quickcheck.Test.run_exn
     (module Robust_cross_prod_pair)
@@ -205,9 +204,9 @@ let%test_unit "robust_cross_prod_ccw_consistent" =
 ;;
 
 (* C++ parity: [TEST(S2, RobustCrossProdError)] identity
-   [RobustCrossProd(b, a).Normalize() == -RobustCrossProd(a, b).Normalize()].
-   Holds whenever [a <> b]; note that the raw (non-normalized) vectors can
-   differ in magnitude, which is why the check is after [Normalize]. *)
+   [RobustCrossProd(b, a).Normalize() == -RobustCrossProd(a, b).Normalize()]. Holds
+   whenever [a <> b]; note that the raw (non-normalized) vectors can differ in magnitude,
+   which is why the check is after [Normalize]. *)
 let%test_unit "robust_cross_prod_swap_antisymmetric" =
   Base_quickcheck.Test.run_exn
     (module Robust_cross_prod_pair)
@@ -229,12 +228,11 @@ let%test_unit "robust_cross_prod_swap_antisymmetric" =
             (S2.R3_vector.to_string (S2.R3_vector.neg ba))))
 ;;
 
-(* C++ parity: [RobustCrossProd(-a, b).Normalize() == -result] and the
-   symmetric [a, -b] version. These identities hold only when [a] and [b] are
-   linearly independent -- for linearly-dependent inputs, symbolic
-   perturbation of [-a] is a distinct symbol from [-sym(a)], so the identity
-   is not required. We detect linear dependence via the double cross product
-   [(a + b) x (b - a)]; when that is nonzero, the exact cross is also
+(* C++ parity: [RobustCrossProd(-a, b).Normalize() == -result] and the symmetric [a, -b]
+   version. These identities hold only when [a] and [b] are linearly independent -- for
+   linearly-dependent inputs, symbolic perturbation of [-a] is a distinct symbol from
+   [-sym(a)], so the identity is not required. We detect linear dependence via the double
+   cross product [(a + b) x (b - a)]; when that is nonzero, the exact cross is also
    nonzero (it's [2 * a x b]) and the identity holds. *)
 let%test_unit "robust_cross_prod_neg_antisymmetric" =
   Base_quickcheck.Test.run_exn
@@ -275,13 +273,12 @@ let%test_unit "robust_cross_prod_neg_antisymmetric" =
               (S2.R3_vector.to_string expected))))
 ;;
 
-(* C++ parity: [TEST(S2, CollinearEdgesThatDontTouch)] from
-   s2edge_crosser_test.cc. Takes two random points [a], [d] on the sphere,
-   picks [b] and [c] as interior interpolation fractions along the great
-   circle [a -> d]. The two sub-edges [a-b] and [c-d] are disjoint collinear
-   segments; [crossing_sign] must return [-1] (do not cross). Exercises the
-   exact and symbolic paths because [a, b, c, d] are mathematically collinear
-   but numerically perturbed. *)
+(* C++ parity: [TEST(S2, CollinearEdgesThatDontTouch)] from s2edge_crosser_test.cc. Takes
+   two random points [a], [d] on the sphere, picks [b] and [c] as interior interpolation
+   fractions along the great circle [a -> d]. The two sub-edges [a-b] and [c-d] are
+   disjoint collinear segments; [crossing_sign] must return [-1] (do not cross). Exercises
+   the exact and symbolic paths because [a, b, c, d] are mathematically collinear but
+   numerically perturbed. *)
 module Pair_a_d = struct
   type t =
     { a : S2.S2_point.t
@@ -319,22 +316,21 @@ let%test_unit "collinear_edges_that_dont_touch" =
             s))
 ;;
 
-(* C++ parity: [TEST(S2, CoincidentZeroLengthEdgesThatDontTouch)]. Picks a
-   point [p] whose components are all zero or a power of two (so every
-   nonzero coordinate shares the same mantissa). Scales [p] by four very
-   close scalars [(1 - 3e-16), (1 - 1e-16), 1, (1 + 2e-16)] to form
-   [a, b, c, d]; after [Normalize] these are coincident on the unit sphere
-   but distinct in memory. [crossing_sign] must return [-1] because the
-   edges are degenerate and symbolic perturbations should rule out an
-   intersection. *)
+(* C++ parity: [TEST(S2, CoincidentZeroLengthEdgesThatDontTouch)]. Picks a point [p] whose
+   components are all zero or a power of two (so every nonzero coordinate shares the same
+   mantissa). Scales [p] by four very close scalars
+   [(1 - 3e-16), (1 - 1e-16), 1, (1 + 2e-16)] to form [a, b, c, d]; after [Normalize]
+   these are coincident on the unit sphere but distinct in memory. [crossing_sign] must
+   return [-1] because the edges are degenerate and symbolic perturbations should rule out
+   an intersection. *)
 module Power_of_two_point = struct
   type t = { p : S2.S2_point.t } [@@deriving sexp_of]
 
   let quickcheck_generator =
     let open Base_quickcheck.Generator in
     let coord_gen =
-      (* Binary exponent chosen from a skewed integer distribution in
-         [0, 11]; values > 10 collapse to 0 to populate ~10% zeros. *)
+      (* Binary exponent chosen from a skewed integer distribution in [0, 11]; values > 10
+         collapse to 0 to populate ~10% zeros. *)
       bind (int_inclusive 0 11) ~f:(fun e ->
         if Int.( > ) e 10 then return 0.0 else return (Float.ldexp 1.0 (Int.neg e)))
     in
@@ -378,11 +374,10 @@ let%test_unit "coincident_zero_length_edges_that_dont_touch" =
             s))
 ;;
 
-(* C++ parity: [TEST(S2, GetIntersectionInvariants)]. When two crossing
-   edges are swapped or reversed, [get_intersection] must return the same
-   point (bit-exactly). We construct crossing edges of equal length by
-   generating two random points and swapping their x and y coordinates
-   (preserves [(x**2 + y**2) + z**2] exactly in double precision), which
+(* C++ parity: [TEST(S2, GetIntersectionInvariants)]. When two crossing edges are swapped
+   or reversed, [get_intersection] must return the same point (bit-exactly). We construct
+   crossing edges of equal length by generating two random points and swapping their x and
+   y coordinates (preserves [(x**2 + y**2) + z**2] exactly in double precision), which
    matches the C++ setup. *)
 module Crossing_equal_length = struct
   type t =
@@ -439,11 +434,9 @@ let%test_unit "get_intersection_invariants" =
       check "all three swaps" d c b a)
 ;;
 
-(* [TEST(S2, IntersectionError)] and [TEST(S2, GrazingIntersections)] are
-   deliberately omitted: they stress-test [get_intersection] under very
-   degenerate configurations (log-uniform 1e-15 .. 1 edge lengths combined
-   with 1e-15 .. 1e15 slopes), which exercises precision paths unrelated to
-   [robust_cross_prod]. Porting them well requires an equivalent of the
-   upstream [s2random::Frame] + [s2random::LogUniform] helpers and a
-   [get_intersection_exact] reference, which are out of scope for this
-   change. *)
+(* [TEST(S2, IntersectionError)] and [TEST(S2, GrazingIntersections)] are deliberately
+   omitted: they stress-test [get_intersection] under very degenerate configurations
+   (log-uniform 1e-15 .. 1 edge lengths combined with 1e-15 .. 1e15 slopes), which
+   exercises precision paths unrelated to [robust_cross_prod]. Porting them well requires
+   an equivalent of the upstream [s2random::Frame] + [s2random::LogUniform] helpers and a
+   [get_intersection_exact] reference, which are out of scope for this change. *)

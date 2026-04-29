@@ -1,8 +1,8 @@
 open Core
 
-(* No error-path snapshot: [S2_lax_polygon] accepts any collection of loops
-   including empty loops (full), single-vertex loops (degenerate edge), and
-   two-vertex loops (sibling edge pairs). *)
+(* No error-path snapshot: [S2_lax_polygon] accepts any collection of loops including
+   empty loops (full), single-vertex loops (degenerate edge), and two-vertex loops
+   (sibling edge pairs). *)
 
 let p x y z = S2.S2_point.of_coords ~x ~y ~z
 

@@ -1,12 +1,12 @@
-(* Golden data from test/gen/s2shapeutil_shape_edge.cc.
-   No upstream s2shapeutil_shape_edge_test.cc exists; the generator emits a
-   handful of (shape_id, edge_id, v0, v1) cases so we can verify the OCaml
-   constructor and accessors round-trip the inputs as the C++ struct does.
+(* Golden data from test/gen/s2shapeutil_shape_edge.cc. No upstream
+   s2shapeutil_shape_edge_test.cc exists; the generator emits a handful of (shape_id,
+   edge_id, v0, v1) cases so we can verify the OCaml constructor and accessors round-trip
+   the inputs as the C++ struct does.
 
    Covered:
-   -  [create] stores [shape_id] and [edge_id] in the [id] field.
-   -  [v0] / [v1] return the edge endpoints unchanged, including the
-      degenerate case [v0 = v1] and negative-coordinate inputs. *)
+   - [create] stores [shape_id] and [edge_id] in the [id] field.
+   - [v0] / [v1] return the edge endpoints unchanged, including the degenerate case
+     [v0 = v1] and negative-coordinate inputs. *)
 
 open Core
 open Alcotest

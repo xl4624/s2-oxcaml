@@ -11,9 +11,9 @@ let print_vec label v =
     (Float_u.to_float (S2.R3_vector.z v))
 ;;
 
-(* The "octant triangle" with vertices on the positive x, y, z axes. This is an
-   eighth of the sphere: signed area = pi/2, and by symmetry the true centroid
-   direction is (1, 1, 1). *)
+(* The "octant triangle" with vertices on the positive x, y, z axes. This is an eighth of
+   the sphere: signed area = pi/2, and by symmetry the true centroid direction is (1, 1,
+   1). *)
 let octant_a () = point ~x:#1.0 ~y:#0.0 ~z:#0.0
 let octant_b () = point ~x:#0.0 ~y:#1.0 ~z:#0.0
 let octant_c () = point ~x:#0.0 ~y:#0.0 ~z:#1.0
@@ -65,8 +65,8 @@ let%expect_test "planar_centroid_degenerate_same_point" =
   [%expect {| degenerate: x=0 y=1 z=0 |}]
 ;;
 
-(* A second, asymmetric but well-behaved triangle: three unit vectors with no
-   symmetry between them. *)
+(* A second, asymmetric but well-behaved triangle: three unit vectors with no symmetry
+   between them. *)
 let asym_a () = point ~x:#1.0 ~y:#0.1 ~z:#0.0
 let asym_b () = point ~x:#0.2 ~y:#1.0 ~z:#0.1
 let asym_c () = point ~x:#0.0 ~y:#0.3 ~z:#1.0

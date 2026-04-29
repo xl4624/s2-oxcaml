@@ -1,7 +1,7 @@
 open Core
 
-(* No error-path snapshot: [S2_edge_tessellator] exposes no [_exn] functions;
-   tolerances below the minimum are silently clamped. *)
+(* No error-path snapshot: [S2_edge_tessellator] exposes no [_exn] functions; tolerances
+   below the minimum are silently clamped. *)
 
 let%expect_test "min_tolerance_constant" =
   printf
@@ -26,8 +26,8 @@ let%expect_test "create_clamps_small_tolerance" =
   let proj = S2.S2_projections.plate_carree ~x_scale:#180.0 in
   let tiny = S2.S1_angle.of_radians #1e-20 in
   let t = S2.S2_edge_tessellator.create ~projection:proj ~tolerance:tiny in
-  (* Even though we passed 1e-20 rad, the scaled_tolerance reflects the
-     clamped value, not the input. *)
+  (* Even though we passed 1e-20 rad, the scaled_tolerance reflects the clamped value, not
+     the input. *)
   Stdlib.print_endline (Sexp.to_string ([%sexp_of: S2.S2_edge_tessellator.t] t));
   [%expect
     {| ((projection((kind Plate_carree)(x_wrap 360)(to_radians 0.017453292519943295)(from_radians 57.295779513082323)))(scaled_tolerance 8.3829992569888513E-14)) |}]

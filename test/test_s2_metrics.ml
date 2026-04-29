@@ -1,16 +1,14 @@
-(* C++ test parity: s2geometry/src/s2/s2metrics_test.cc and the Metrics block
-   in s2cell_test.cc.
+(* C++ test parity: s2geometry/src/s2/s2metrics_test.cc and the Metrics block in
+   s2cell_test.cc.
 
    Covered:
-   -  TEST(S2, Metrics)         - constant deriv + values-at-every-level
-                                  for all 15 metrics, plus the boundary
-                                  width/area loop and the negative/infinity
-                                  boundary cases.
-   -  GetLevelForMaxValue / GetLevelForMinValue / GetClosestLevel coverage
-      via fixture-driven cases.
+   - TEST(S2, Metrics) - constant deriv + values-at-every-level for all 15 metrics, plus
+     the boundary width/area loop and the negative/infinity boundary cases.
+   - GetLevelForMaxValue / GetLevelForMinValue / GetClosestLevel coverage via
+     fixture-driven cases.
 
    Deliberately omitted:
-   -  Randomized consistency checks (no upstream randomized test corresponds). *)
+   - Randomized consistency checks (no upstream randomized test corresponds). *)
 
 open Core
 open Test_helpers

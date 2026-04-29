@@ -4,8 +4,10 @@
     Every shape has a fixed {e dimension}:
     - [0] = points (each represented by a degenerate edge [v == v]);
     - [1] = polylines (edges need not be connected, and may be degenerate);
-    - [2] = polygons (edges are oriented with the interior on the left; a full polygon is
-      represented by a chain of zero edges).
+    -
+
+    [2] = polygons (edges are oriented with the interior on the left; a full polygon is
+    represented by a chain of zero edges).
 
     All geometry inside one shape has the same dimension, so a mixed-dimension scene
     requires multiple shapes (typically stored in an {!S2_shape_index.t}).

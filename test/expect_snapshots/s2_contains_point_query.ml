@@ -1,12 +1,12 @@
-(* Expect tests for [S2_contains_point_query] - focuses on the [Vertex_model.Open]
-   and [Vertex_model.Closed] paths for 2D shapes (polygons). *)
+(* Expect tests for [S2_contains_point_query] - focuses on the [Vertex_model.Open] and
+   [Vertex_model.Closed] paths for 2D shapes (polygons). *)
 
 open Core
 module Q = S2.S2_contains_point_query
 
 let make_square_polygon () =
-  (* Unit square near origin with lat-lng vertices (0,0), (0,1), (1,1), (1,0).
-     Interior is the small enclosed region. *)
+  (* Unit square near origin with lat-lng vertices (0,0), (0,1), (1,1), (1,0). Interior is
+     the small enclosed region. *)
   let v0 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#0.0) in
   let v1 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#1.0) in
   let v2 = S2.S2_latlng.to_point (S2.S2_latlng.of_degrees ~lat:#1.0 ~lng:#1.0) in

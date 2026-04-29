@@ -1,30 +1,30 @@
-(* C++ test parity: s2geometry/src/s2/s2edge_distances_test.cc
-   Golden data from test/gen/s2edge_distances.cc.
+(* C++ test parity: s2geometry/src/s2/s2edge_distances_test.cc Golden data from
+   test/gen/s2edge_distances.cc.
 
    Covered:
-   -  TEST(S2, GetUpdateMinDistanceMaxError)
-   -  TEST(S2, Distance)
-   -  TEST(S2, MaxDistance)
-   -  TEST(S2, Interpolate)
-   -  TEST(S2, InterpolateCanExtrapolate)
-   -  TEST(S2, UpdateMinInteriorDistanceLowerBoundOptimizationIsConservative)
-   -  TEST(S2, DistanceFraction) (via project fixture)
-   -  TEST(S2, GetPointToLeftS1Angle)
-   -  TEST(S2, GetPointToRightS1Angle)
-   -  GetPointOnLine
+   - TEST(S2, GetUpdateMinDistanceMaxError)
+   - TEST(S2, Distance)
+   - TEST(S2, MaxDistance)
+   - TEST(S2, Interpolate)
+   - TEST(S2, InterpolateCanExtrapolate)
+   - TEST(S2, UpdateMinInteriorDistanceLowerBoundOptimizationIsConservative)
+   - TEST(S2, DistanceFraction) (via project fixture)
+   - TEST(S2, GetPointToLeftS1Angle)
+   - TEST(S2, GetPointToRightS1Angle)
+   - GetPointOnLine
 
    Deliberately omitted:
-   -  TEST(S2, GetUpdateMinInteriorDistanceMaxError) - randomized stress test
-   -  TEST(S2, UpdateMinInteriorDistanceRejectionTestIsConservative) - specific
-      regression cases (partially covered by interior_distance_conservative)
-   -  TEST(S2, ProjectError) - randomized stress test
-   -  TEST(S2, RepeatedInterpolation) - randomized stress test
-   -  TEST(S2, EdgePairMinDistance) - requires s2_edge_crossings
-   -  TEST(S2, EdgePairMaxDistance) - requires s2_edge_crossings
-   -  TEST(IsEdgePairDistanceLess, Coverage) - requires s2_edge_crossings
+   - TEST(S2, GetUpdateMinInteriorDistanceMaxError) - randomized stress test
+   - TEST(S2, UpdateMinInteriorDistanceRejectionTestIsConservative) - specific regression
+     cases (partially covered by interior_distance_conservative)
+   - TEST(S2, ProjectError) - randomized stress test
+   - TEST(S2, RepeatedInterpolation) - randomized stress test
+   - TEST(S2, EdgePairMinDistance) - requires s2_edge_crossings
+   - TEST(S2, EdgePairMaxDistance) - requires s2_edge_crossings
+   - TEST(IsEdgePairDistanceLess, Coverage) - requires s2_edge_crossings
 
    Covered via fixture-only (no upstream TEST() mirror beyond EdgeBNearEdgeA):
-   -  TEST(S2, EdgeBNearEdgeA) *)
+   - TEST(S2, EdgeBNearEdgeA) *)
 
 open Core
 open Test_helpers
@@ -128,7 +128,7 @@ let test_project () =
           ~expected:true
           ~actual:
             (S2.S2_point.approx_equal
-               ~max_error:(Packed_float_option.Unboxed.none)
+               ~max_error:Packed_float_option.Unboxed.none
                closest
                expected_closest))
 ;;
@@ -324,7 +324,7 @@ let test_project_fixture () =
       ~expected:true
       ~actual:
         (S2.S2_point.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none)
+           ~max_error:Packed_float_option.Unboxed.none
            actual
            expected))
 ;;
@@ -343,7 +343,7 @@ let test_project_with_cross_fixture () =
       ~expected:true
       ~actual:
         (S2.S2_point.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none)
+           ~max_error:Packed_float_option.Unboxed.none
            actual
            expected))
 ;;

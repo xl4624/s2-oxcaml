@@ -92,7 +92,7 @@ let%expect_test "approx_equals_self" =
   printf
     "%b\n"
     (S2.S2_pointutil.approx_equals
-       ~max_error_radians:(Packed_float_option.Unboxed.none)
+       ~max_error_radians:Packed_float_option.Unboxed.none
        p
        p);
   [%expect {| true |}]
@@ -104,7 +104,7 @@ let%expect_test "approx_equals_distinct" =
   printf
     "default=%b loose=%b\n"
     (S2.S2_pointutil.approx_equals
-       ~max_error_radians:(Packed_float_option.Unboxed.none)
+       ~max_error_radians:Packed_float_option.Unboxed.none
        a
        b)
     (S2.S2_pointutil.approx_equals

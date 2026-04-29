@@ -26,8 +26,8 @@ let%expect_test "from_center_size" =
 ;;
 
 let%expect_test "exn_path" =
-  (* [create_intervals_exn] with one empty and one non-empty interval is not
-     a valid rectangle. *)
+  (* [create_intervals_exn] with one empty and one non-empty interval is not a valid
+     rectangle. *)
   Expect_test_helpers_core.show_raise (fun () ->
     ignore
       (S2.R2_rect.create_intervals_exn

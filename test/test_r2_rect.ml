@@ -1,14 +1,15 @@
 (* C++ test parity: s2geometry/src/s2/r2rect_test.cc
-   -  TEST(R2Rect, EmptyRectangles)           - full parity (empty_rect)
-   -  TEST(R2Rect, ConstructorsAndAccessors)  - full parity (constructors + accessors)
-   -  TEST(R2Rect, FromCenterSize)            - full parity (constructors: both cases)
-   -  TEST(R2Rect, FromPoint)                 - full parity (constructors)
-   -  TEST(R2Rect, SimplePredicates)          - full parity (accessors, contains_point, ccw_vertices)
-   -  TEST(R2Rect, IntervalOperations)        - full parity (interval_ops: all 9 C++ pairs)
-   -  TEST(R2Rect, AddPoint)                  - full parity (add_point: same 4-point sequence)
-   -  TEST(R2Rect, Project)                   - full parity (project: all 9 C++ cases)
-   -  TEST(R2Rect, Expanded)                  - full parity (expanded: all 7 C++ cases)
-   -  TEST(R2Rect, Expanded) uses ApproxEquals - approx_equal golden (no separate macro)
+   - TEST(R2Rect, EmptyRectangles) - full parity (empty_rect)
+   - TEST(R2Rect, ConstructorsAndAccessors) - full parity (constructors + accessors)
+   - TEST(R2Rect, FromCenterSize) - full parity (constructors: both cases)
+   - TEST(R2Rect, FromPoint) - full parity (constructors)
+   - TEST(R2Rect, SimplePredicates) - full parity (accessors, contains_point,
+     ccw_vertices)
+   - TEST(R2Rect, IntervalOperations) - full parity (interval_ops: all 9 C++ pairs)
+   - TEST(R2Rect, AddPoint) - full parity (add_point: same 4-point sequence)
+   - TEST(R2Rect, Project) - full parity (project: all 9 C++ cases)
+   - TEST(R2Rect, Expanded) - full parity (expanded: all 7 C++ cases)
+   - TEST(R2Rect, Expanded) uses ApproxEquals - approx_equal golden (no separate macro)
 
    Deliberately omitted (C++-only mutable API, no OCaml equivalent):
    - r[0] = R1Interval(3, 4), r[1][0] = 5 (mutable index assignment)
@@ -300,7 +301,7 @@ let test_expanded fixture () =
         "approx_equal"
         true
         (S2.R2_rect.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none)
+           ~max_error:Packed_float_option.Unboxed.none
            expected
            result)))
 ;;
@@ -314,7 +315,7 @@ let test_approx_equal fixture () =
     (check bool)
       "approx_equal"
       expected
-      (S2.R2_rect.approx_equal ~max_error:(Packed_float_option.Unboxed.none) r1 r2))
+      (S2.R2_rect.approx_equal ~max_error:Packed_float_option.Unboxed.none r1 r2))
 ;;
 
 let () =

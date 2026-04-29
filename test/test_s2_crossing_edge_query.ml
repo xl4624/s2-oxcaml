@@ -1,21 +1,20 @@
-(* C++ test parity: s2geometry/src/s2/s2crossing_edge_query_test.cc.
-   Golden data from test/gen/s2crossing_edge_query.cc.
+(* C++ test parity: s2geometry/src/s2/s2crossing_edge_query_test.cc. Golden data from
+   test/gen/s2crossing_edge_query.cc.
 
    Covered:
-   -  Empty index: every query returns empty candidates and crossings.
-   -  Zigzag polyline (single shape, <= 27 edges): brute-force candidate path.
-   -  Three zigzag polylines across multiple shapes.
-   -  Regular 64-gon loop (> 27 edges): exercises the recursive cell-descent
-      path with default [max_edges_per_cell].
-   -  Regular 64-gon loop with [max_edges_per_cell = 1] to force deep
-      subdivision.
-   -  Mixed shapes (loop + polyline).
-   -  Degenerate zero-length query edge.
+   - Empty index: every query returns empty candidates and crossings.
+   - Zigzag polyline (single shape, <= 27 edges): brute-force candidate path.
+   - Three zigzag polylines across multiple shapes.
+   - Regular 64-gon loop (> 27 edges): exercises the recursive cell-descent path with
+     default [max_edges_per_cell].
+   - Regular 64-gon loop with [max_edges_per_cell = 1] to force deep subdivision.
+   - Mixed shapes (loop + polyline).
+   - Degenerate zero-length query edge.
 
    Not covered (deferred):
-   -  Randomized perturbation tests (would require random generation parity).
-   -  Low-level VisitCells / VisitRawCandidates visitor APIs (our OCaml
-      interface only exposes GetCandidates / GetCrossingEdges). *)
+   - Randomized perturbation tests (would require random generation parity).
+   - Low-level VisitCells / VisitRawCandidates visitor APIs (our OCaml interface only
+     exposes GetCandidates / GetCrossingEdges). *)
 
 open Core
 open Alcotest

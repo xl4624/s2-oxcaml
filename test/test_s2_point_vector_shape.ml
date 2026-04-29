@@ -4,8 +4,8 @@
    - TEST(S2PointVectorShape, Empty)
    - TEST(S2PointVectorShape, ConstructionAndAccess) - via the grid case
    - TEST(S2PointVectorShape, ChainIteratorWorks) - via the three_points case
-   - TEST(S2PointVectorShape, ChainVertexIteratorWorks) - the per-point
-     chain/edge access is checked by shared shape summary assertions.
+   - TEST(S2PointVectorShape, ChainVertexIteratorWorks) - the per-point chain/edge access
+     is checked by shared shape summary assertions.
 
    Deliberately omitted:
    - Move: OCaml values have no move semantics to exercise.

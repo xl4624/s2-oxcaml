@@ -6,21 +6,17 @@
    - TEST(S2LaxPolylineShape, EdgeAccess)
 
    Extra coverage beyond upstream:
-   - four_vertices: a longer polyline to exercise chain_edge / chain_position
-     over multiple edges.
-   - degenerate_repeat: a polyline with two identical vertices (one
-     zero-length edge). Explicitly permitted by LaxPolyline but rejected by
-     S2Polyline.
-   - antipodal: a polyline with antipodal endpoints, also permitted by
-     LaxPolyline only.
+   - four_vertices: a longer polyline to exercise chain_edge / chain_position over
+     multiple edges.
+   - degenerate_repeat: a polyline with two identical vertices (one zero-length edge).
+     Explicitly permitted by LaxPolyline but rejected by S2Polyline.
+   - antipodal: a polyline with antipodal endpoints, also permitted by LaxPolyline only.
 
    Deliberately omitted:
-   - Move: OCaml values are immutable at this level; no move semantics to
-     exercise.
-   - RoundtripEncoding / S2CoderWorks / EncodedS2LaxPolylineShape: encoding
-     is not ported.
-   - ChainIteratorWorks / ChainVertexIteratorWorks: iterators are not part
-     of the public API. *)
+   - Move: OCaml values are immutable at this level; no move semantics to exercise.
+   - RoundtripEncoding / S2CoderWorks / EncodedS2LaxPolylineShape: encoding is not ported.
+   - ChainIteratorWorks / ChainVertexIteratorWorks: iterators are not part of the public
+     API. *)
 
 open Core
 open Test_helpers

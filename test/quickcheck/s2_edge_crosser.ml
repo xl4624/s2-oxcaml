@@ -59,8 +59,8 @@ let qc_config =
 (* --- Properties ----------------------------------------------------------- *)
 
 let%test_unit "crossing_sign_matches_edge_crossings" =
-  (* The stateful crosser should produce the same sign as the stateless
-     crossing_sign in S2_edge_crossings. *)
+  (* The stateful crosser should produce the same sign as the stateless crossing_sign in
+     S2_edge_crossings. *)
   Base_quickcheck.Test.run_exn
     (module S2_point_quad)
     ~config:qc_config
@@ -74,8 +74,8 @@ let%test_unit "crossing_sign_matches_edge_crossings" =
 ;;
 
 let%test_unit "chain_crossing_matches_stateless" =
-  (* Feeding a chain c -> d through chain_crossing_sign after restart_at c
-     should equal crossing_sign for edge cd. *)
+  (* Feeding a chain c -> d through chain_crossing_sign after restart_at c should equal
+     crossing_sign for edge cd. *)
   Base_quickcheck.Test.run_exn
     (module S2_point_quad)
     ~config:qc_config

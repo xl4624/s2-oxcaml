@@ -135,7 +135,7 @@ let%test_unit "points_vs_latlngs" =
       let by_points = S2.Earth.length_from_points a_pt b_pt in
       let by_latlngs = S2.Earth.length_from_latlngs a_ll b_ll in
       let diff = Float_u.to_float (Float_u.abs (Float_u.sub by_points by_latlngs)) in
-      (* Allow a few millimeters of slack: the two formulations use different
-         numerical paths (chord-based vs. haversine). *)
+      (* Allow a few millimeters of slack: the two formulations use different numerical
+         paths (chord-based vs. haversine). *)
       assert (Float.(diff <= 1e-2)))
 ;;

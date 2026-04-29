@@ -5,16 +5,15 @@
    - TEST(S2LaxLoopShape, NonEmptyLoop)
 
    Extra coverage beyond upstream:
-   - single_vertex: a one-vertex loop, which defines a single zero-length
-     edge. Explicitly permitted by LaxLoopShape.
+   - single_vertex: a one-vertex loop, which defines a single zero-length edge. Explicitly
+     permitted by LaxLoopShape.
    - two_vertex: a two-vertex degenerate loop with two matched zero-length
-     "back-and-forth" edges; the reference-point algorithm must conclude
-     the shape is empty.
+     "back-and-forth" edges; the reference-point algorithm must conclude the shape is
+     empty.
    - triangle: a triangle loop, a typical non-degenerate case.
 
    Deliberately omitted:
-   - Move: OCaml values are immutable at this level; no move semantics to
-     exercise.
+   - Move: OCaml values are immutable at this level; no move semantics to exercise.
    - S2VertexIdLaxLoopShape: the index-based variant is not ported.
    - S2LaxClosedPolylineShape: the polyline-flavored subclass is not ported.
 *)

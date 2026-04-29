@@ -1,15 +1,13 @@
-(* C++ test parity:
-   s2geometry/src/s2/s2shapeutil_contains_brute_force_test.cc.
-   Golden data from test/gen/s2shapeutil_contains_brute_force.cc.
+(* C++ test parity: s2geometry/src/s2/s2shapeutil_contains_brute_force_test.cc. Golden
+   data from test/gen/s2shapeutil_contains_brute_force.cc.
 
    Covered:
-   -  TEST(ContainsBruteForce, NoInterior): a polyline never contains any
-      point because its dimension is 1.
-   -  TEST(ContainsBruteForce, ContainsReferencePoint): the shape's own
-      reference point round-trips through [contains_brute_force].
-   -  TEST(ContainsBruteForce, ConsistentWithS2Loop): on a 100-vertex regular
-      loop, [contains_brute_force] agrees with the loop's own [contains] for
-      every vertex. *)
+   - TEST(ContainsBruteForce, NoInterior): a polyline never contains any point because its
+     dimension is 1.
+   - TEST(ContainsBruteForce, ContainsReferencePoint): the shape's own reference point
+     round-trips through [contains_brute_force].
+   - TEST(ContainsBruteForce, ConsistentWithS2Loop): on a 100-vertex regular loop,
+     [contains_brute_force] agrees with the loop's own [contains] for every vertex. *)
 
 open Core
 open Alcotest

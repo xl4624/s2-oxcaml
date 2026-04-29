@@ -4,8 +4,8 @@ open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 
-(* Generate loops from S2 cells: a fast, reliable way to produce a guaranteed
-   valid (simple, normalized) non-degenerate loop from random input. *)
+(* Generate loops from S2 cells: a fast, reliable way to produce a guaranteed valid
+   (simple, normalized) non-degenerate loop from random input. *)
 module Cell_loop = struct
   type t = { id : Int64.t }
 

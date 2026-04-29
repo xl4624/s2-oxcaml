@@ -1,7 +1,7 @@
 open Core
 
-(* No error-path snapshot: [S2_lax_loop] accepts any vertex sequence, including
-   empty, single-vertex, and antipodal-adjacent loops. *)
+(* No error-path snapshot: [S2_lax_loop] accepts any vertex sequence, including empty,
+   single-vertex, and antipodal-adjacent loops. *)
 
 let p x y z = S2.S2_point.of_coords ~x ~y ~z
 

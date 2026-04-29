@@ -75,9 +75,9 @@ let add_polygon t p =
 
 let cap_bound t = S2_latlng_rect.cap_bound t.bound
 
-(* Remove duplicate entries from [t.points.[0 .. t.n - 1]] using structural
-   equality. The dedup is O(n^2) against the already-written prefix - good
-   enough for the workloads this module is built for. *)
+(* Remove duplicate entries from [t.points.[0 .. t.n - 1]] using structural equality. The
+   dedup is O(n^2) against the already-written prefix - good enough for the workloads this
+   module is built for. *)
 let dedupe t =
   let pts = t.points in
   let mutable w = 0 in
@@ -97,9 +97,9 @@ let dedupe t =
   t.n <- w
 ;;
 
-(* Sort the first [t.n] slots of [t.points] into CCW order around [origin].
-   Uses a basic quicksort adapted from [Array.sort] but avoiding the boxed
-   comparator, since [S2_point.t] has a non-value layout. *)
+(* Sort the first [t.n] slots of [t.points] into CCW order around [origin]. Uses a basic
+   quicksort adapted from [Array.sort] but avoiding the boxed comparator, since
+   [S2_point.t] has a non-value layout. *)
 let sort_around t ~origin =
   let less a b =
     match S2_predicates.robust_sign origin a b with
@@ -144,13 +144,14 @@ let reverse_points t =
   done
 ;;
 
-(* Andrew's monotone-chain inner loop: walk the current point array and
-   maintain a stack of points that make only CCW turns. Each new point pops
-   the stack until the top two stack entries plus the new point form a
-   left turn. Producing one chain of the hull takes O(n) after the O(n log
-   n) sort; [convex_hull] runs it twice (once forward, once reversed) and
-   glues the results. Writes into a caller-provided [output] buffer and
-   returns the number of points written. *)
+(* Andrew's monotone-chain inner loop: walk the current point array and maintain a stack
+   of points that make only CCW turns. Each new point pops the stack until the top two
+   stack entries plus the new point form a left turn. Producing one chain of the hull
+   takes O(n) after the O(n log
+
+   n) sort; [convex_hull] runs it twice (once forward, once reversed) and glues the
+   results. Writes into a caller-provided [output] buffer and returns the number of points
+   written. *)
 let monotone_chain t ~output =
   let mutable out_n = 0 in
   for i = 0 to t.n - 1 do
@@ -170,8 +171,8 @@ let monotone_chain t ~output =
   out_n
 ;;
 
-(* Three-vertex loop containing a single point. Useful when the hull has
-   fewer than three distinct input points. *)
+(* Three-vertex loop containing a single point. Useful when the hull has fewer than three
+   distinct input points. *)
 let single_point_loop p =
   let offset = #1e-15 in
   let d0 = S2_pointutil.ortho p in
@@ -181,9 +182,8 @@ let single_point_loop p =
   S2_loop.of_vertices ~validate:false [| p; v1; v2 |]
 ;;
 
-(* Three-vertex loop containing the edge [a]->[b]. Antipodal endpoints turn
-   into the full loop so we do not have to deal with the degenerate
-   antipodal-adjacent-vertex case. *)
+(* Three-vertex loop containing the edge [a]->[b]. Antipodal endpoints turn into the full
+   loop so we do not have to deal with the degenerate antipodal-adjacent-vertex case. *)
 let single_edge_loop a b =
   if R3_vector.equal (R3_vector.add a b) R3_vector.zero
   then S2_loop.full ()
@@ -213,8 +213,8 @@ let convex_hull t =
       copy_points ~src:buf ~dst:lower ~len:lower_n;
       reverse_points t;
       let upper_n = monotone_chain t ~output:buf in
-      (* Drop the last vertex of each chain (it is shared with the other
-         chain's first vertex) and concatenate. *)
+      (* Drop the last vertex of each chain (it is shared with the other chain's first
+         vertex) and concatenate. *)
       let total = lower_n - 1 + (upper_n - 1) in
       let combined = Array.create ~len:total S2_point.origin in
       for i = 0 to lower_n - 2 do

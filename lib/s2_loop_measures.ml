@@ -20,10 +20,9 @@ let perimeter (loop : S2_point.t array) =
     S1_angle.of_radians sum)
 ;;
 
-(* [loop_at loop i] returns the vertex at cyclic position [i], accepting
-   indices used by the canonical-order comparator which can step outside
-   [0, n-1] by a single direction unit (as low as [-1] and as high as
-   [2*n - 1]). *)
+(* [loop_at loop i] returns the vertex at cyclic position [i], accepting indices used by
+   the canonical-order comparator which can step outside [0, n-1] by a single direction
+   unit (as low as [-1] and as high as [2*n - 1]). *)
 let[@inline] loop_at (loop : S2_point.t array) i =
   let n = Array.length loop in
   let j = i mod n in
@@ -31,19 +30,19 @@ let[@inline] loop_at (loop : S2_point.t array) i =
   loop.(j)
 ;;
 
-(* Upper bound on the edge length (in radians) that we treat as numerically
-   stable when decomposing the loop interior into a triangle fan. The
-   exact value is fairly arbitrary; it matches s2loop_measures.h:294 and is
-   conservative enough for every [f_tri] used in this file. *)
+(* Upper bound on the edge length (in radians) that we treat as numerically stable when
+   decomposing the loop interior into a triangle fan. The exact value is fairly arbitrary;
+   it matches s2loop_measures.h:294 and is conservative enough for every [f_tri] used in
+   this file. *)
 let k_max_length = Float.(pi - 1e-5)
 
-(* Compute the oriented surface integral of [f_tri] over the loop interior,
-   accumulating into an R3 vector. The running sum is held in three [float#]
-   components so no intermediate [R3_vector.t] is allocated. Re-origination
-   rules match s2loop_measures.h:258-362: when the leading-edge length would
-   exceed [k_max_length], the fan origin is moved to [RobustCrossProd(v0, vi)]
-   (or [v0 x old_origin] when [old_origin] was already displaced) and extra
-   triangles are emitted to keep the running sum consistent. *)
+(* Compute the oriented surface integral of [f_tri] over the loop interior, accumulating
+   into an R3 vector. The running sum is held in three [float#] components so no
+   intermediate [R3_vector.t] is allocated. Re-origination rules match
+   s2loop_measures.h:258-362: when the leading-edge length would exceed [k_max_length],
+   the fan origin is moved to [RobustCrossProd(v0, vi)] (or [v0 x old_origin] when
+   [old_origin] was already displaced) and extra triangles are emitted to keep the running
+   sum consistent. *)
 let surface_integral_r3 (loop : S2_point.t array) ~f_tri =
   let n = Array.length loop in
   if n < 3
@@ -93,10 +92,10 @@ let surface_integral_r3 (loop : S2_point.t array) ~f_tri =
     R3_vector.create ~x:sum_x ~y:sum_y ~z:sum_z)
 ;;
 
-(* Kahan-compensated surface integral specialised to [float#] accumulators.
-   The control flow mirrors [surface_integral_r3] exactly; it is duplicated
-   rather than parameterised because the scalar accumulator lets us hold
-   [sum] and [err] in unboxed registers without a shared boxed state. *)
+(* Kahan-compensated surface integral specialised to [float#] accumulators. The control
+   flow mirrors [surface_integral_r3] exactly; it is duplicated rather than parameterised
+   because the scalar accumulator lets us hold [sum] and [err] in unboxed registers
+   without a shared boxed state. *)
 let surface_integral_kahan_f (loop : S2_point.t array) ~f_tri =
   let n = Array.length loop in
   if n < 3
@@ -154,12 +153,11 @@ let prune_degeneracies (loop : S2_point.t array) =
   if n = 0
   then [||]
   else (
-    (* Two-pass pruning. The first pass runs a stack-like scan that collapses
-       any adjacent [AA] or [ABA] pattern as soon as it appears: [AA -> A]
-       drops the duplicate tail, while [ABA -> A] pops the middle vertex and
-       skips the new one. Post-pass we still need to handle degeneracies
-       that wrap across the boundary between the end and start of the buffer,
-       which is what the second [while] loop does. *)
+    (* Two-pass pruning. The first pass runs a stack-like scan that collapses any adjacent
+       [AA] or [ABA] pattern as soon as it appears: [AA -> A] drops the duplicate tail,
+       while [ABA -> A] pops the middle vertex and skips the new one. Post-pass we still
+       need to handle degeneracies that wrap across the boundary between the end and start
+       of the buffer, which is what the second [while] loop does. *)
     let buf = Array.create ~len:n R3_vector.zero in
     let mutable size = 0 in
     for i = 0 to n - 1 do
@@ -184,10 +182,10 @@ let prune_degeneracies (loop : S2_point.t array) =
     if size < 3
     then [||]
     else (
-      (* Strip any [ABA] that wraps the boundary: if the loop begins with
-         [BA...] and ends with [...A], or begins with [A...] and ends with
-         [...AB], removing both ends is equivalent to the non-wrapping
-         [ABA -> A] rule. Keep peeling as long as it applies. *)
+      (* Strip any [ABA] that wraps the boundary: if the loop begins with [BA...] and ends
+         with [...A], or begins with [A...] and ends with [...AB], removing both ends is
+         equivalent to the non-wrapping [ABA -> A] rule. Keep peeling as long as it
+         applies. *)
       let mutable k = 0 in
       let mutable continue = true in
       while continue do
@@ -212,10 +210,9 @@ let curvature_max_error (loop : S2_point.t array) =
   #11.25 * Float_u.epsilon_float * Float_u.of_int (Array.length loop)
 ;;
 
-(* Returns [true] iff the vertex sequence generated by [order1] is
-   lexicographically strictly less than the one generated by [order2]. Used
-   by [canonical_loop_order] to pick a tie-breaker among loop orders that
-   start at the same minimum vertex. *)
+(* Returns [true] iff the vertex sequence generated by [order1] is lexicographically
+   strictly less than the one generated by [order2]. Used by [canonical_loop_order] to
+   pick a tie-breaker among loop orders that start at the same minimum vertex. *)
 let is_order_less (loop : S2_point.t array) ~order1 ~order2 =
   if order1.first = order2.first && order1.dir = order2.dir
   then false
@@ -248,11 +245,10 @@ let rec canonical_loop_order (loop : S2_point.t array) =
   if n = 0
   then { first = 0; dir = 1 }
   else (
-    (* Collect every index at which the minimum vertex occurs, then for each
-       candidate compare the forward order [{ first = idx; dir = 1 }] and
-       the reverse order [{ first = idx + n; dir = -1 }] against the best
-       known order. This yields the lexicographically smallest traversal
-       among all rotations and reversals. *)
+    (* Collect every index at which the minimum vertex occurs, then for each candidate
+       compare the forward order [{ first = idx; dir = 1 }] and the reverse order
+       [{ first = idx + n; dir = -1 }] against the best known order. This yields the
+       lexicographically smallest traversal among all rotations and reversals. *)
     let mutable min_indices = [ 0 ] in
     let mutable current_min = loop.(0) in
     for i = 1 to n - 1 do
@@ -279,10 +275,9 @@ let rec canonical_loop_order (loop : S2_point.t array) =
     min_order)
 
 and curvature (loop : S2_point.t array) =
-  (* By convention the empty array means the full sphere, whose curvature
-     is [-2 * pi]. A fully-degenerate non-empty loop prunes to the empty
-     array, and the contract is that it should still report [+2 * pi];
-     we special-case this before pruning. *)
+  (* By convention the empty array means the full sphere, whose curvature is [-2 * pi]. A
+     fully-degenerate non-empty loop prunes to the empty array, and the contract is that
+     it should still report [+2 * pi]; we special-case this before pruning. *)
   if Array.length loop = 0
   then Float_u.O.(-#2.0 * Float_u.pi)
   else (
@@ -292,11 +287,10 @@ and curvature (loop : S2_point.t array) =
     then (* Completely degenerate. *)
       Float_u.O.(#2.0 * Float_u.pi)
     else (
-      (* Traversal in canonical order makes the result invariant under
-         vertex rotation and direction, which is the property used by the
-         wider S2 API (e.g. equality testing of loops). The direction [dir]
-         also flips the sign of the sum, which [signed_area] relies on to
-         keep CCW loops positive. *)
+      (* Traversal in canonical order makes the result invariant under vertex rotation and
+         direction, which is the property used by the wider S2 API (e.g. equality testing
+         of loops). The direction [dir] also flips the sign of the sum, which
+         [signed_area] relies on to keep CCW loops positive. *)
       let order = canonical_loop_order loop in
       let dir = order.dir in
       let first = order.first in
@@ -319,9 +313,9 @@ and curvature (loop : S2_point.t array) =
         remaining <- remaining - 1
       done;
       let open Float_u.O in
-      (* Clamp into the open interval [(-2*pi, 2*pi)] so that rounding noise
-         cannot produce the sentinel values [+/- 2*pi] that are reserved
-         for fully-degenerate and full-sphere loops respectively. *)
+      (* Clamp into the open interval [(-2*pi, 2*pi)] so that rounding noise cannot
+         produce the sentinel values [+/- 2*pi] that are reserved for fully-degenerate and
+         full-sphere loops respectively. *)
       let k_max_curvature = (#2.0 * Float_u.pi) - (#4.0 * Float_u.epsilon_float) in
       let total = sum + compensation in
       let dir_f = Float_u.of_int dir in
@@ -365,9 +359,8 @@ let signed_area loop =
 ;;
 
 let area loop =
-  (* Fold the negative half of [signed_area] back into [[0, 4*pi]]: a
-     clockwise loop simply represents the complement of its CCW counterpart
-     on the sphere. *)
+  (* Fold the negative half of [signed_area] back into [[0, 4*pi]]: a clockwise loop
+     simply represents the complement of its CCW counterpart on the sphere. *)
   let a = signed_area loop in
   let open Float_u.O in
   if a < #0.0 then a + (#4.0 * Float_u.pi) else a
@@ -379,9 +372,8 @@ let approx_area loop =
 ;;
 
 let centroid loop =
-  (* Non-Kahan variant: the scalar Kahan loop accumulates a single
-     [float#] register, while a vector centroid needs three independent
-     accumulators and the per-component compensation would triple the
-     arithmetic cost without a meaningful accuracy win here. *)
+  (* Non-Kahan variant: the scalar Kahan loop accumulates a single [float#] register,
+     while a vector centroid needs three independent accumulators and the per-component
+     compensation would triple the arithmetic cost without a meaningful accuracy win here. *)
   surface_integral_r3 loop ~f_tri:(fun a b c -> S2_centroids.true_centroid a b c)
 ;;

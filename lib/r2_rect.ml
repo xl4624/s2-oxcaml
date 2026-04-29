@@ -19,9 +19,9 @@ let[@zero_alloc ignore] to_string t =
 ;;
 
 (* A rectangle is valid when both intervals agree on emptiness: either the rectangle
-   covers a non-degenerate 2D region, or it is globally empty. The mixed state
-   (one axis empty, the other not) would represent a "flat empty" region that is
-   rejected by all constructors. *)
+   covers a non-degenerate 2D region, or it is globally empty. The mixed state (one axis
+   empty, the other not) would represent a "flat empty" region that is rejected by all
+   constructors. *)
 let[@inline] [@zero_alloc] is_valid t =
   Bool.equal (R1_interval.is_empty t.#x) (R1_interval.is_empty t.#y)
 ;;
@@ -110,8 +110,8 @@ let[@inline] [@zero_alloc] hi t =
 
 let[@inline] [@zero_alloc] is_empty t = R1_interval.is_empty t.#x
 
-(* Vertices go counterclockwise starting from the lower-left corner:
-   0 = (lo.x, lo.y), 1 = (hi.x, lo.y), 2 = (hi.x, hi.y), 3 = (lo.x, hi.y). *)
+(* Vertices go counterclockwise starting from the lower-left corner: 0 = (lo.x, lo.y), 1 =
+   (hi.x, lo.y), 2 = (hi.x, hi.y), 3 = (lo.x, hi.y). *)
 let[@inline] [@zero_alloc] get_vertex t k =
   let k = k % 4 in
   match k with

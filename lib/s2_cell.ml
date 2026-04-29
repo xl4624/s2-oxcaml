@@ -1,10 +1,9 @@
 open Core
 
-(* Hilbert curve bookkeeping used by [child] to derive a child's orientation and
-   its quadrant within the parent's UV rectangle.  [pos_to_ij.(orient).(pos)]
-   packs the [(i, j)] offset (2*i + j) of the [pos]-th Hilbert child under
-   orientation [orient]; [pos_to_orientation.(pos)] is the orientation tweak
-   applied when descending. *)
+(* Hilbert curve bookkeeping used by [child] to derive a child's orientation and its
+   quadrant within the parent's UV rectangle. [pos_to_ij.(orient).(pos)] packs the
+   [(i, j)] offset (2*i + j) of the [pos]-th Hilbert child under orientation [orient];
+   [pos_to_orientation.(pos)] is the orientation tweak applied when descending. *)
 module Internal = struct
   let pos_to_ij =
     [| [| 0; 1; 3; 2 |]; [| 0; 2; 3; 1 |]; [| 3; 2; 0; 1 |]; [| 3; 1; 0; 2 |] |]
@@ -81,8 +80,8 @@ let[@inline] [@zero_alloc] center_raw t = S2_cell_id.to_point_raw t.#id
 let[@inline] [@zero_alloc] center t = S2_cell_id.to_point t.#id
 
 let[@inline] [@zero_alloc] average_area level =
-  (* AvgArea = 4*pi / (6 * 4^level): divide the sphere (area 4*pi) evenly over
-     the 6 * 4^level cells at the given level. *)
+  (* AvgArea = 4*pi / (6 * 4^level): divide the sphere (area 4*pi) evenly over the 6 *
+     4^level cells at the given level. *)
   let open Float_u.O in
   Float_u.pi * #4.0 / #6.0 / (#4.0 ** of_int level)
 ;;
@@ -123,9 +122,9 @@ let approx_area t =
     / (#1.0 + Float_u.sqrt (#1.0 - Float_util.min_u #1.0 (flat_area / Float_u.pi)))
 ;;
 
-(* The [5/3 * DBL_EPSILON] UV margin cancels the worst-case rounding in the
-   XYZ -> UV projection so that a point exactly on a face boundary is classified
-   as contained by at least one adjacent cell. *)
+(* The [5/3 * DBL_EPSILON] UV margin cancels the worst-case rounding in the XYZ -> UV
+   projection so that a point exactly on a face boundary is classified as contained by at
+   least one adjacent cell. *)
 let contains_point t p =
   let uv = S2_coords.face_xyz_to_uv t.#face p in
   match%optional_u.R2_point.Option uv with
@@ -340,8 +339,8 @@ let[@inline] [@zero_alloc] step_max_edge cur v a b =
 ;;
 
 let[@zero_alloc] distance_to_edge t a b =
-  (* Start with the minimum of the distances from each endpoint to the cell.
-     A zero here means the endpoint is inside the cell. *)
+  (* Start with the minimum of the distances from each endpoint to the cell. A zero here
+     means the endpoint is inside the cell. *)
   let min_dist = min_ca (distance_to_point t a) (distance_to_point t b) in
   if S1_chord_angle.is_zero min_dist
   then min_dist
@@ -350,8 +349,8 @@ let[@zero_alloc] distance_to_edge t a b =
     let v1 = vertex t 1 in
     let v2 = vertex t 2 in
     let v3 = vertex t 3 in
-    (* Check whether [ab] crosses the cell boundary.  We chain through the
-       four cell edges [v3 v0], [v0 v1], [v1 v2], [v2 v3]. *)
+    (* Check whether [ab] crosses the cell boundary. We chain through the four cell edges
+       [v3 v0], [v0 v1], [v1 v2], [v2 v3]. *)
     let mutable crosser = S2_edge_crosser.create_with_chain ~a ~b ~c:v3 in
     let mutable crossed = false in
     let mutable i = 0 in
@@ -373,10 +372,10 @@ let[@zero_alloc] distance_to_edge t a b =
     if crossed
     then S1_chord_angle.zero
     else (
-      (* Both endpoints are outside the cell and [ab] does not cross the cell.
-         The minimum is attained between a cell vertex and an interior point
-         of [ab] (or between a cell vertex and one of [a], [b], but those are
-         already folded into [min_dist] via [distance_to_point]). *)
+      (* Both endpoints are outside the cell and [ab] does not cross the cell. The minimum
+         is attained between a cell vertex and an interior point of [ab] (or between a
+         cell vertex and one of [a], [b], but those are already folded into [min_dist] via
+         [distance_to_point]). *)
       let cur = min_dist in
       let cur = step_min_edge cur v0 a b in
       let cur = step_min_edge cur v1 a b in
@@ -398,10 +397,9 @@ let[@zero_alloc] max_distance_to_edge t a b =
       (distance_to_edge t (R3_vector.neg a) (R3_vector.neg b))
 ;;
 
-(* Index of the edge of [a] that is furthest from the opposite edge of [b] in
-   (u,v) space, returned in S2Cell's edge numbering
-   (0 = bottom, 1 = right, 2 = top, 3 = left).  Returns [-1] when the cells'
-   (u,v) rectangles overlap, meaning the cells intersect. *)
+(* Index of the edge of [a] that is furthest from the opposite edge of [b] in (u,v) space,
+   returned in S2Cell's edge numbering (0 = bottom, 1 = right, 2 = top, 3 = left). Returns
+   [-1] when the cells' (u,v) rectangles overlap, meaning the cells intersect. *)
 let[@inline] [@zero_alloc] find_furthest_edge a_uv b_uv =
   let open Float_u.O in
   let ax = R2_rect.x a_uv in

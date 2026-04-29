@@ -1,40 +1,40 @@
-(* C++ test parity: s2geometry/src/s2/s2latlng_rect_test.cc
-   Golden data from test/gen/s2latlng_rect.cc.
+(* C++ test parity: s2geometry/src/s2/s2latlng_rect_test.cc Golden data from
+   test/gen/s2latlng_rect.cc.
 
    Covered:
-   -  TEST(S2LatLngRect, EmptyAndFull)
-   -  TEST(S2LatLngRect, Accessors)
-   -  TEST(S2LatLngRect, FromCenterSize)
-   -  TEST(S2LatLngRect, FromPoint)
-   -  TEST(S2LatLngRect, FromPointPair)
-   -  TEST(S2LatLngRect, GetCenterSize)
-   -  TEST(S2LatLngRect, GetVertex)
-   -  TEST(S2LatLngRect, Contains) -latlng, interior, point
-   -  TEST(S2LatLngRect, IntervalOps) -contains, interior_contains, intersects,
-      interior_intersects, union, intersection
-   -  TEST(S2LatLngRect, AddPoint)
-   -  TEST(S2LatLngRect, Expanded)
-   -  TEST(S2LatLngRect, PolarClosure)
-   -  TEST(S2LatLngRect, Area)
-   -  TEST(S2LatLngRect, GetCentroid)
-   -  TEST(S2LatLngRect, ApproxEquals)
-   -  TEST(S2LatLngRect, GetCapBound)
-   -  TEST(S2LatLngRect, DistanceToLatLng)
-   -  TEST(S2LatLngRect, GetDistanceOverlapping)
-   -  TEST(S2LatLngRect, GetDistanceRectVsRect)
-   -  TEST(S2LatLngRect, GetDirectedHausdorffDistanceContained)
-   -  TEST(S2LatLngRect, GetDirectHausdorffDistancePointToRect)
-   -  TEST(S2LatLngRect, GetHausdorffDistance)
+   - TEST(S2LatLngRect, EmptyAndFull)
+   - TEST(S2LatLngRect, Accessors)
+   - TEST(S2LatLngRect, FromCenterSize)
+   - TEST(S2LatLngRect, FromPoint)
+   - TEST(S2LatLngRect, FromPointPair)
+   - TEST(S2LatLngRect, GetCenterSize)
+   - TEST(S2LatLngRect, GetVertex)
+   - TEST(S2LatLngRect, Contains) -latlng, interior, point
+   - TEST(S2LatLngRect, IntervalOps) -contains, interior_contains, intersects,
+     interior_intersects, union, intersection
+   - TEST(S2LatLngRect, AddPoint)
+   - TEST(S2LatLngRect, Expanded)
+   - TEST(S2LatLngRect, PolarClosure)
+   - TEST(S2LatLngRect, Area)
+   - TEST(S2LatLngRect, GetCentroid)
+   - TEST(S2LatLngRect, ApproxEquals)
+   - TEST(S2LatLngRect, GetCapBound)
+   - TEST(S2LatLngRect, DistanceToLatLng)
+   - TEST(S2LatLngRect, GetDistanceOverlapping)
+   - TEST(S2LatLngRect, GetDistanceRectVsRect)
+   - TEST(S2LatLngRect, GetDirectedHausdorffDistanceContained)
+   - TEST(S2LatLngRect, GetDirectHausdorffDistancePointToRect)
+   - TEST(S2LatLngRect, GetHausdorffDistance)
 
    Deliberately omitted:
-   -  TEST(S2LatLngRect, CellOps) requires S2_cell.rect_bound (not yet ported)
-   -  TEST(S2LatLngRect, EncodeDecode) not ported yet
-   -  TEST(BoundaryIntersects) requires S2_edge_crossings (not yet ported)
-   -  TEST(ExpandedByDistance) requires S2_cell.rect_bound
-   -  TEST(S2LatLngRect, GetDistanceRandomPairs) randomized, verified by brute-force
-   -  TEST(S2LatLngRect, GetDirectedHausdorffDistanceRandomPairs) randomized
-   -  TEST(S2LatLngRect, S2CoderWorks)
-   -  TEST(S2LatLngRect, Hash) *)
+   - TEST(S2LatLngRect, CellOps) requires S2_cell.rect_bound (not yet ported)
+   - TEST(S2LatLngRect, EncodeDecode) not ported yet
+   - TEST(BoundaryIntersects) requires S2_edge_crossings (not yet ported)
+   - TEST(ExpandedByDistance) requires S2_cell.rect_bound
+   - TEST(S2LatLngRect, GetDistanceRandomPairs) randomized, verified by brute-force
+   - TEST(S2LatLngRect, GetDirectedHausdorffDistanceRandomPairs) randomized
+   - TEST(S2LatLngRect, S2CoderWorks)
+   - TEST(S2LatLngRect, Hash) *)
 
 open Core
 open Test_helpers
@@ -165,7 +165,7 @@ let test_from_center_size () =
         ~expected:(bool_of_json_exn (member "approx_equals" case))
         ~actual:
           (S2.S2_latlng_rect.approx_equal
-             ~max_error:(Packed_float_option.Unboxed.none)
+             ~max_error:Packed_float_option.Unboxed.none
              result
              expected))
 ;;
@@ -352,9 +352,7 @@ let test_add_point () =
   let p =
     S2.S2_latlng_rect.add_point
       p
-      (S2.S2_latlng.of_radians
-         ~lat:(Float_u.pi / #4.0)
-         ~lng:(Float_u.neg (Float_u.pi)))
+      (S2.S2_latlng.of_radians ~lat:(Float_u.pi / #4.0) ~lng:(Float_u.neg Float_u.pi))
   in
   let p =
     S2.S2_latlng_rect.add_point
@@ -388,9 +386,9 @@ let test_expanded () =
       (label ^ " is_full")
       ~expected:is_full
       ~actual:(S2.S2_latlng_rect.is_full actual);
-    (* Empty results can carry arbitrary interval values (e.g. [Empty] is a
-       reserved sentinel interval), so skip the interval-equality check in that
-       case; the [is_empty] bool is the meaningful signal. *)
+    (* Empty results can carry arbitrary interval values (e.g. [Empty] is a reserved
+       sentinel interval), so skip the interval-equality check in that case; the
+       [is_empty] bool is the meaningful signal. *)
     if not is_empty then check_rect (label ^ " expanded") ~expected ~actual)
 ;;
 
@@ -455,10 +453,7 @@ let test_approx_equals () =
       label
       ~expected
       ~actual:
-        (S2.S2_latlng_rect.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none)
-           a
-           b))
+        (S2.S2_latlng_rect.approx_equal ~max_error:Packed_float_option.Unboxed.none a b))
 ;;
 
 let test_approx_equals_margin () =

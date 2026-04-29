@@ -1,25 +1,24 @@
-(* C++ test parity: s2geometry/src/s2/s2edge_tessellator_test.cc
-   Golden data from test/gen/s2edge_tessellator.cc.
+(* C++ test parity: s2geometry/src/s2/s2edge_tessellator_test.cc Golden data from
+   test/gen/s2edge_tessellator.cc.
 
    Covered:
-   -  TEST(S2EdgeTessellator, ProjectedNoTessellation)
-   -  TEST(S2EdgeTessellator, UnprojectedNoTessellation)
-   -  TEST(S2EdgeTessellator, UnprojectedWrapping)
-   -  TEST(S2EdgeTessellator, ProjectedWrapping)
-   -  TEST(S2EdgeTessellator, UnprojectedWrappingMultipleCrossings)
-   -  TEST(S2EdgeTessellator, ProjectedWrappingMultipleCrossings)
-   -  TEST(S2EdgeTessellator, InfiniteRecursionBug)
-   -  Extra: degenerate (a = b) edge cases, Mercator chain, alternate x_scale
-   -  min_tolerance round-trip
+   - TEST(S2EdgeTessellator, ProjectedNoTessellation)
+   - TEST(S2EdgeTessellator, UnprojectedNoTessellation)
+   - TEST(S2EdgeTessellator, UnprojectedWrapping)
+   - TEST(S2EdgeTessellator, ProjectedWrapping)
+   - TEST(S2EdgeTessellator, UnprojectedWrappingMultipleCrossings)
+   - TEST(S2EdgeTessellator, ProjectedWrappingMultipleCrossings)
+   - TEST(S2EdgeTessellator, InfiniteRecursionBug)
+   - Extra: degenerate (a = b) edge cases, Mercator chain, alternate x_scale
+   - min_tolerance round-trip
 
    Deliberately omitted:
-   -  Accuracy tests (UnprojectedAccuracy, ProjectedAccuracy, etc.): these
-      rely on random sampling and error-bound statistics. The fixture-driven
-      tests below already exercise both projections and enforce exact output
-      parity with C++, which transitively guarantees accuracy.
-   -  IsAssignable: not applicable (our type is a value, not a reassignable
-      object).
-   -  MaxEdgeErrorRandom: randomized stress test. *)
+   - Accuracy tests (UnprojectedAccuracy, ProjectedAccuracy, etc.): these rely on random
+     sampling and error-bound statistics. The fixture-driven tests below already exercise
+     both projections and enforce exact output parity with C++, which transitively
+     guarantees accuracy.
+   - IsAssignable: not applicable (our type is a value, not a reassignable object).
+   - MaxEdgeErrorRandom: randomized stress test. *)
 
 open Core
 open Test_helpers
@@ -88,8 +87,8 @@ let make_tessellator c =
   S2.S2_edge_tessellator.create ~projection:proj ~tolerance:(S2.S1_angle.of_radians tol)
 ;;
 
-(* For exact vertex-by-vertex comparison. Floating-point outputs from C++ and
-   OxCaml should match bit-for-bit up to a small eps. *)
+(* For exact vertex-by-vertex comparison. Floating-point outputs from C++ and OxCaml
+   should match bit-for-bit up to a small eps. *)
 let check_r2_array label ~expected ~actual =
   let n_exp = Array.length expected in
   let n_act = Array.length actual in
@@ -131,9 +130,8 @@ let check_s2_array label ~expected ~actual =
   done
 ;;
 
-(* Dispatch on the "kind" of the fixture case. If the case has a "projected"
-   kind, it feeds S2 points and expects R2 points; vice versa for
-   "unprojected". *)
+(* Dispatch on the "kind" of the fixture case. If the case has a "projected" kind, it
+   feeds S2 points and expects R2 points; vice versa for "unprojected". *)
 let run_case label c =
   let tess = make_tessellator c in
   let kind = string_of_json_exn (member "kind" c) in
@@ -301,8 +299,8 @@ let test_min_tolerance () =
 ;;
 
 let test_create_clamps_tolerance () =
-  (* A tolerance smaller than min_tolerance should behave exactly like
-     min_tolerance: tessellating a generic edge should yield the same result. *)
+  (* A tolerance smaller than min_tolerance should behave exactly like min_tolerance:
+     tessellating a generic edge should yield the same result. *)
   let proj = S2.S2_projections.plate_carree ~x_scale:#180.0 in
   let tiny = S2.S1_angle.of_radians #1e-20 in
   let t1 = S2.S2_edge_tessellator.create ~projection:proj ~tolerance:tiny in

@@ -44,19 +44,13 @@ let%test_unit "bound_matches_s2cell" =
     let pc = S2.S2_padded_cell.create cid ~padding:#0.0 in
     let got = S2.S2_padded_cell.bound pc in
     assert (
-      S2.R2_rect.approx_equal
-        ~max_error:(Packed_float_option.Unboxed.none)
-        expected
-        got);
+      S2.R2_rect.approx_equal ~max_error:Packed_float_option.Unboxed.none expected got);
     let padding = #0.01 in
     let expanded = S2.R2_rect.expanded_scalar expected padding in
     let pc2 = S2.S2_padded_cell.create cid ~padding in
     let got2 = S2.S2_padded_cell.bound pc2 in
     assert (
-      S2.R2_rect.approx_equal
-        ~max_error:(Packed_float_option.Unboxed.none)
-        expanded
-        got2))
+      S2.R2_rect.approx_equal ~max_error:Packed_float_option.Unboxed.none expanded got2))
 ;;
 
 (* Quickcheck: the padded cell center equals the S2Cell center. *)
@@ -82,8 +76,8 @@ let%test_unit "exit_equals_next_entry" =
       ~actual:(S2.S2_padded_cell.entry_vertex pc_next))
 ;;
 
-(* Quickcheck: child_ij_of_pos inverts child_ij (up to the orientation-dependent
-   kPosToIJ / kIJtoPos tables). *)
+(* Quickcheck: child_ij_of_pos inverts child_ij (up to the orientation-dependent kPosToIJ
+   / kIJtoPos tables). *)
 let%test_unit "child_ij_roundtrip" =
   Base_quickcheck.Test.run_exn (module Cell_id_int) ~config:qc_config ~f:(fun id ->
     let cid = cid_of_int64 id in

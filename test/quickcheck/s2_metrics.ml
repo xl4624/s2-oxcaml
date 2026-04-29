@@ -99,8 +99,8 @@ let%test_unit "monotone_at_level" =
     List.iter [ "width"; "edge"; "diag"; "area"; "angle_span" ] ~f:check)
 ;;
 
-(* Scaling law: get_value(l+1) = get_value(l) * 2^(-dim). Matches the C++
-   definition [ldexp(deriv, -dim * level)]. *)
+(* Scaling law: get_value(l+1) = get_value(l) * 2^(-dim). Matches the C++ definition
+   [ldexp(deriv, -dim * level)]. *)
 let%test_unit "level_scaling" =
   Base_quickcheck.Test.run_exn
     (module Level_pos)
@@ -128,8 +128,8 @@ let%test_unit "level_scaling" =
 ;;
 
 (* For any metric m and level l, feeding [m.get_value l] back into
-   [get_level_for_min_value] or [get_level_for_max_value] recovers l. This is
-   the precise postcondition guaranteed by the C++ DCHECKs. *)
+   [get_level_for_min_value] or [get_level_for_max_value] recovers l. This is the precise
+   postcondition guaranteed by the C++ DCHECKs. *)
 let%test_unit "level_roundtrip" =
   Base_quickcheck.Test.run_exn (module Level) ~config:qc_config ~f:(fun { Level.level } ->
     let check_roundtrip metric =
@@ -166,8 +166,8 @@ let%test_unit "level_roundtrip" =
       ~f:(fun name -> check_roundtrip (metric_by_name name)))
 ;;
 
-(* get_closest_level on min_width.get_value(l) returns l, matching the width
-   and area loop assertions in s2metrics_test.cc. *)
+(* get_closest_level on min_width.get_value(l) returns l, matching the width and area loop
+   assertions in s2metrics_test.cc. *)
 let%test_unit "closest_level_roundtrip" =
   Base_quickcheck.Test.run_exn (module Level) ~config:qc_config ~f:(fun { Level.level } ->
     let check metric =

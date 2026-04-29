@@ -1,27 +1,27 @@
 (* C++ test parity: s2geometry/src/s2/s2cell_id_test.cc
-   -  TEST(S2CellId, FaceDefinitions) / FromFace       - faces
-   -  TEST(S2CellId, ParentChildRelationships)         - hierarchy, parent_child
-   -  TEST(S2CellId, CenterSiTi)                       - points
-   -  TEST(S2CellId, Advance)                          - advance, advance_extended, advance_wrap_equiv
-   -  TEST(S2CellId, SentinelRangeMinMax)              - sentinel_range
-   -  TEST(S2CellId, Wrapping)                         - wrapping
-   -  TEST(S2CellId, Tokens)                           - tokens, token_invalid
-   -  TEST(S2CellId, Containment)                      - containment
-   -  TEST(S2CellId, Continuity)                       - continuity_level8, continuity_geometry
-   -  TEST(S2CellId, DistanceFromBegin)                - distance_from_begin
-   -  TEST(S2CellId, GetCommonAncestorLevel)           - common_ancestor
-   -  TEST(S2CellId, MaximumTile)                      - maximum_tile
-   -  TEST(S2CellId, Coverage)                         - coverage_sample
+   - TEST(S2CellId, FaceDefinitions) / FromFace - faces
+   - TEST(S2CellId, ParentChildRelationships) - hierarchy, parent_child
+   - TEST(S2CellId, CenterSiTi) - points
+   - TEST(S2CellId, Advance) - advance, advance_extended, advance_wrap_equiv
+   - TEST(S2CellId, SentinelRangeMinMax) - sentinel_range
+   - TEST(S2CellId, Wrapping) - wrapping
+   - TEST(S2CellId, Tokens) - tokens, token_invalid
+   - TEST(S2CellId, Containment) - containment
+   - TEST(S2CellId, Continuity) - continuity_level8, continuity_geometry
+   - TEST(S2CellId, DistanceFromBegin) - distance_from_begin
+   - TEST(S2CellId, GetCommonAncestorLevel) - common_ancestor
+   - TEST(S2CellId, MaximumTile) - maximum_tile
+   - TEST(S2CellId, Coverage) - coverage_sample
 
    Generator-only (no TEST(...) macro in s2cell_id_test.cc):
-   -  TEST(S2CellIdGolden, LatLngFace) - latlng_face (S2LatLng::FromDegrees + face/leaf)
+   - TEST(S2CellIdGolden, LatLngFace) - latlng_face (S2LatLng::FromDegrees + face/leaf)
 
-   -  TEST(S2CellId, DefaultConstructor)                - default_constructor
+   - TEST(S2CellId, DefaultConstructor) - default_constructor
 
    Deliberately omitted (no OCaml equivalent yet, or I/O-only in C++):
-   -  S2CellIdHash, EncodeDecode*, LegacyCoder*,
-      Neighbors*, ExpandedByDistanceUV, ToString, FromDebugString, OutputOperator,
-      S2CoderWorks, AbslParseFlag*, SupportsAbslHash. *)
+   - S2CellIdHash, EncodeDecode*, LegacyCoder*, Neighbors*, ExpandedByDistanceUV,
+     ToString, FromDebugString, OutputOperator, S2CoderWorks, AbslParseFlag*,
+     SupportsAbslHash. *)
 
 open Core
 open Test_helpers
@@ -33,8 +33,8 @@ let test_default_constructor () =
   assert (not (S2.S2_cell_id.is_valid id))
 ;;
 
-(* C++ vs OCaml geometry can differ slightly; full Continuity walk (~400k steps)
-   needs a margin above ~1e-9 on some cells. *)
+(* C++ vs OCaml geometry can differ slightly; full Continuity walk (~400k steps) needs a
+   margin above ~1e-9 on some cells. *)
 let angle_eps = #5e-9
 
 let uint64_ge (a : S2.S2_cell_id.t) (b : S2.S2_cell_id.t) =

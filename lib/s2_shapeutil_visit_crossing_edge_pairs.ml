@@ -3,18 +3,16 @@ module Crossing_type = S2_crossing_edge_query.Crossing_type
 
 type visitor = S2_shapeutil_shape_edge.t -> S2_shapeutil_shape_edge.t -> bool -> bool
 
-(* Sentinel used to grow / pre-fill arrays of [S2_shapeutil_shape_edge.t]. The
-   id is set to the canonical "none" pair and the edge endpoints are the
-   origin point. The sentinel is never read back: writes always overwrite
-   the slot before any read. *)
+(* Sentinel used to grow / pre-fill arrays of [S2_shapeutil_shape_edge.t]. The id is set
+   to the canonical "none" pair and the edge endpoints are the origin point. The sentinel
+   is never read back: writes always overwrite the slot before any read. *)
 let none_shape_edge =
   let edge = S2_shape.Edge.create ~v0:S2_point.origin ~v1:S2_point.origin in
   S2_shapeutil_shape_edge.create ~shape_id:(-1) ~edge_id:(-1) ~edge
 ;;
 
-(* Growable buffer of [S2_shapeutil_shape_edge.t]: lists cannot hold non-value
-   elements, so accumulating cell edges needs a small array that doubles when
-   full. *)
+(* Growable buffer of [S2_shapeutil_shape_edge.t]: lists cannot hold non-value elements,
+   so accumulating cell edges needs a small array that doubles when full. *)
 type edge_buf =
   { mutable data : S2_shapeutil_shape_edge.t array
   ; mutable len : int
@@ -58,8 +56,8 @@ let min_sign_of (crossing_type : Crossing_type.t) =
   | Interior -> 1
 ;;
 
-(* Visit all crossings within a single buffer of edges. Returns [false] if
-   the visitor terminated early. *)
+(* Visit all crossings within a single buffer of edges. Returns [false] if the visitor
+   terminated early. *)
 let visit_crossings_within buf ~min_sign ~need_adjacent ~visitor =
   let n = buf.len in
   let mutable cont = true in
@@ -67,12 +65,11 @@ let visit_crossings_within buf ~min_sign ~need_adjacent ~visitor =
   while cont && i + 1 < n do
     let a = buf.data.(i) in
     let mutable j = i + 1 in
-    (* When [need_adjacent] is false, skip a single (a.v1 == b.v0) "adjacent"
-       neighbour. The crossing search for self-intersection only cares about
-       (AB, AC) pairs, not (AB, BC) pairs, so this skip removes the very
-       common chain-step pair without missing any real error. The skip
-       applies even across chain boundaries since the buffer is sorted by
-       (shape_id, edge_id) and adjacency is purely positional. *)
+    (* When [need_adjacent] is false, skip a single (a.v1 == b.v0) "adjacent" neighbour.
+       The crossing search for self-intersection only cares about (AB, AC) pairs, not (AB,
+       BC) pairs, so this skip removes the very common chain-step pair without missing any
+       real error. The skip applies even across chain boundaries since the buffer is
+       sorted by (shape_id, edge_id) and adjacency is purely positional. *)
     if (not need_adjacent) && S2_point.equal a.#edge.#v1 buf.data.(j).#edge.#v0
     then j <- j + 1;
     if j >= n
@@ -93,8 +90,8 @@ let visit_crossings_within buf ~min_sign ~need_adjacent ~visitor =
   cont
 ;;
 
-(* Internal entry point for the single-index walk; exposed so
-   [find_self_intersection] can ask for [need_adjacent = false]. *)
+(* Internal entry point for the single-index walk; exposed so [find_self_intersection] can
+   ask for [need_adjacent = false]. *)
 let visit_crossings_internal index ~crossing_type ~need_adjacent ~visitor =
   let min_sign = min_sign_of crossing_type in
   let iter = S2_shape_index.iterator index in
@@ -120,12 +117,11 @@ let visit_crossing_edge_pairs index ~crossing_type ~visitor =
   visit_crossings_internal index ~crossing_type ~need_adjacent ~visitor
 ;;
 
-(* Two-index walk: for each edge in A, query B for candidate crossings, then
-   run an edge-crosser to filter the candidates and to recover [is_interior]
-   (the crosser's sign is +1 for strictly interior crossings, 0 for vertex
-   crossings). The crosser is created once per A-edge and reused across all
-   B candidates; the chain optimisation kicks in automatically when
-   consecutive candidates share an endpoint. *)
+(* Two-index walk: for each edge in A, query B for candidate crossings, then run an
+   edge-crosser to filter the candidates and to recover [is_interior] (the crosser's sign
+   is +1 for strictly interior crossings, 0 for vertex crossings). The crosser is created
+   once per A-edge and reused across all B candidates; the chain optimisation kicks in
+   automatically when consecutive candidates share an endpoint. *)
 let visit_crossing_edge_pairs_two ~a_index ~b_index ~crossing_type ~visitor =
   let min_sign = min_sign_of crossing_type in
   let b_query = S2_crossing_edge_query.create b_index in
@@ -168,10 +164,10 @@ let visit_crossing_edge_pairs_two ~a_index ~b_index ~crossing_type ~visitor =
   cont
 ;;
 
-(* Helpers for [find_self_intersection]. Each error path produces a string
-   in one of two shapes: bare "Edge X ..." for single-loop shapes, or
-   "Loop K: Edge X ..." / "Loop K edge X ..." for multi-loop shapes. The
-   exact wording is what callers can pin in their error messages. *)
+(* Helpers for [find_self_intersection]. Each error path produces a string in one of two
+   shapes: bare "Edge X ..." for single-loop shapes, or "Loop K: Edge X ..." / "Loop K
+   edge X ..." for multi-loop shapes. The exact wording is what callers can pin in their
+   error messages. *)
 
 let loop_prefix ~is_polygon ~chain_id =
   if is_polygon then sprintf "Loop %d: " chain_id else ""
@@ -181,9 +177,8 @@ let format_loop_error ~is_polygon ~ap_chain_id ~ap_offset ~bp_offset fmt =
   loop_prefix ~is_polygon ~chain_id:ap_chain_id ^ sprintf fmt ap_offset bp_offset
 ;;
 
-(* Inspect a pair of edges that the crossing visitor has flagged. Returns
-   [Some message] when the pair represents a validation error and the walk
-   should terminate. *)
+(* Inspect a pair of edges that the crossing visitor has flagged. Returns [Some message]
+   when the pair represents a validation error and the walk should terminate. *)
 let find_crossing_error
   (shape : S2_shape.t)
   (a : S2_shapeutil_shape_edge.t)
@@ -242,9 +237,9 @@ let find_crossing_error
            bp.#chain_id
            bp.#offset)
     else (
-      (* Two non-overlapping wedges that share the middle vertex [ab1] cross at
-         that vertex iff each wedge properly overlaps the other one's reflexion
-         around the shared edge. *)
+      (* Two non-overlapping wedges that share the middle vertex [ab1] cross at that
+         vertex iff each wedge properly overlaps the other one's reflexion around the
+         shared edge. *)
       let r1 =
         S2_wedge_relations.get_wedge_relation
           ~a0:a.#edge.#v0

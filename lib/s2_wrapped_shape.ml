@@ -1,9 +1,8 @@
 open Core
 
-(* Boxed record around [S2_shape.t], which is itself an unboxed product.
-   Gives the wrapper a nameable [value]-layout type for callers that need to
-   pass an [S2_wrapped_shape.t] around without immediately turning it back
-   into an [S2_shape.t]. *)
+(* Boxed record around [S2_shape.t], which is itself an unboxed product. Gives the wrapper
+   a nameable [value]-layout type for callers that need to pass an [S2_wrapped_shape.t]
+   around without immediately turning it back into an [S2_shape.t]. *)
 type t = { shape : S2_shape.t }
 
 let sexp_of_t _ = Sexp.Atom "<S2_wrapped_shape>"

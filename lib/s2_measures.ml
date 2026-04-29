@@ -1,12 +1,12 @@
 let[@inline] angle a b c =
-  (* Cross products are stable when the two input points are nearly
-     (anti-)parallel; the naive cross product loses precision there. *)
+  (* Cross products are stable when the two input points are nearly (anti-)parallel; the
+     naive cross product loses precision there. *)
   R3_vector.angle (S2_point.robust_cross_prod a b) (S2_point.robust_cross_prod c b)
 ;;
 
 let[@inline] turn_angle a b c =
-  (* Sign must come from the orientation predicate rather than [sign * angle]
-     because [a = c] is legal and produces either [-pi] or [pi]. *)
+  (* Sign must come from the orientation predicate rather than [sign * angle] because
+     [a = c] is legal and produces either [-pi] or [pi]. *)
   let ang =
     R3_vector.angle (S2_point.robust_cross_prod a b) (S2_point.robust_cross_prod b c)
   in
@@ -29,16 +29,14 @@ let[@inline] girard_area a b c =
 ;;
 
 let area a b c =
-  (* l'Huilier's theorem:
-       tan(E/4) = sqrt(tan(s/2) tan((s-a)/2) tan((s-b)/2) tan((s-c)/2))
-     where E is the spherical excess (the triangle area), a/b/c are the side
-     lengths, and s is the semiperimeter. Its relative error is roughly
-     1e-16 * s / min(s-a, s-b, s-c), which is tiny for non-skinny triangles.
-     For long thin triangles the cancellation in (s-a), (s-b), (s-c) dominates
-     and we prefer Girard's formula despite its weaker accuracy on small
-     triangles. The threshold [dmin < s * 0.1 * (g + 5e-15)] keeps the choice
-     conservative by inflating the measured Girard area by its approximate
-     error bound. See s2measures.cc:87-147 for the derivation. *)
+  (* l'Huilier's theorem: tan(E/4) = sqrt(tan(s/2) tan((s-a)/2) tan((s-b)/2) tan((s-c)/2))
+     where E is the spherical excess (the triangle area), a/b/c are the side lengths, and
+     s is the semiperimeter. Its relative error is roughly 1e-16 * s / min(s-a, s-b, s-c),
+     which is tiny for non-skinny triangles. For long thin triangles the cancellation in
+     (s-a), (s-b), (s-c) dominates and we prefer Girard's formula despite its weaker
+     accuracy on small triangles. The threshold [dmin < s * 0.1 * (g + 5e-15)] keeps the
+     choice conservative by inflating the measured Girard area by its approximate error
+     bound. See s2measures.cc:87-147 for the derivation. *)
   let open Float_u.O in
   let sa = S1_angle.radians (S2_point.stable_angle b c) in
   let sb = S1_angle.radians (S2_point.stable_angle c a) in

@@ -1,15 +1,15 @@
-(* C++ test parity: s2geometry/src/s2/s2edge_clipping_test.cc
-   Golden data from test/gen/s2edge_clipping.cc.
+(* C++ test parity: s2geometry/src/s2/s2edge_clipping_test.cc Golden data from
+   test/gen/s2edge_clipping.cc.
 
    Covered:
-   -  TEST(S2, FaceClipping) - hand-picked deterministic GetFaceSegments and
-      ClipToPaddedFace cases
-   -  TEST(S2, EdgeClipping) - hand-picked deterministic ClipEdge,
-      GetClippedEdgeBound, and IntersectsRect cases
-   -  TEST(S2, InterpolateDouble) - hand-picked deterministic cases
+   - TEST(S2, FaceClipping) - hand-picked deterministic GetFaceSegments and
+     ClipToPaddedFace cases
+   - TEST(S2, EdgeClipping) - hand-picked deterministic ClipEdge, GetClippedEdgeBound, and
+     IntersectsRect cases
+   - TEST(S2, InterpolateDouble) - hand-picked deterministic cases
 
    Deliberately omitted:
-   -  Randomized sweeps that rely on absl BitGen seeding. *)
+   - Randomized sweeps that rely on absl BitGen seeding. *)
 
 open Core
 open Test_helpers

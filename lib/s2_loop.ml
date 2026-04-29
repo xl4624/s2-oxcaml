@@ -1,10 +1,9 @@
 open Core
 
-(* The two distinguished single-vertex chains. A loop with a single vertex is
-   interpreted as the empty loop when the vertex is in the northern hemisphere
-   (so the origin lies outside) and as the full loop otherwise. The sentinel
-   vertices coincide with the poles, which we also need during bound
-   computation, so both names are exposed for readability.
+(* The two distinguished single-vertex chains. A loop with a single vertex is interpreted
+   as the empty loop when the vertex is in the northern hemisphere (so the origin lies
+   outside) and as the full loop otherwise. The sentinel vertices coincide with the poles,
+   which we also need during bound computation, so both names are exposed for readability.
    See s2loop.h:212-229 for the empty/full loop encoding convention. *)
 let north_pole = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0
 let south_pole = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:(-#1.0)
@@ -86,8 +85,8 @@ let[@inline] [@zero_alloc] is_empty t = is_empty_or_full t && not t.origin_insid
 let[@inline] [@zero_alloc] is_full t = is_empty_or_full t && t.origin_inside
 
 (* Brute-force point containment used for bound pre-checks and reference parity.
-   [contains_point] uses {!S2_shape_index} plus {!S2_contains_point_query} after the
-   bound test. *)
+   [contains_point] uses {!S2_shape_index} plus {!S2_contains_point_query} after the bound
+   test. *)
 let[@zero_alloc] brute_force_contains_point ~vertices ~origin_inside p =
   let n = Array.length vertices in
   if n = 0
@@ -115,12 +114,11 @@ type init_result =
    ; subregion_bound : S2_latlng_rect.t
    }
 
-(* Compute origin_inside and bounds for a freshly-built vertex array. The
-   empty/full loops have their own special cases; for normal loops the
-   origin_inside flag is determined by checking whether the brute-force
-   crossing count from [S2_pointutil.origin] to [vertex 1] agrees with the
-   wedge containment of vertex 1. The bound starts from the rect-bounder
-   over all edges and is then expanded if the loop contains either pole. *)
+(* Compute origin_inside and bounds for a freshly-built vertex array. The empty/full loops
+   have their own special cases; for normal loops the origin_inside flag is determined by
+   checking whether the brute-force crossing count from [S2_pointutil.origin] to
+   [vertex 1] agrees with the wedge containment of vertex 1. The bound starts from the
+   rect-bounder over all edges and is then expanded if the loop contains either pole. *)
 let init_origin_and_bound (vs : S2_point.t array) : init_result =
   let n = Array.length vs in
   if n < 3
@@ -136,10 +134,10 @@ let init_origin_and_bound (vs : S2_point.t array) : init_result =
       let bound = if origin_inside then S2_latlng_rect.full else S2_latlng_rect.empty in
       #{ origin_inside; bound; subregion_bound = bound })
   else (
-    (* Determine origin_inside by comparing the wedge-based containment of
-       [vertex 1] against the brute-force crossing count. The brute force
-       call uses the not-yet-finalised origin_inside = false; if the result
-       disagrees with the wedge, the true value must be true instead. *)
+    (* Determine origin_inside by comparing the wedge-based containment of [vertex 1]
+       against the brute-force crossing count. The brute force call uses the
+       not-yet-finalised origin_inside = false; if the result disagrees with the wedge,
+       the true value must be true instead. *)
     let v0 = vs.(0) in
     let v1 = vs.(1) in
     let v2 = vs.(2) in
@@ -150,8 +148,7 @@ let init_origin_and_bound (vs : S2_point.t array) : init_result =
     in
     let probe = brute_force_contains_point ~vertices:vs ~origin_inside:false v1 in
     let origin_inside = Bool.( <> ) v1_inside probe in
-    (* Build the rect bound by walking [n + 1] vertices so the closing edge is
-       included. *)
+    (* Build the rect bound by walking [n + 1] vertices so the closing edge is included. *)
     let mutable rb = S2_latlng_rect_bounder.create () in
     for i = 0 to n do
       rb <- S2_latlng_rect_bounder.add_point rb (vertex_raw vs i)
@@ -269,8 +266,8 @@ let invert t =
       else if Float_u.O.(R1_interval.lo lat > -half_pi)
               && Float_u.O.(R1_interval.hi lat < half_pi)
       then
-        (* The complement of this loop contains both poles, so its bound is
-           the full sphere. *)
+        (* The complement of this loop contains both poles, so its bound is the full
+           sphere. *)
         #{ origin_inside = new_origin_inside
          ; bound = S2_latlng_rect.full
          ; subregion_bound = S2_latlng_rect.full
@@ -297,10 +294,10 @@ let is_normalized t =
 
 let normalize t = if is_normalized t then t else invert t
 
-(* For empty/full loops [S2_loop_measures] would treat the single sentinel
-   vertex as a degenerate triangle and report area 0 / curvature +2pi for
-   both. Short-circuit here so the caller gets the correct values:
-   full = 4pi area, -2pi curvature; empty = 0 area, +2pi curvature. *)
+(* For empty/full loops [S2_loop_measures] would treat the single sentinel vertex as a
+   degenerate triangle and report area 0 / curvature +2pi for both. Short-circuit here so
+   the caller gets the correct values: full = 4pi area, -2pi curvature; empty = 0 area,
+   +2pi curvature. *)
 
 let area t =
   if is_full t
@@ -332,8 +329,8 @@ let[@inline] [@zero_alloc] cap_bound t = S2_latlng_rect.cap_bound t.bound
 let[@inline] [@zero_alloc] rect_bound t = t.bound
 let cell_union_bound t = S2_latlng_rect.cell_union_bound t.bound
 
-(* contains_cell and may_intersect_cell are defined after contains_point
-   (and the index cache) so they can reuse the shared shape index. *)
+(* contains_cell and may_intersect_cell are defined after contains_point (and the index
+   cache) so they can reuse the shared shape index. *)
 
 (* Equality. *)
 
@@ -454,10 +451,10 @@ let to_shape t : S2_shape.t =
    }
 ;;
 
-(* Lazily build and cache the loop's shape index together with point and
-   crossing query objects. All index-driven predicates (contains_point,
-   contains_cell, may_intersect_cell, contains, intersects) share this
-   cache so the index is built at most once per loop. *)
+(* Lazily build and cache the loop's shape index together with point and crossing query
+   objects. All index-driven predicates (contains_point, contains_cell,
+   may_intersect_cell, contains, intersects) share this cache so the index is built at
+   most once per loop. *)
 let get_index_cache t =
   match t.index_cache with
   | Some c -> c
@@ -488,8 +485,8 @@ let contains_point t p =
     S2_contains_point_query.shape_contains c.point_query ~shape_id:c.sid p)
 ;;
 
-(* Does any edge of [cell] cross any edge of the loop, using the loop's
-   shape index to prune? *)
+(* Does any edge of [cell] cross any edge of the loop, using the loop's shape index to
+   prune? *)
 let any_cell_edge_crosses_loop t cell =
   let ceq = get_crossing_query t in
   let verts =
@@ -598,19 +595,17 @@ let[@zero_alloc] canonical_first_vertex t =
   for i = 1 to n - 1 do
     if R3_vector.compare t.vertices.(i) t.vertices.(first) < 0 then first <- i
   done;
-  (* Choose direction so that the neighbour in the forward direction is
-     lex-smaller than the neighbour in the reverse direction. Offsetting
-     [first] by [n] when dir = -1 keeps [first + k * dir] non-negative for
-     any [k] in [0, n]. *)
+  (* Choose direction so that the neighbour in the forward direction is lex-smaller than
+     the neighbour in the reverse direction. Offsetting [first] by [n] when dir = -1 keeps
+     [first + k * dir] non-negative for any [k] in [0, n]. *)
   if R3_vector.compare (vertex t (first + 1)) (vertex t (first + n - 1)) < 0
   then #{ first; dir = 1 }
   else #{ first = first + n; dir = -1 }
 ;;
 
-(* Reports whether the wedge [(a0, ab1, a2)] contains the "semiwedge" of rays
-   immediately CCW from edge [(ab1, b2)]. If [reverse] is [true], CCW is
-   replaced by CW; this is used when the other loop's orientation should be
-   flipped (holes versus shells). *)
+(* Reports whether the wedge [(a0, ab1, a2)] contains the "semiwedge" of rays immediately
+   CCW from edge [(ab1, b2)]. If [reverse] is [true], CCW is replaced by CW; this is used
+   when the other loop's orientation should be flipped (holes versus shells). *)
 let[@zero_alloc] wedge_contains_semiwedge ~a0 ~ab1 ~a2 ~b2 ~reverse =
   if S2_point.equal b2 a0 || S2_point.equal b2 a2
   then Bool.( = ) (S2_point.equal b2 a0) reverse
@@ -623,8 +618,7 @@ let contains_nested a b =
   else if is_empty_or_full a || Array.length b.vertices < 2
   then is_full a || is_empty b
   else (
-    (* By contract, [a] and [b] either share vertex 1 of [b] or they are
-       properly nested. *)
+    (* By contract, [a] and [b] either share vertex 1 of [b] or they are properly nested. *)
     let v1 = vertex b 1 in
     let m = find_vertex a v1 in
     if m < 0
@@ -659,10 +653,9 @@ let contains_non_crossing_boundary a b ~reverse =
         ~reverse)
 ;;
 
-(* Reports whether any pair of edges from [a] and [b] cross at a point
-   interior to both. Used by {!contains}, {!intersects}, and
-   {!compare_boundary}. Uses [b]'s shape index plus {!S2_crossing_edge_query}
-   to probe each edge of [a] against [b]. *)
+(* Reports whether any pair of edges from [a] and [b] cross at a point interior to both.
+   Used by {!contains}, {!intersects}, and {!compare_boundary}. Uses [b]'s shape index
+   plus {!S2_crossing_edge_query} to probe each edge of [a] against [b]. *)
 let any_proper_crossing a b =
   let na = Array.length a.vertices in
   if na = 0 || Array.length b.vertices = 0
@@ -828,5 +821,4 @@ let compare_boundary a b =
 (* TODO: port GetDistance / GetDistanceToBoundary from s2loop.cc:298-306. *)
 (* TODO: port Project / ProjectToBoundary from s2loop.cc:309-314. *)
 (* TODO: port BoundaryNear from s2loop.cc:349. *)
-(* TODO: port Encode / Decode, including compressed form, from
-   s2loop.cc:424-441, 572-587. *)
+(* TODO: port Encode / Decode, including compressed form, from s2loop.cc:424-441, 572-587. *)

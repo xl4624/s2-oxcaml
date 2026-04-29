@@ -1,30 +1,29 @@
-(* C++ test parity: s2geometry/src/s2/s2edge_crossings_test.cc
-   and s2geometry/src/s2/s2edge_crosser_test.cc
-   Golden data from test/gen/s2edge_crossings.cc.
+(* C++ test parity: s2geometry/src/s2/s2edge_crossings_test.cc and
+   s2geometry/src/s2/s2edge_crosser_test.cc Golden data from test/gen/s2edge_crossings.cc.
 
    Covered:
-   -  TEST(S2, Crossings) (from s2edge_crosser_test.cc)
-   -  TEST(S2, AngleContainsVertex)
-   -  TEST(S2, VertexCrossing) - manual cases
-   -  SignedVertexCrossing - shared-vertex setups + identity cases
-   -  TEST(S2, GetIntersection) - selected deterministic cases
-   -  TEST(S2, RobustSign / Sign) - basic cases
-   -  TEST(S2, CompareEdgesOrderInvariant)
-   -  TEST(S2, RobustCrossProdCoverage) - the EXACT and SYMBOLIC cases that
-      reach our arbitrary-precision fallback; the DOUBLE-vs-LONG_DOUBLE
-      precision-selection cases are omitted since OCaml has no long double.
-   -  TEST(S2, RobustCrossProdMagnitude) - regression for the underflow fix.
-   -  TEST(S2, SymbolicCrossProdConsistentWithSign) - 27-point unit-vector
-      sweep checking that [robust_cross_prod] is CCW-consistent with [sign]
-      whenever symbolic perturbations are required.
+   - TEST(S2, Crossings) (from s2edge_crosser_test.cc)
+   - TEST(S2, AngleContainsVertex)
+   - TEST(S2, VertexCrossing) - manual cases
+   - SignedVertexCrossing - shared-vertex setups + identity cases
+   - TEST(S2, GetIntersection) - selected deterministic cases
+   - TEST(S2, RobustSign / Sign) - basic cases
+   - TEST(S2, CompareEdgesOrderInvariant)
+   - TEST(S2, RobustCrossProdCoverage) - the EXACT and SYMBOLIC cases that reach our
+     arbitrary-precision fallback; the DOUBLE-vs-LONG_DOUBLE precision-selection cases are
+     omitted since OCaml has no long double.
+   - TEST(S2, RobustCrossProdMagnitude) - regression for the underflow fix.
+   - TEST(S2, SymbolicCrossProdConsistentWithSign) - 27-point unit-vector sweep checking
+     that [robust_cross_prod] is CCW-consistent with [sign] whenever symbolic
+     perturbations are required.
 
    Deliberately omitted:
-   -  TEST(S2, RobustCrossProdError) - statistical/randomized
-   -  TEST(S2, IntersectionError) - statistical/randomized
-   -  TEST(S2, GrazingIntersections) - statistical/randomized
-   -  TEST(S2, GetIntersectionInvariants) - statistical/randomized
-   -  TEST(S2, CollinearEdgesThatDontTouch) - statistical/randomized
-   -  TEST(S2, CoincidentZeroLengthEdgesThatDontTouch) - statistical *)
+   - TEST(S2, RobustCrossProdError) - statistical/randomized
+   - TEST(S2, IntersectionError) - statistical/randomized
+   - TEST(S2, GrazingIntersections) - statistical/randomized
+   - TEST(S2, GetIntersectionInvariants) - statistical/randomized
+   - TEST(S2, CollinearEdgesThatDontTouch) - statistical/randomized
+   - TEST(S2, CoincidentZeroLengthEdgesThatDontTouch) - statistical *)
 
 open Core
 open Test_helpers
@@ -210,10 +209,9 @@ let p x y z =
     ~z:(Float_u.of_float z)
 ;;
 
-(* Like EXPECT_EQ on [result.Normalize()] in C++: after [Normalize], the
-   direction is exactly what we expect. Uses [S2_point.approx_equal] with a
-   tight tolerance so ulp-level differences from rescaling pass but any
-   direction error fails loudly. *)
+(* Like EXPECT_EQ on [result.Normalize()] in C++: after [Normalize], the direction is
+   exactly what we expect. Uses [S2_point.approx_equal] with a tight tolerance so
+   ulp-level differences from rescaling pass but any direction error fails loudly. *)
 let check_direction label ~expected ~actual =
   let normalized = S2.R3_vector.normalize actual in
   let max_error =
@@ -229,19 +227,18 @@ let check_direction label ~expected ~actual =
       (S2.R3_vector.to_string actual)
 ;;
 
-(* Subnormal inputs that force the exact-arithmetic fallback. Mirrors the
-   EXACT-precision rows of C++ [RobustCrossProdCoverage] at
-   s2edge_crossings_test.cc:217-222. *)
+(* Subnormal inputs that force the exact-arithmetic fallback. Mirrors the EXACT-precision
+   rows of C++ [RobustCrossProdCoverage] at s2edge_crossings_test.cc:217-222. *)
 let test_robust_cross_prod_subnormal () =
-  (* Exact result is scaled up when the direct [ExactCrossProd] cast would
-     underflow. Inputs: (5e-324, 1, 0) x (0, 1, 0). *)
+  (* Exact result is scaled up when the direct [ExactCrossProd] cast would underflow.
+     Inputs: (5e-324, 1, 0) x (0, 1, 0). *)
   check_direction
     "subnormal vs (0,1,0)"
     ~expected:(p 0.0 0.0 1.0)
     ~actual:(S2.S2_point.robust_cross_prod (p 5e-324 1.0 0.0) (p 0.0 1.0 0.0));
-  (* Even when the exact cross product underflows in double precision: the z
-     component of the real cross product is [-5e-324 * DBL_ERR ~= 2^-1127],
-     well below the smallest subnormal. *)
+  (* Even when the exact cross product underflows in double precision: the z component of
+     the real cross product is [-5e-324 * DBL_ERR ~= 2^-1127], well below the smallest
+     subnormal. *)
   let dbl_err = Float.ldexp 1.0 (-53) in
   check_direction
     "subnormal vs (5e-324, 1-DBL_ERR, 0)"
@@ -250,10 +247,9 @@ let test_robust_cross_prod_subnormal () =
       (S2.S2_point.robust_cross_prod (p 5e-324 1.0 0.0) (p 5e-324 (1.0 -. dbl_err) 0.0))
 ;;
 
-(* Symbolic-perturbation cases: [a] and [b] are exactly collinear in the
-   reals, so the exact cross product is zero and [robust_cross_prod] falls
-   through to [SymbolicCrossProd]. Mirrors s2edge_crossings_test.cc:225-230
-   (after [Normalize]). *)
+(* Symbolic-perturbation cases: [a] and [b] are exactly collinear in the reals, so the
+   exact cross product is zero and [robust_cross_prod] falls through to
+   [SymbolicCrossProd]. Mirrors s2edge_crossings_test.cc:225-230 (after [Normalize]). *)
 let test_robust_cross_prod_symbolic () =
   let dbl_epsilon = Float.ldexp 1.0 (-52) in
   check_direction
@@ -272,11 +268,10 @@ let test_robust_cross_prod_symbolic () =
     ~actual:(S2.S2_point.robust_cross_prod (p 0.0 0.0 1.0) (p 0.0 0.0 (-1.0)))
 ;;
 
-(* At 1e-100 scale, simply ensuring the [robust_cross_prod] result is
-   normalizable is not sufficient: [Angle] between two such results would
-   still underflow without the direction-preserving scaling that
-   [ensure_normalizable] / [normalizable_from_exact] provide. Mirrors
-   s2edge_crossings_test.cc:264-283. *)
+(* At 1e-100 scale, simply ensuring the [robust_cross_prod] result is normalizable is not
+   sufficient: [Angle] between two such results would still underflow without the
+   direction-preserving scaling that [ensure_normalizable] / [normalizable_from_exact]
+   provide. Mirrors s2edge_crossings_test.cc:264-283. *)
 let test_robust_cross_prod_magnitude () =
   let pi_2 = Float.pi /. 2.0 in
   let angle_between u v =
@@ -296,8 +291,8 @@ let test_robust_cross_prod_magnitude () =
     ~b:(p 1.0 1e-100 0.0)
     ~c:(p 1.0 0.0 0.0)
     ~d:(p 1.0 0.0 1e-100);
-  (* Same but the exact cross product itself underflows in double after the
-     cast, forcing the [normalizable_from_exact] scaling path. *)
+  (* Same but the exact cross product itself underflows in double after the cast, forcing
+     the [normalizable_from_exact] scaling path. *)
   check
     "exact-underflow direction preserved"
     ~a:(p (-1e-100) 0.0 1.0)

@@ -15,22 +15,19 @@ let flat_id_offsets components =
   offsets
 ;;
 
-(* The loop boundaries do not cross, so a nesting hierarchy can be defined by
-   choosing any point on the sphere as the "point at infinity": loop A then
-   contains loop B if A contains the boundary of B and A does not contain the
-   point at infinity. The implementation uses [S2_pointutil.origin] for that
-   role.
+(* The loop boundaries do not cross, so a nesting hierarchy can be defined by choosing any
+   point on the sphere as the "point at infinity": loop A then contains loop B if A
+   contains the boundary of B and A does not contain the point at infinity. The
+   implementation uses [S2_pointutil.origin] for that role.
 
    Algorithm:
-   1. Build a shape index over every loop that does not contain origin. Each
-      multi-loop component contributes exactly one outer loop (the unique loop
-      that contains origin); a single-loop component is treated as outer
-      regardless of orientation.
-   2. For each component, look up the indexed loops that contain its outer
-      loop's first vertex; that set is the component's "ancestors".
-   3. Pair each component's outer loop with an ancestor whose own ancestor
-      depth is one less. Outer loops at depth 0 are stitched together into
-      the trailing face. *)
+   1. Build a shape index over every loop that does not contain origin. Each multi-loop
+      component contributes exactly one outer loop (the unique loop that contains origin);
+      a single-loop component is treated as outer regardless of orientation.
+   2. For each component, look up the indexed loops that contain its outer loop's first
+      vertex; that set is the component's "ancestors".
+   3. Pair each component's outer loop with an ancestor whose own ancestor depth is one
+      less. Outer loops at depth 0 are stitched together into the trailing face. *)
 
 let build_polygon_boundaries (components : Loop.t list list) : int list list =
   let n_comp = List.length components in

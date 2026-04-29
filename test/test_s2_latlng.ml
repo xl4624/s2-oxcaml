@@ -1,23 +1,23 @@
-(* C++ test parity: s2geometry/src/s2/s2latlng_test.cc
-   Golden data from test/gen/s2latlng.cc.
+(* C++ test parity: s2geometry/src/s2/s2latlng_test.cc Golden data from
+   test/gen/s2latlng.cc.
 
    Covered:
-   -  TEST(S2LatLng, TestBasic)       - constructors, is_valid, normalized, arithmetic
-   -  TEST(S2LatLng, TestConversion)  - conversion (point round-trips, Latitude/Longitude)
-   -  TEST(S2LatLng, NegativeZeros)   - negative_zeros
-   -  TEST(S2LatLng, TestDistance)    - distance
-   -  E5/E6/E7 constructors          - e_constructors
-   -  Unsigned E6/E7 constructors    - unsigned_e_constructors
-   -  ToPoint                        - to_point
-   -  ApproxEquals                   - approx_equal
-   -  TEST(S2LatLng, TestToString)    - to_string_in_degrees
+   - TEST(S2LatLng, TestBasic) - constructors, is_valid, normalized, arithmetic
+   - TEST(S2LatLng, TestConversion) - conversion (point round-trips, Latitude/Longitude)
+   - TEST(S2LatLng, NegativeZeros) - negative_zeros
+   - TEST(S2LatLng, TestDistance) - distance
+   - E5/E6/E7 constructors - e_constructors
+   - Unsigned E6/E7 constructors - unsigned_e_constructors
+   - ToPoint - to_point
+   - ApproxEquals - approx_equal
+   - TEST(S2LatLng, TestToString) - to_string_in_degrees
 
    Deliberately omitted:
-   -  TEST(S2LatLng, InfIsInvalid) / NanIsInvalid - covered by is_valid cases
-   -  TEST(S2LatLng, TestHashCode)    - hash not ported
-   -  TEST(S2LatLng, S2CoderWorks)    - serialization not ported
-   -  TEST(S2LatLng, SupportsAbslHash) - hash not ported
-   -  Benchmarks *)
+   - TEST(S2LatLng, InfIsInvalid) / NanIsInvalid - covered by is_valid cases
+   - TEST(S2LatLng, TestHashCode) - hash not ported
+   - TEST(S2LatLng, S2CoderWorks) - serialization not ported
+   - TEST(S2LatLng, SupportsAbslHash) - hash not ported
+   - Benchmarks *)
 
 open Core
 open Test_helpers
@@ -227,8 +227,7 @@ let test_approx_equal fixture () =
     check_bool
       name
       ~expected
-      ~actual:
-        (S2.S2_latlng.approx_equal ~max_error:(Packed_float_option.Unboxed.none) a b))
+      ~actual:(S2.S2_latlng.approx_equal ~max_error:Packed_float_option.Unboxed.none a b))
 ;;
 
 let test_unsigned_e_constructors fixture () =

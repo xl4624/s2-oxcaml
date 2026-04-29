@@ -110,9 +110,9 @@ let%test_unit "centroid_reversal_invariant" =
       let c1 = S2.S2_polyline_measures.centroid vertices in
       let reversed = reverse_array vertices in
       let c2 = S2.S2_polyline_measures.centroid reversed in
-      (* [edge_true_centroid a b] is symmetric in its arguments, so reversing
-         the polyline does not change the centroid (up to floating-point
-         roundoff in the accumulation order). *)
+      (* [edge_true_centroid a b] is symmetric in its arguments, so reversing the polyline
+         does not change the centroid (up to floating-point roundoff in the accumulation
+         order). *)
       check_vec_close ~eps:1e-14 "centroid reversal invariant" c1 c2)
 ;;
 

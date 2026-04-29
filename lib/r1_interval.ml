@@ -17,8 +17,8 @@ let[@zero_alloc ignore] to_string t =
 
 let[@inline] [@zero_alloc] create ~lo ~hi = #{ lo; hi }
 
-(* Canonical empty representation: any pair with [lo > hi] is empty, but [(1, 0)] is
-   the single value returned by [empty] so tests against it are stable. *)
+(* Canonical empty representation: any pair with [lo > hi] is empty, but [(1, 0)] is the
+   single value returned by [empty] so tests against it are stable. *)
 let empty = #{ lo = #1.0; hi = #0.0 }
 let[@inline] [@zero_alloc] from_point p = #{ lo = p; hi = p }
 
@@ -42,8 +42,8 @@ let[@inline] [@zero_alloc] interior_contains_interval t y =
   if is_empty y then true else y.#lo > t.#lo && y.#hi < t.#hi
 ;;
 
-(* The branch ensures that the [<=] check against the other interval's [hi] is paired
-   with an emptiness check on the same interval, so two empty intervals do not spuriously
+(* The branch ensures that the [<=] check against the other interval's [hi] is paired with
+   an emptiness check on the same interval, so two empty intervals do not spuriously
    report as intersecting. *)
 let[@inline] [@zero_alloc] intersects t y =
   if t.#lo <= y.#lo
@@ -55,9 +55,8 @@ let[@inline] [@zero_alloc] interior_intersects t y =
   y.#lo < t.#hi && t.#lo < y.#hi && t.#lo < t.#hi && y.#lo <= y.#hi
 ;;
 
-(* No special case for empty inputs: taking [max] of [lo]s and [min] of [hi]s of an
-   empty input with anything yields a result that remains empty by the [lo > hi]
-   convention. *)
+(* No special case for empty inputs: taking [max] of [lo]s and [min] of [hi]s of an empty
+   input with anything yields a result that remains empty by the [lo > hi] convention. *)
 let[@inline] [@zero_alloc] intersection t y : t =
   #{ lo = Float_util.max_u t.#lo y.#lo; hi = Float_util.min_u t.#hi y.#hi }
 ;;

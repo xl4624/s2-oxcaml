@@ -6,15 +6,13 @@
    - TEST(S2EdgeVectorShape, SingletonConstructor)
 
    Extra coverage beyond upstream:
-   - points_dim0: constructed from a vector of degenerate edges and mutated
-     with set_dimension(0) - exercises the vector constructor and a
-     non-default dimension.
-   - dim2: set_dimension(2) confirms the accessor reports whatever value was
-     configured, not just the default.
+   - points_dim0: constructed from a vector of degenerate edges and mutated with
+     set_dimension(0) - exercises the vector constructor and a non-default dimension.
+   - dim2: set_dimension(2) confirms the accessor reports whatever value was configured,
+     not just the default.
 
    Deliberately omitted:
-   - Move: OCaml values are immutable at the type level; no move semantics
-     to exercise. *)
+   - Move: OCaml values are immutable at the type level; no move semantics to exercise. *)
 
 open Core
 open Test_helpers
@@ -44,8 +42,8 @@ let int_pair_of_json j =
      | (_ : Nothing.t) -> .)
 ;;
 
-(* Construct the shape from the fixture's "input_edges" plus, where applicable,
-   a [set_dimension] call to mirror the generator. We key on the case name. *)
+(* Construct the shape from the fixture's "input_edges" plus, where applicable, a
+   [set_dimension] call to mirror the generator. We key on the case name. *)
 let build_shape ~name ~(input_edges : S2.S2_shape.Edge.t array) =
   let shape =
     match name with

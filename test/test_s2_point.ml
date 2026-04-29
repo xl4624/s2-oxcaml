@@ -1,29 +1,29 @@
-(* C++ test parity: s2geometry/src/s2/s2point_test.cc and s2pointutil_test.cc
-   Golden data from test/gen/s2point.cc.
+(* C++ test parity: s2geometry/src/s2/s2point_test.cc and s2pointutil_test.cc Golden data
+   from test/gen/s2point.cc.
 
    Covered:
-   -  TEST(S2, OriginTest)              - origin
-   -  TEST(S2PointUtil, IsUnitLength)   - is_unit_length
-   -  TEST(S2PointUtil, ApproxEquals)   - approx_equal
-   -  TEST(S2PointUtil, Ortho)          - ortho
-   -  TEST(S2Point, PointCross)         - robust_cross_prod
-   -  TEST(S2, Frames)                  - frames
-   -  TEST(S2, Rotate)                  - rotate
-   -  TEST(S2Point, SubtractionWorks)   - add/sub/mul/neg via arith
-   -  TEST(S2Point, ElementWiseDivisionWorks) - mul_components / div_components
-   -  TEST(S2Point, SqrtWorks)          - sqrt
-   -  TEST(S2Point, FloorWorks)         - floor
-   -  TEST(S2Point, CeilWorks)          - ceil
-   -  TEST(S2Point, FRoundWorks)        - fround
-   -  Max / Min (inherited from Vector3) - max / min
-   -  S2Point::NaN                      - nan / is_nan
-   -  distance, stable_angle, chord_angle_between, from_coords
+   - TEST(S2, OriginTest) - origin
+   - TEST(S2PointUtil, IsUnitLength) - is_unit_length
+   - TEST(S2PointUtil, ApproxEquals) - approx_equal
+   - TEST(S2PointUtil, Ortho) - ortho
+   - TEST(S2Point, PointCross) - robust_cross_prod
+   - TEST(S2, Frames) - frames
+   - TEST(S2, Rotate) - rotate
+   - TEST(S2Point, SubtractionWorks) - add/sub/mul/neg via arith
+   - TEST(S2Point, ElementWiseDivisionWorks) - mul_components / div_components
+   - TEST(S2Point, SqrtWorks) - sqrt
+   - TEST(S2Point, FloorWorks) - floor
+   - TEST(S2Point, CeilWorks) - ceil
+   - TEST(S2Point, FRoundWorks) - fround
+   - Max / Min (inherited from Vector3) - max / min
+   - S2Point::NaN - nan / is_nan
+   - distance, stable_angle, chord_angle_between, from_coords
 
    Deliberately omitted:
-   -  TEST(S2Point, HashSpreads) - hash is not part of this OCaml port
-   -  TEST(S2Point, IsAVector) - type-layout test, not applicable
-   -  TEST(S2Point, CoderWorks) - serialization not ported
-   -  TEST(S2, OriginTest) collinearity checks - requires S2Cell/S2Predicates *)
+   - TEST(S2Point, HashSpreads) - hash is not part of this OCaml port
+   - TEST(S2Point, IsAVector) - type-layout test, not applicable
+   - TEST(S2Point, CoderWorks) - serialization not ported
+   - TEST(S2, OriginTest) collinearity checks - requires S2Cell/S2Predicates *)
 
 open Core
 open Test_helpers
@@ -141,9 +141,8 @@ let test_frames fixture () =
       (name ^ " from_frame e2")
       (point_of_json (member "from_frame_e2" c))
       from_frame_e2;
-    (* Determinant of the 3x3 frame via the scalar triple product of its
-       columns: det = col0 . (col1 x col2). An orthonormal right-handed frame
-       satisfies det = 1. *)
+    (* Determinant of the 3x3 frame via the scalar triple product of its columns: det =
+       col0 . (col1 x col2). An orthonormal right-handed frame satisfies det = 1. *)
     let #{ S2.S2_point.col0; col1; col2 } = frame in
     let det = S2.R3_vector.dot col0 (S2.R3_vector.cross col1 col2) in
     check_float_u

@@ -1,18 +1,16 @@
 (* C++ test parity: s2geometry/src/s2/s2pointutil_test.cc
-   -  TEST(S2, Frames)      - full parity (plus extra off-axis cases)
-   -  TEST(S2, Rotate)      - deterministic subset (random property test in C++
-                              omitted; covered via property-style checks here)
-   -  TEST(S2, OriginTest)  - partial: we check Origin() coordinates, unit
-                              length, and distance from the north pole.
-                              The large-cell collinearity check is omitted
-                              because it depends on s2pred::TriageSign and
-                              S2Cell which are not yet ported.
+   - TEST(S2, Frames) - full parity (plus extra off-axis cases)
+   - TEST(S2, Rotate) - deterministic subset (random property test in C++ omitted; covered
+     via property-style checks here)
+   - TEST(S2, OriginTest) - partial: we check Origin() coordinates, unit length, and
+     distance from the north pole. The large-cell collinearity check is omitted because it
+     depends on s2pred::TriageSign and S2Cell which are not yet ported.
 
    Extra coverage:
-   -  is_unit_length on a dozen representative points
-   -  approx_equals with explicit max_error_radians values
-   -  ortho negation identity: ortho(-a) = -ortho(a)
-   -  ref_dir (aliased to ortho in upstream C++) *)
+   - is_unit_length on a dozen representative points
+   - approx_equals with explicit max_error_radians values
+   - ortho negation identity: ortho(-a) = -ortho(a)
+   - ref_dir (aliased to ortho in upstream C++) *)
 
 open Core
 open Test_helpers

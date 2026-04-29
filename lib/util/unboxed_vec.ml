@@ -1,15 +1,14 @@
 open Core
 
-(* Kind-polymorphic growable array via ppx_template. Instantiated below for
-   the non-value kinds we use in the S2 port:
+(* Kind-polymorphic growable array via ppx_template. Instantiated below for the non-value
+   kinds we use in the S2 port:
 
    - R2_point.t : (float64 & float64) mod external_
    - R3_vector.t / S2_point.t : (float64 & float64 & float64) mod external_
 
-   High-level operations like [Array.iter] and [Array.blit] are not yet
-   kind-polymorphic over unboxed products, so we implement push / copy /
-   to_array with manual [for] loops backed by layout-polymorphic
-   [Array.get] / [Array.set]. *)
+   High-level operations like [Array.iter] and [Array.blit] are not yet kind-polymorphic
+   over unboxed products, so we implement push / copy / to_array with manual [for] loops
+   backed by layout-polymorphic [Array.get] / [Array.set]. *)
 
 module%template
   [@kind

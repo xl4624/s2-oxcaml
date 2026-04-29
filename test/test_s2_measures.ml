@@ -1,9 +1,9 @@
 (* C++ test parity: s2geometry/src/s2/s2measures_test.cc
-   -  TEST(S2, AngleMethods)             - full parity via fixture cases
-   -  TEST(S2, AreaMethods)               - full parity via fixture cases
-   -  TEST(S2, GetAreaRegression_B229644268) - full parity
-   -  Quarter-sphere near-180 triangles  - full parity (two groups)
-   -  Meridian zero-area case            - full parity *)
+   - TEST(S2, AngleMethods) - full parity via fixture cases
+   - TEST(S2, AreaMethods) - full parity via fixture cases
+   - TEST(S2, GetAreaRegression_B229644268) - full parity
+   - Quarter-sphere near-180 triangles - full parity (two groups)
+   - Meridian zero-area case - full parity *)
 
 open Core
 open Test_helpers

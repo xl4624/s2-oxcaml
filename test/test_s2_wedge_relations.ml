@@ -1,10 +1,10 @@
-(* C++ test parity: s2geometry/src/s2/s2wedge_relations_test.cc
-   Golden data from test/gen/s2wedge_relations.cc.
+(* C++ test parity: s2geometry/src/s2/s2wedge_relations_test.cc Golden data from
+   test/gen/s2wedge_relations.cc.
 
    Covered:
-   -  TEST(S2WedgeRelations, Wedges) - every sub-case from the upstream test,
-      including intersection in one/two wedges, normal containment, equality
-      on one/both sides, disjoint with equality, and B contains A. *)
+   - TEST(S2WedgeRelations, Wedges) - every sub-case from the upstream test, including
+     intersection in one/two wedges, normal containment, equality on one/both sides,
+     disjoint with equality, and B contains A. *)
 
 open Core
 open Test_helpers

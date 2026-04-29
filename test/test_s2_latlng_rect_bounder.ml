@@ -1,21 +1,21 @@
-(* C++ test parity: s2geometry/src/s2/s2latlng_rect_bounder_test.cc
-   Golden data from test/gen/s2latlng_rect_bounder.cc.
+(* C++ test parity: s2geometry/src/s2/s2latlng_rect_bounder_test.cc Golden data from
+   test/gen/s2latlng_rect_bounder.cc.
 
    Covered:
-   -  TEST(RectBounder, MaxLatitudeSimple) - vertex cube, interior CW/CCW, poles
-   -  TEST(RectBounder, NearlyIdenticalOrAntipodalPoints) - identical and
-      exact antipodal cases
-   -  TEST(RectBounder, ExpandForSubregions)
-   -  TEST(RectBounder, AccuracyBug)
-   -  Multi-step accumulation via successive add_point / get_bound
-   -  AddPoint-vs-AddLatLng equivalence for normalized inputs
-   -  MaxErrorForTests values
+   - TEST(RectBounder, MaxLatitudeSimple) - vertex cube, interior CW/CCW, poles
+   - TEST(RectBounder, NearlyIdenticalOrAntipodalPoints) - identical and exact antipodal
+     cases
+   - TEST(RectBounder, ExpandForSubregions)
+   - TEST(RectBounder, AccuracyBug)
+   - Multi-step accumulation via successive add_point / get_bound
+   - AddPoint-vs-AddLatLng equivalence for normalized inputs
+   - MaxErrorForTests values
 
    Deliberately omitted:
-   -  TEST(RectBounder, MaxLatitudeRandom) randomized
-   -  TEST(RectBounder, NearlyIdenticalOrAntipodalPoints) full 10,000-iteration
-      random sweep; spot-checked exactly via fixture
-   -  Benchmarks (BM_AddPoints, BM_AddLatLngAsPoints, BM_AddLatLngAsLatLng) *)
+   - TEST(RectBounder, MaxLatitudeRandom) randomized
+   - TEST(RectBounder, NearlyIdenticalOrAntipodalPoints) full 10,000-iteration random
+     sweep; spot-checked exactly via fixture
+   - Benchmarks (BM_AddPoints, BM_AddLatLngAsPoints, BM_AddLatLngAsLatLng) *)
 
 open Core
 open Test_helpers

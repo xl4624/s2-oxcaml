@@ -1,6 +1,5 @@
-(* C++ test parity:
-   s2geometry/src/s2/s2shapeutil_build_polygon_boundaries_test.cc.
-   Golden data from test/gen/s2shapeutil_build_polygon_boundaries.cc.
+(* C++ test parity: s2geometry/src/s2/s2shapeutil_build_polygon_boundaries_test.cc. Golden
+   data from test/gen/s2shapeutil_build_polygon_boundaries.cc.
 
    Covered:
    - TEST(BuildPolygonBoundaries, NoComponents)
@@ -12,10 +11,10 @@
    - TEST(BuildPolygonBoundaries, TwoDegenerateLoops)
 
    Deliberately omitted:
-   - TEST(BuildPolygonBoundaries, ComplexTest1): a 27-loop nested arrangement.
-     The simpler cases above already exercise nested, sibling, and degenerate
-     configurations; a fixture-driven version of this test would be a large
-     literal with no incremental coverage. *)
+   - TEST(BuildPolygonBoundaries, ComplexTest1): a 27-loop nested arrangement. The simpler
+     cases above already exercise nested, sibling, and degenerate configurations; a
+     fixture-driven version of this test would be a large literal with no incremental
+     coverage. *)
 
 open Core
 open Alcotest

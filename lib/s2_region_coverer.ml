@@ -34,9 +34,9 @@ let adjust_level t level =
   else level
 ;;
 
-(* A candidate cell being considered for the covering. Children live in the coverer's
-   flat [children_buf]; [children_start] and [num_children] mark this candidate's
-   contiguous slice of that buffer. *)
+(* A candidate cell being considered for the covering. Children live in the coverer's flat
+   [children_buf]; [children_start] and [num_children] mark this candidate's contiguous
+   slice of that buffer. *)
 type candidate =
   { cell : S2_cell.t
   ; mutable is_terminal : bool
@@ -94,10 +94,9 @@ let new_coverer opts (region : S2_region.t) =
   }
 ;;
 
-(* Append [child] to the flat children buffer, growing it on demand. The first-ever
-   append fills the freshly allocated slots with [child]; since we overwrite slot
-   [children_len] immediately and never read beyond [children_len], the fill value
-   is inert. *)
+(* Append [child] to the flat children buffer, growing it on demand. The first-ever append
+   fills the freshly allocated slots with [child]; since we overwrite slot [children_len]
+   immediately and never read beyond [children_len], the fill value is inert. *)
 let push_child c child =
   let cap = Array.length c.children_buf in
   if c.children_len >= cap
@@ -114,10 +113,10 @@ let push_child c child =
 (* Decide this cell's status. Returns:
    - [-1] if the region doesn't intersect [cell] (cell is rejected).
    - [0] if the cell should be added as a non-terminal candidate.
-   - [1] if the cell should be added as a terminal (leaf of the covering).
-   This is the [new_candidate] "allocate or not + is_terminal" logic split out so
-   callers can allocate the candidate directly without going through an [option]
-   wrapper, saving the [Some _] header per accepted candidate. *)
+   - [1] if the cell should be added as a terminal (leaf of the covering). This is the
+         [new_candidate] "allocate or not + is_terminal" logic split out so callers can
+         allocate the candidate directly without going through an [option] wrapper, saving
+         the [Some _] header per accepted candidate. *)
 let[@inline] classify_cell c cell =
   if not (S2_region.intersects_cell c.region cell)
   then -1
@@ -172,8 +171,8 @@ let rec add_candidate c cand =
     let num_levels =
       if S2_cell.level cand.cell < c.opts.min_level then 1 else c.opts.level_mod
     in
-    (* Reserve this candidate's children slice at the current end of the flat
-       buffer, then expand: new children are appended in order. *)
+    (* Reserve this candidate's children slice at the current end of the flat buffer, then
+       expand: new children are appended in order. *)
     cand.children_start <- c.children_len;
     let num_terminals = expand_children c cand cand.cell num_levels in
     let mcs = 2 * c.opts.level_mod in
@@ -333,10 +332,10 @@ let is_canonical_internal opts (covering : S2_cell_id.t array) len =
   ok
 ;;
 
-(* Mutates [working] in place (shifting elements left as cells are collapsed into
-   common ancestors). Takes ownership of [working], which must be large enough to
-   hold [working_len] initial entries. Returns the new length; the unused tail of
-   [working] is left with stale data and must not be read beyond the result. *)
+(* Mutates [working] in place (shifting elements left as cells are collapsed into common
+   ancestors). Takes ownership of [working], which must be large enough to hold
+   [working_len] initial entries. Returns the new length; the unused tail of [working] is
+   left with stale data and must not be read beyond the result. *)
 let reduce_covering opts (working : S2_cell_id.t array) working_len =
   let mutable wlen = working_len in
   let mutable done_ = false in
@@ -378,9 +377,9 @@ let rec get_initial_candidates c =
   let tmp =
     create ~max_level:c.opts.max_level ~max_cells:(Int.min 4 c.opts.max_cells) ()
   in
-  (* Use the canonicalized array directly - wrapping it in an [S2_cell_union.t]
-     only to immediately [cell_ids_raw] it back would allocate two extra copies
-     of the array per covering. *)
+  (* Use the canonicalized array directly - wrapping it in an [S2_cell_union.t] only to
+     immediately [cell_ids_raw] it back would allocate two extra copies of the array per
+     covering. *)
   let canonical =
     canonicalize_covering_internal tmp (S2_region.cell_union_bound c.region)
   in
@@ -396,10 +395,10 @@ and fast_covering_internal opts (region : S2_region.t) =
   S2_cell_union.of_verbatim_owned result
 
 and canonicalize_covering_internal opts (covering : S2_cell_id.t array) =
-  (* Replace cells that are too small or don't satisfy [level_mod]. When
-     adjustment is needed, emit into a fresh array so the caller's input is
-     not mutated; otherwise pass the input straight through, because
-     [S2_cell_union.create] copies its argument before mutating it. *)
+  (* Replace cells that are too small or don't satisfy [level_mod]. When adjustment is
+     needed, emit into a fresh array so the caller's input is not mutated; otherwise pass
+     the input straight through, because [S2_cell_union.create] copies its argument before
+     mutating it. *)
   let covering =
     if opts.max_level < S2_cell_id.max_level || opts.level_mod > 1
     then (

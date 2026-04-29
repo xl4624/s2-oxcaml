@@ -1,12 +1,12 @@
-(* C++ test parity: s2geometry/src/s2/s2contains_vertex_query_test.cc
-   Golden data from test/gen/s2contains_vertex_query.cc.
+(* C++ test parity: s2geometry/src/s2/s2contains_vertex_query_test.cc Golden data from
+   test/gen/s2contains_vertex_query.cc.
 
    Covered:
-   -  TEST(S2ContainsVertexQuery, Undetermined)
-   -  TEST(S2ContainsVertexQuery, ContainedWithDuplicates)
-   -  TEST(S2ContainsVertexQuery, NotContainedWithDuplicates)
-   -  TEST(S2ContainsVertexQuery, CompatibleWithAngleContainsVertex)
-   -  TEST(S2ContainsVertexQuery, CompatibleWithAngleContainsVertexDegenerate) *)
+   - TEST(S2ContainsVertexQuery, Undetermined)
+   - TEST(S2ContainsVertexQuery, ContainedWithDuplicates)
+   - TEST(S2ContainsVertexQuery, NotContainedWithDuplicates)
+   - TEST(S2ContainsVertexQuery, CompatibleWithAngleContainsVertex)
+   - TEST(S2ContainsVertexQuery, CompatibleWithAngleContainsVertexDegenerate) *)
 
 open Core
 open Test_helpers
@@ -15,8 +15,8 @@ open Alcotest
 let fixture = lazy (load_fixture "s2contains_vertex_query.json")
 let point_of_json = r3_vector_of_json
 
-(* Replay a sequence of AddEdge actions and check that contains_sign and
-   duplicate_edges match the values the generator recorded after each step. *)
+(* Replay a sequence of AddEdge actions and check that contains_sign and duplicate_edges
+   match the values the generator recorded after each step. *)
 let run_action_sequence name =
   let section = member name (Lazy.force fixture) in
   let target = point_of_json (member "target" section) in

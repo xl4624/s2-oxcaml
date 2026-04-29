@@ -3,10 +3,9 @@ open Core
 let pt x y z = S2.S2_point.of_coords ~x ~y ~z
 
 let%expect_test "crossing_sign_clear_crossing" =
-  (* AB is the quarter equator arc from (1,0,0) to (0,1,0).
-     CD goes from (0.5, 0.5, 0.5) to (0.5, 0.5, -0.5) and crosses the
-     equator near the midpoint of AB, so the two great-circle edges
-     intersect at a point interior to both. *)
+  (* AB is the quarter equator arc from (1,0,0) to (0,1,0). CD goes from (0.5, 0.5, 0.5)
+     to (0.5, 0.5, -0.5) and crosses the equator near the midpoint of AB, so the two
+     great-circle edges intersect at a point interior to both. *)
   let a = pt #1.0 #0.0 #0.0 in
   let b = pt #0.0 #1.0 #0.0 in
   let c = pt #0.5 #0.5 #0.5 in

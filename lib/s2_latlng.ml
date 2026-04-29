@@ -146,11 +146,11 @@ let[@inline] [@zero_alloc] of_unsigned_e7_exn ~lat ~lng =
 let[@inline] [@zero_alloc] lat t = S1_angle.of_radians t.#lat
 let[@inline] [@zero_alloc] lng t = S1_angle.of_radians t.#lng
 
-(* Use atan2 rather than asin: the input vector is not required to be unit
-   length and atan2 is markedly more accurate near the poles. The [+ #0.0]
-   coerces -0.0 to +0.0 so that lat/lng of points that differ only by sign
-   of zero compare equal (they already do under float equality but format
-   differently, and downstream code relies on textual equality). *)
+(* Use atan2 rather than asin: the input vector is not required to be unit length and
+   atan2 is markedly more accurate near the poles. The [+ #0.0] coerces -0.0 to +0.0 so
+   that lat/lng of points that differ only by sign of zero compare equal (they already do
+   under float equality but format differently, and downstream code relies on textual
+   equality). *)
 let[@inline] [@zero_alloc] latitude p =
   let z = Float_u.O.(S2_point.z p + #0.0) in
   let x = S2_point.x p in
@@ -187,7 +187,7 @@ let[@inline] [@zero_alloc] normalized t : t =
     let lat =
       Float_u.clamp_exn
         t.#lat
-        ~min:(Float_u.neg (Float_u.pi) / #2.0)
+        ~min:(Float_u.neg Float_u.pi / #2.0)
         ~max:(Float_u.pi / #2.0)
     in
     let lng = Float_util.ieee_remainder_u t.#lng (#2.0 * Float_u.pi) in
@@ -214,10 +214,9 @@ let[@inline] [@zero_alloc] to_point t =
     ~z:(Float_u.sin phi)
 ;;
 
-(* Haversine formula. Numerically stable for small angular separations but
-   loses precision near antipodal pairs (about 8 digits versus 15 for the
-   S2Point-based computation). The min-with-1 guard absorbs roundoff that
-   might push [x] slightly above 1 before the asin. *)
+(* Haversine formula. Numerically stable for small angular separations but loses precision
+   near antipodal pairs (about 8 digits versus 15 for the S2Point-based computation). The
+   min-with-1 guard absorbs roundoff that might push [x] slightly above 1 before the asin. *)
 let[@inline] [@zero_alloc] distance a b =
   let lat1 = a.#lat in
   let lat2 = b.#lat in

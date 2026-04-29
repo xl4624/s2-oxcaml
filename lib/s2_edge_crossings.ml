@@ -5,14 +5,13 @@ open Core
 (* Half ULP of a double: this is the S2 reference's DBL_ERR. *)
 let dbl_error = Float_u.O.(#0.5 * Float_u.epsilon_float)
 
-(* Maximum rounding error in the triage determinant (a x b) . c for
-   unit-length inputs.  Values under this threshold are treated as
-   indeterminate and fall through to [stable_sign].  The 1.8274 factor
-   comes from the analysis in s2predicates_internal.h. *)
+(* Maximum rounding error in the triage determinant (a x b) . c for unit-length inputs.
+   Values under this threshold are treated as indeterminate and fall through to
+   [stable_sign]. The 1.8274 factor comes from the analysis in s2predicates_internal.h. *)
 let max_determinant_error = Float_u.O.(#1.8274 * Float_u.epsilon_float)
 
-(* Multiplier used to bound the error of the stable-sign determinant
-   in terms of the norms of two edge vectors. *)
+(* Multiplier used to bound the error of the stable-sign determinant in terms of the norms
+   of two edge vectors. *)
 let det_error_multiplier = Float_u.O.(#3.2321 * Float_u.epsilon_float)
 
 (* --- Robust sign predicate ------------------------------------------------ *)
@@ -22,10 +21,9 @@ let[@inline] [@zero_alloc] float_sign v =
   if v > #0.0 then 1 else if v < #0.0 then -1 else 0
 ;;
 
-(* Tier 1 of the sign cascade.  Computes the signed volume (a x b) . c
-   once in double precision and commits to a sign only when the
-   magnitude is larger than the rounding envelope.  Roughly 15 ns for
-   well-separated inputs. *)
+(* Tier 1 of the sign cascade. Computes the signed volume (a x b) . c once in double
+   precision and commits to a sign only when the magnitude is larger than the rounding
+   envelope. Roughly 15 ns for well-separated inputs. *)
 let[@inline] [@zero_alloc] triage_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let open Float_u.O in
   let det =
@@ -40,12 +38,11 @@ let[@inline] [@zero_alloc] triage_sign (a : S2_point.t) (b : S2_point.t) (c : S2
   else 0
 ;;
 
-(* Tier 2 of the sign cascade.  Rewrites the determinant using edge
-   differences AB, BC, CA; the longest edge is selected as the pivot
-   so the final cross product is taken between the two shorter edges.
-   This cuts the error bound to det_error_multiplier * sqrt(len2 * len2)
-   and extends the range of determinants we can resolve without
-   falling through to exact arithmetic. *)
+(* Tier 2 of the sign cascade. Rewrites the determinant using edge differences AB, BC, CA;
+   the longest edge is selected as the pivot so the final cross product is taken between
+   the two shorter edges. This cuts the error bound to det_error_multiplier * sqrt(len2 *
+   len2) and extends the range of determinants we can resolve without falling through to
+   exact arithmetic. *)
 let[@inline] [@zero_alloc] stable_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let open Float_u.O in
   let ab = R3_vector.sub (S2_point.to_r3 b) (S2_point.to_r3 a) in
@@ -68,7 +65,7 @@ let[@inline] [@zero_alloc] stable_sign (a : S2_point.t) (b : S2_point.t) (c : S2
     det <- Float_u.neg (R3_vector.dot (R3_vector.cross bc ab) (S2_point.to_r3 b));
     max_error <- det_error_multiplier * Float_u.sqrt (bc2 * ab2));
   let min_no_underflow_error =
-    det_error_multiplier * Float_u.sqrt (Float_u.min_positive_normal_value)
+    det_error_multiplier * Float_u.sqrt Float_u.min_positive_normal_value
   in
   if max_error < min_no_underflow_error
   then 0
@@ -82,9 +79,9 @@ type float_pair =
    ; lo : float#
    }
 
-(* Error-free transformation: returns hi = a * b (rounded) and
-   lo = a * b - hi exactly, so hi + lo represents the product with no
-   rounding loss.  Relies on the IEEE fused multiply-add. *)
+(* Error-free transformation: returns hi = a * b (rounded) and lo = a * b - hi exactly, so
+   hi + lo represents the product with no rounding loss. Relies on the IEEE fused
+   multiply-add. *)
 let[@inline] [@zero_alloc] two_product a b =
   let open Float_u.O in
   let p = a * b in
@@ -98,9 +95,9 @@ let[@inline] [@zero_alloc] two_product a b =
   #{ hi = p; lo = e }
 ;;
 
-(* Error-free transformation: hi = a + b (rounded), lo = a + b - hi
-   exactly.  Together with [two_product] this is the working basis of
-   the Shewchuk-style expansion arithmetic used below. *)
+(* Error-free transformation: hi = a + b (rounded), lo = a + b - hi exactly. Together with
+   [two_product] this is the working basis of the Shewchuk-style expansion arithmetic used
+   below. *)
 let[@inline] [@zero_alloc] two_sum a b =
   let open Float_u.O in
   let s = a + b in
@@ -111,15 +108,13 @@ let[@inline] [@zero_alloc] two_sum a b =
   #{ hi = s; lo = da + db }
 ;;
 
-(* Exact 3x3 determinant sign via Shewchuk's floating-point expansion
-   arithmetic.  A non-overlapping expansion is a list of doubles whose
-   exact sum represents the value; the highest-magnitude term at
-   buf[len-1] therefore has the same sign as the sum.  We use a single
-   local float# array as workspace so the whole path stays zero-alloc. *)
+(* Exact 3x3 determinant sign via Shewchuk's floating-point expansion arithmetic. A
+   non-overlapping expansion is a list of doubles whose exact sum represents the value;
+   the highest-magnitude term at buf[len-1] therefore has the same sign as the sum. We use
+   a single local float# array as workspace so the whole path stays zero-alloc. *)
 
-(* Shewchuk's GROW-EXPANSION: add the scalar [b] into the expansion
-   stored in [buf.(0..len-1)] and return the new length.  Zero terms
-   are squeezed out as they appear. *)
+(* Shewchuk's GROW-EXPANSION: add the scalar [b] into the expansion stored in
+   [buf.(0..len-1)] and return the new length. Zero terms are squeezed out as they appear. *)
 let grow_expansion (buf : float# array @ local) (len : int) (b : float#) : int =
   let mutable q = b in
   let mutable out = 0 in
@@ -138,10 +133,9 @@ let grow_expansion (buf : float# array @ local) (len : int) (b : float#) : int =
   out
 ;;
 
-(* Build a non-overlapping expansion out of the [n] input terms in
-   [buf.(0..n-1)] and return the sign of its sum (i.e. the sign of
-   the highest-magnitude surviving term).  [buf] must have room for
-   the in-place expansion; we pass a workspace sized for 24 input
+(* Build a non-overlapping expansion out of the [n] input terms in [buf.(0..n-1)] and
+   return the sign of its sum (i.e. the sign of the highest-magnitude surviving term).
+   [buf] must have room for the in-place expansion; we pass a workspace sized for 24 input
    terms below. *)
 let sign_of_terms (buf : float# array @ local) (n : int) : int =
   let mutable len = 0 in
@@ -161,12 +155,9 @@ let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let cx = S2_point.x c in
   let cy = S2_point.y c in
   let cz = S2_point.z c in
-  (* Compute the three 2x2 cofactors of the expansion-by-first-row
-     formula exactly.  Each cofactor is a four-term expansion built
-     from two two-products and one two-sum:
-       cofactor0 = by*cz - bz*cy
-       cofactor1 = bz*cx - bx*cz
-       cofactor2 = bx*cy - by*cx *)
+  (* Compute the three 2x2 cofactors of the expansion-by-first-row formula exactly. Each
+     cofactor is a four-term expansion built from two two-products and one two-sum:
+     cofactor0 = by*cz - bz*cy cofactor1 = bz*cx - bx*cz cofactor2 = bx*cy - by*cx *)
   let #{ hi = p0; lo = e0 } = two_product by cz in
   let #{ hi = q0; lo = f0 } = two_product bz cy in
   let #{ hi = p1; lo = e1 } = two_product bz cx in
@@ -177,9 +168,9 @@ let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let #{ hi = s0; lo = r0 } = two_sum p0 (Float_u.neg q0) in
   let #{ hi = s1; lo = r1 } = two_sum p1 (Float_u.neg q1) in
   let #{ hi = s2; lo = r2 } = two_sum p2 (Float_u.neg q2) in
-  (* det = ax * cofactor0 + ay * cofactor1 + az * cofactor2.  Expand
-     each a_i * (four-term cofactor) into eight terms via two-product,
-     giving 24 terms total.  Their exact sum is the determinant. *)
+  (* det = ax * cofactor0 + ay * cofactor1 + az * cofactor2. Expand each a_i * (four-term
+     cofactor) into eight terms via two-product, giving 24 terms total. Their exact sum is
+     the determinant. *)
   let #{ hi = t00; lo = u00 } = two_product ax s0 in
   let #{ hi = t01; lo = u01 } = two_product ax r0 in
   let #{ hi = t02; lo = u02 } = two_product ax e0 in
@@ -192,9 +183,8 @@ let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let #{ hi = t21; lo = u21 } = two_product az r2 in
   let #{ hi = t22; lo = u22 } = two_product az e2 in
   let #{ hi = t23; lo = u23 } = two_product az (Float_u.neg f2) in
-  (* Stack-allocate the workspace: 24 live terms plus 24 extra slots
-     used as in-place expansion scratch so the whole path is
-     zero-alloc. *)
+  (* Stack-allocate the workspace: 24 live terms plus 24 extra slots used as in-place
+     expansion scratch so the whole path is zero-alloc. *)
   let local_ buf : float# array =
     [| t00
      ; u00
@@ -249,16 +239,14 @@ let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   sign_of_terms buf 24 [@nontail]
 ;;
 
-(* Symbolic perturbation ("simulation of simplicity" in the sense of
-   Edelsbrunner and Muecke) used when the exact determinant is zero
-   and the three points are genuinely collinear.  The perturbed
-   coordinates form a polynomial in a fictitious infinitesimal; the
-   cascade below tries successive coefficients of that polynomial in
-   increasing order, returning the sign of the first non-zero
-   coefficient.  Preserves consistency with [triage_sign] for any
-   non-collinear perturbation of the inputs.  Requires
-   a < b < c lexicographically; the caller is responsible for the
-   sort and records the permutation sign. *)
+(* Symbolic perturbation ("simulation of simplicity" in the sense of Edelsbrunner and
+   Muecke) used when the exact determinant is zero and the three points are genuinely
+   collinear. The perturbed coordinates form a polynomial in a fictitious infinitesimal;
+   the cascade below tries successive coefficients of that polynomial in increasing order,
+   returning the sign of the first non-zero coefficient. Preserves consistency with
+   [triage_sign] for any non-collinear perturbation of the inputs. Requires a < b < c
+   lexicographically; the caller is responsible for the sort and records the permutation
+   sign. *)
 let symbolically_perturbed_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
   let[@inline] [@zero_alloc] sign_of v =
     if Float_u.O.( > ) v #0.0 then 1 else if Float_u.O.( < ) v #0.0 then -1 else 0
@@ -320,12 +308,11 @@ let symbolically_perturbed_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.
                         if Int.( <> ) s 0 then s else 1)))))))))))
 ;;
 
-(* Lexicographic sort of three S2 points.  The permutation sign is
-   carried alongside the sorted outputs so callers can restore the
-   orientation of the original triangle after running any operation
-   that requires sorted inputs (for example the symbolic perturbation
-   above).  An unboxed record is used because [S2_point.t] cannot
-   appear in tuples. *)
+(* Lexicographic sort of three S2 points. The permutation sign is carried alongside the
+   sorted outputs so callers can restore the orientation of the original triangle after
+   running any operation that requires sorted inputs (for example the symbolic
+   perturbation above). An unboxed record is used because [S2_point.t] cannot appear in
+   tuples. *)
 type sorted3 =
   #{ p0 : S2_point.t
    ; p1 : S2_point.t
@@ -394,11 +381,10 @@ let ordered_ccw (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) (o : S2_point
 
 (* --- Crossing predicates -------------------------------------------------- *)
 
-(* Interior-crossing characterization: edges AB and CD cross at a
-   point interior to both iff the four oriented triangles ACB, BDA,
-   CBD, DAC all share the same non-zero orientation.  The fast path
-   checks the first pair (ACB and BDA) and rejects most misses before
-   taking a second [sign] call. *)
+(* Interior-crossing characterization: edges AB and CD cross at a point interior to both
+   iff the four oriented triangles ACB, BDA, CBD, DAC all share the same non-zero
+   orientation. The fast path checks the first pair (ACB and BDA) and rejects most misses
+   before taking a second [sign] call. *)
 let[@inline] [@zero_alloc] crossing_sign
   (a : S2_point.t)
   (b : S2_point.t)
@@ -410,24 +396,21 @@ let[@inline] [@zero_alloc] crossing_sign
   else if S2_point.equal a b || S2_point.equal c d
   then -1
   else (
-    (* Use the rotation identities
-         sign(A,C,B) = -sign(A,B,C),  sign(B,D,A) =  sign(A,B,D),
-         sign(C,B,D) = -sign(C,D,B),  sign(D,A,C) =  sign(C,D,A)
-       so every orientation can be expressed as a single [sign] call on a
-       triangle whose first two vertices are either [AB] or [CD]. *)
+    (* Use the rotation identities sign(A,C,B) = -sign(A,B,C), sign(B,D,A) = sign(A,B,D),
+       sign(C,B,D) = -sign(C,D,B), sign(D,A,C) = sign(C,D,A) so every orientation can be
+       expressed as a single [sign] call on a triangle whose first two vertices are either
+       [AB] or [CD]. *)
     let acb = -sign a b c in
     let bda = sign a b d in
-    (* Early rejection when ACB and BDA have opposite non-zero signs:
-       C and D already lie on opposite sides of AB's great circle but
-       the two triangles rotate oppositely, so no interior crossing is
-       possible. *)
+    (* Early rejection when ACB and BDA have opposite non-zero signs: C and D already lie
+       on opposite sides of AB's great circle but the two triangles rotate oppositely, so
+       no interior crossing is possible. *)
     if acb = -bda && not (Int.equal bda 0)
     then -1
     else (
       let cbd = -sign c d b in
       let dac = sign c d a in
-      (* A crossing requires all four triangles to share the same
-         non-zero orientation. *)
+      (* A crossing requires all four triangles to share the same non-zero orientation. *)
       if (not (Int.equal acb 0))
          && Int.equal acb bda
          && Int.equal acb cbd
@@ -620,10 +603,9 @@ let get_intersection_exact
   let x = R3_vector.cross a_norm b_norm in
   if R3_vector.equal x R3_vector.zero
   then (
-    (* Collinear edges: the great circles containing AB and CD
-       coincide, so the "intersection" is not a single point.  To keep
-       the result reproducible we return the lexicographically
-       smallest endpoint that lies on both edges, using [big] as a
+    (* Collinear edges: the great circles containing AB and CD coincide, so the
+       "intersection" is not a single point. To keep the result reproducible we return the
+       lexicographically smallest endpoint that lies on both edges, using [big] as a
        sentinel initial value that is guaranteed to be replaced. *)
     let big = R3_vector.create ~x:#10.0 ~y:#10.0 ~z:#10.0 in
     let a_norm_pt : S2_point.t = R3_vector.normalize a_norm in
@@ -659,20 +641,18 @@ let[@inline] [@zero_alloc] get_intersection
   (b0 : S2_point.t)
   (b1 : S2_point.t)
   =
-  (* Two-tier strategy: the stable path covers all non-degenerate
-     crossings in double precision and returns None only when the
-     computed error bound would exceed kIntersectionError; the exact
-     path handles the remaining cases (including perfectly collinear
-     edges) using unbounded-precision cross products. *)
+  (* Two-tier strategy: the stable path covers all non-degenerate crossings in double
+     precision and returns None only when the computed error bound would exceed
+     kIntersectionError; the exact path handles the remaining cases (including perfectly
+     collinear edges) using unbounded-precision cross products. *)
   let pt =
     match%optional_u.R3_vector.Option get_intersection_stable a0 a1 b0 b1 with
     | Some result -> result
     | None -> get_intersection_exact a0 a1 b0 b1
   in
-  (* The result of a cross product is only determined up to sign; flip
-     it so the returned point is on the same hemisphere as the average
-     of the four inputs, which is always very close to the true
-     intersection. *)
+  (* The result of a cross product is only determined up to sign; flip it so the returned
+     point is on the same hemisphere as the average of the four inputs, which is always
+     very close to the true intersection. *)
   let sum =
     R3_vector.add
       (R3_vector.add (S2_point.to_r3 a0) (S2_point.to_r3 a1))

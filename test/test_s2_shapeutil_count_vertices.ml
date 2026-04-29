@@ -1,10 +1,9 @@
 (* Golden data produced by test/gen/s2shapeutil_count_vertices.cc.
 
    Upstream C++ tests covered:
-   - TEST(CountVertices, CountsCorrectly) - the five sub-scenarios are
-     replayed as "three_points", "points_and_polyline",
-     "points_polyline_polygon", "degenerate_polyline", and
-     "degenerate_polygon".
+   - TEST(CountVertices, CountsCorrectly) - the five sub-scenarios are replayed as
+     "three_points", "points_and_polyline", "points_polyline_polygon",
+     "degenerate_polyline", and "degenerate_polygon".
 
    Extra coverage:
    - "empty" pins the index result on a zero-shape index. *)

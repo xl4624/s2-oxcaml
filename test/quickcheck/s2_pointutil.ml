@@ -84,7 +84,7 @@ let%test_unit "approx_equals_self" =
     ~f:(fun { Unit_point.p } ->
       assert (
         S2.S2_pointutil.approx_equals
-          ~max_error_radians:(Packed_float_option.Unboxed.none)
+          ~max_error_radians:Packed_float_option.Unboxed.none
           p
           p))
 ;;

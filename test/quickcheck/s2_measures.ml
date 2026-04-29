@@ -158,9 +158,9 @@ let%test_unit "angle_range" =
 ;;
 
 let%test_unit "girard_area_vs_area_large_triangle" =
-  (* For reasonably sized triangles (neither tiny nor tiny edges),
-     girard_area agrees with area to within a few ulps. We filter out
-     degenerate near-antipodal or tiny configurations. *)
+  (* For reasonably sized triangles (neither tiny nor tiny edges), girard_area agrees with
+     area to within a few ulps. We filter out degenerate near-antipodal or tiny
+     configurations. *)
   Base_quickcheck.Test.run_exn
     (module S2_point_triple)
     ~config:qc_config

@@ -13,11 +13,10 @@ let result t =
 ;;
 
 let loop_of_edge_sequence (g : G.t) edge_ids =
-  (* Each directed loop is represented by its edge ids in traversal order.
-     The S2_loop takes the [src] vertex of each edge; the final edge's [dst]
-     equals the first edge's [src], which is implicit in the closed loop
-     representation. Validation is skipped because the graph-level simple-loop
-     assembly already guarantees a well-formed cycle. *)
+  (* Each directed loop is represented by its edge ids in traversal order. The S2_loop
+     takes the [src] vertex of each edge; the final edge's [dst] equals the first edge's
+     [src], which is implicit in the closed loop representation. Validation is skipped
+     because the graph-level simple-loop assembly already guarantees a well-formed cycle. *)
   let n = Array.length edge_ids in
   if n = 0
   then S2_loop.empty ()
@@ -33,10 +32,10 @@ let loop_of_edge_sequence (g : G.t) edge_ids =
 ;;
 
 let validation_error_of msg =
-  (* The OCaml [S2_polygon.find_validation_error] returns a string only, so we
-     surface a single generic code. C++ distinguishes specific codes such as
-     POLYGON_LOOPS_SHARE_EDGE or LOOP_SELF_INTERSECTION; callers wanting that
-     granularity must inspect [message]. *)
+  (* The OCaml [S2_polygon.find_validation_error] returns a string only, so we surface a
+     single generic code. C++ distinguishes specific codes such as
+     POLYGON_LOOPS_SHARE_EDGE or LOOP_SELF_INTERSECTION; callers wanting that granularity
+     must inspect [message]. *)
   S2_builder.Error.create ~code:"INVALID_POLYGON" ~message:msg
 ;;
 
@@ -69,9 +68,9 @@ let build_from_graph (g : G.t) ~output ~validate : S2_builder.Error.t =
 ;;
 
 let layer ?(validate = false) output : S2_builder.Layer.t =
-  (* Graph options match s2builderutil_s2polygon_layer.cc:75-83: directed edges,
-     drop degenerate edges, keep duplicates (the assembler tolerates them), and
-     drop sibling pairs so zero-area regions do not produce spurious loops. *)
+  (* Graph options match s2builderutil_s2polygon_layer.cc:75-83: directed edges, drop
+     degenerate edges, keep duplicates (the assembler tolerates them), and drop sibling
+     pairs so zero-area regions do not produce spurious loops. *)
   let graph_options =
     S2_builder.Graph_options.create
       ~edge_type:S2_builder.Edge_type.Directed

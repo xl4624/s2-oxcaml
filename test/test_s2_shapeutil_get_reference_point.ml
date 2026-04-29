@@ -1,27 +1,26 @@
-(* C++ test parity:
-   s2geometry/src/s2/s2shapeutil_get_reference_point_test.cc.
-   Golden data from test/gen/s2shapeutil_get_reference_point.cc.
+(* C++ test parity: s2geometry/src/s2/s2shapeutil_get_reference_point_test.cc. Golden data
+   from test/gen/s2shapeutil_get_reference_point.cc.
 
    Covered:
-   - TEST(GetReferencePoint, EmptyPolygon): a lax polygon with zero loops is
-     not contained.
-   - TEST(GetReferencePoint, FullPolygon): a single zero-vertex chain marks
-     the full polygon and is contained.
-   - TEST(GetReferencePoint, DegenerateLoops): loops whose edges form sibling
-     pairs are balanced, leaving the polygon empty.
-   - TEST(GetReferencePoint, InvertedLoops): two clockwise (inverted) loops;
-     captured here to pin the chosen reference vertex and its containment.
+   - TEST(GetReferencePoint, EmptyPolygon): a lax polygon with zero loops is not
+     contained.
+   - TEST(GetReferencePoint, FullPolygon): a single zero-vertex chain marks the full
+     polygon and is contained.
+   - TEST(GetReferencePoint, DegenerateLoops): loops whose edges form sibling pairs are
+     balanced, leaving the polygon empty.
+   - TEST(GetReferencePoint, InvertedLoops): two clockwise (inverted) loops; captured here
+     to pin the chosen reference vertex and its containment.
 
    Extra coverage (not in C++):
-   - "ccw_triangle": a normal counter-clockwise triangle; the algorithm
-     picks edge(0).v0 because every vertex is unbalanced.
-   - "cw_triangle": same triangle reversed; verifies that flipping
-     orientation flips containment of the chosen reference vertex.
+   - "ccw_triangle": a normal counter-clockwise triangle; the algorithm picks edge(0).v0
+     because every vertex is unbalanced.
+   - "cw_triangle": same triangle reversed; verifies that flipping orientation flips
+     containment of the chosen reference vertex.
 
    Deliberately omitted:
-   - TEST(GetReferencePoint, PartiallyDegenerateLoops): a randomized stress
-     test that walks the S2CellId Hilbert curve. Reproducing the absl seed
-     sequence in OCaml is not worth the complexity. *)
+   - TEST(GetReferencePoint, PartiallyDegenerateLoops): a randomized stress test that
+     walks the S2CellId Hilbert curve. Reproducing the absl seed sequence in OCaml is not
+     worth the complexity. *)
 
 open Core
 open Alcotest
@@ -59,18 +58,17 @@ let test_cases () =
     let shape = S2.S2_lax_polygon.to_shape polygon in
     let actual = S2.S2_shapeutil_get_reference_point.get_reference_point shape in
     check bool (sprintf "%s: contained" name) expected.#contained actual.#contained;
-    (* The point must match bit-exactly: the algorithm picks a specific
-       vertex (or [S2_point.origin] in the all-balanced fallback), so any
-       drift indicates a divergence from the C++ algorithm. *)
+    (* The point must match bit-exactly: the algorithm picks a specific vertex (or
+       [S2_point.origin] in the all-balanced fallback), so any drift indicates a
+       divergence from the C++ algorithm. *)
     check
       bool
       (sprintf "%s: point" name)
       true
       (S2.S2_point.equal expected.#point actual.#point);
-    (* Round-trip the reference point through [contains_brute_force]: by
-       construction the chosen point's containment must be preserved when
-       traced from itself (zero edge crossings), so the two answers must
-       agree. *)
+    (* Round-trip the reference point through [contains_brute_force]: by construction the
+       chosen point's containment must be preserved when traced from itself (zero edge
+       crossings), so the two answers must agree. *)
     check
       bool
       (sprintf "%s: brute force agrees with reference point" name)

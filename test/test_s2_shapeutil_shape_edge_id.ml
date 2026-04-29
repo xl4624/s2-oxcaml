@@ -1,18 +1,18 @@
-(* C++ test parity: s2geometry/src/s2/s2shapeutil_shape_edge_id_test.cc.
-   Golden data from test/gen/s2shapeutil_shape_edge_id.cc.
+(* C++ test parity: s2geometry/src/s2/s2shapeutil_shape_edge_id_test.cc. Golden data from
+   test/gen/s2shapeutil_shape_edge_id.cc.
 
    Covered:
-   -  Default-constructed [ShapeEdgeId] is [(-1, -1)], matching {!none}.
-   -  TEST(ShapeEdgeIdTest, BothFieldsEqualIsEqual)
-   -  TEST(ShapeEdgeIdTest, BothShapeIdUnequalIsUnequal)
-   -  TEST(ShapeEdgeIdTest, BothEdgeIdUnequalIsUnequal)
-   -  TEST(ShapeEdgeIdTest, LessThanIsLexicographicShapeIdFirst)
-   -  TEST(ShapeEdgeIdTest, LessEqIsLexicographicShapeIdFirst)
-   -  TEST(ShapeEdgeIdTest, GreaterThanIsLexicographicShapeIdFirst)
-   -  TEST(ShapeEdgeIdTest, GreaterEqIsLexicographicShapeIdFirst)
+   - Default-constructed [ShapeEdgeId] is [(-1, -1)], matching {!none}.
+   - TEST(ShapeEdgeIdTest, BothFieldsEqualIsEqual)
+   - TEST(ShapeEdgeIdTest, BothShapeIdUnequalIsUnequal)
+   - TEST(ShapeEdgeIdTest, BothEdgeIdUnequalIsUnequal)
+   - TEST(ShapeEdgeIdTest, LessThanIsLexicographicShapeIdFirst)
+   - TEST(ShapeEdgeIdTest, LessEqIsLexicographicShapeIdFirst)
+   - TEST(ShapeEdgeIdTest, GreaterThanIsLexicographicShapeIdFirst)
+   - TEST(ShapeEdgeIdTest, GreaterEqIsLexicographicShapeIdFirst)
 
    Not covered:
-   -  AbslHashValue / streaming operators (no parity in OCaml). *)
+   - AbslHashValue / streaming operators (no parity in OCaml). *)
 
 open Core
 open Alcotest

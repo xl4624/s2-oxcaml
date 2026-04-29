@@ -1,7 +1,7 @@
 open Core
 
-(* No error-path snapshot: [S2_lax_polyline] accepts any vertex sequence
-   including empty, single-vertex, and repeated/antipodal-adjacent vertices. *)
+(* No error-path snapshot: [S2_lax_polyline] accepts any vertex sequence including empty,
+   single-vertex, and repeated/antipodal-adjacent vertices. *)
 
 let p x y z = S2.S2_point.of_coords ~x ~y ~z
 
@@ -44,8 +44,8 @@ let%expect_test "two_vertex_sexp" =
 ;;
 
 let%expect_test "degenerate_repeated_vertex_allowed" =
-  (* A polyline that repeats the same vertex twice is the canonical single
-     degenerate edge. *)
+  (* A polyline that repeats the same vertex twice is the canonical single degenerate
+     edge. *)
   let v = p #1.0 #0.0 #0.0 in
   let t = S2.S2_lax_polyline.of_vertices [| v; v |] in
   printf

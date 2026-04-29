@@ -1,5 +1,5 @@
-(* Minimal hot-loop driver for profiling Cap coverage with perf. Runs the same workload
-   as the Cap sub-benchmark but without core_bench's noise model, so perf samples are
+(* Minimal hot-loop driver for profiling Cap coverage with perf. Runs the same workload as
+   the Cap sub-benchmark but without core_bench's noise model, so perf samples are
    attributed to S2 code rather than the measurement harness. *)
 
 open! Core

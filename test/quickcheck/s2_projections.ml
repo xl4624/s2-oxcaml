@@ -29,8 +29,8 @@ let qc_config =
   { T.default_config with test_count = 200; shrink_count = 50 }
 ;;
 
-let plate_carree = S2.S2_projections.plate_carree ~x_scale:(Float_u.pi)
-let mercator = S2.S2_projections.mercator ~max_x:(Float_u.pi)
+let plate_carree = S2.S2_projections.plate_carree ~x_scale:Float_u.pi
+let mercator = S2.S2_projections.mercator ~max_x:Float_u.pi
 
 (* --- Properties ----------------------------------------------------------- *)
 

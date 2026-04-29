@@ -4,9 +4,8 @@ open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 
-(* We build random four-vertex loops from an S2 cell; these are always valid,
-   have known small area, and give us something to check curvature/area
-   identities against. *)
+(* We build random four-vertex loops from an S2 cell; these are always valid, have known
+   small area, and give us something to check curvature/area identities against. *)
 module Cell_vertices = struct
   type t = { id : Int64.t }
 
@@ -122,7 +121,7 @@ let%test_unit "approx_area_close_to_area" =
     let a = S2.S2_loop_measures.area vs in
     let ap = S2.S2_loop_measures.approx_area vs in
     let scale = Float_u.max #1.0 a in
-    (* approx_area trades some accuracy for speed but should match area
-       closely for small, near-planar quads like cell corners. *)
+    (* approx_area trades some accuracy for speed but should match area closely for small,
+       near-planar quads like cell corners. *)
     assert (Float_u.abs (a - ap) <= #1e-8 * scale))
 ;;

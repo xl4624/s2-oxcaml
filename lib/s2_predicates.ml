@@ -1,8 +1,8 @@
 open Core
 module V = R3_vector
 
-(* Shared with [S2_point.robust_cross_prod]; factored into [Exact_arith] so
-   the big-integer and dyadic-rational scaffolding is not duplicated. *)
+(* Shared with [S2_point.robust_cross_prod]; factored into [Exact_arith] so the
+   big-integer and dyadic-rational scaffolding is not duplicated. *)
 module Bigint = Exact_arith.Bigint
 module Dyadic = Exact_arith.Dyadic
 module Exact_vec = Exact_arith.Exact_vec
@@ -10,17 +10,17 @@ module Exact_vec = Exact_arith.Exact_vec
 (* Rounding epsilon for IEEE float64: 2^-53. *)
 let[@inline] [@zero_alloc] dbl_error () = Float_u.O.(Float_u.epsilon_float / #2.0)
 
-(* Conservative upper bound on the error in evaluating [(A x B) . C] in
-   floating point for unit-length inputs. Derivation: see s2predicates.h
-   lines 376-392; for vectors of magnitude <= sqrt(2) the bound doubles. *)
+(* Conservative upper bound on the error in evaluating [(A x B) . C] in floating point for
+   unit-length inputs. Derivation: see s2predicates.h lines 376-392; for vectors of
+   magnitude <= sqrt(2) the bound doubles. *)
 let[@inline] [@zero_alloc] max_determinant_error () =
   let open Float_u.O in
   #1.8274 * Float_u.epsilon_float
 ;;
 
-(* Stable-sign error scaling: [det_error_multiplier * sqrt(|e1|^2 * |e2|^2)]
-   bounds the determinant error when the two shortest edges of the triangle
-   are used for the cross product. See s2predicates.cc::StableSign. *)
+(* Stable-sign error scaling: [det_error_multiplier * sqrt(|e1|^2 * |e2|^2)] bounds the
+   determinant error when the two shortest edges of the triangle are used for the cross
+   product. See s2predicates.cc::StableSign. *)
 let[@inline] [@zero_alloc] det_error_multiplier () =
   let open Float_u.O in
   #3.2321 * Float_u.epsilon_float
@@ -49,8 +49,8 @@ let[@inline] [@zero_alloc] sign a b c =
   V.dot (V.cross c a) b > #0.0
 ;;
 
-(* Fast floating-point triage: compute det = (A x B) . C and compare to the
-   conservative error bound. Resolves most callsites without any fallback. *)
+(* Fast floating-point triage: compute det = (A x B) . C and compare to the conservative
+   error bound. Resolves most callsites without any fallback. *)
 let[@inline] [@zero_alloc] triage_sign a b c =
   let open Float_u.O in
   let det = V.dot (V.cross a b) c in
@@ -61,20 +61,19 @@ let[@inline] [@zero_alloc] triage_sign a b c =
   else Direction.Indeterminate
 ;;
 
-(* Errors smaller than [min_no_underflow_error] cannot be trusted because the
-   intermediate product [e1n2 * e2n2] has already underflowed to zero. Without this
-   guard the stable-sign formula returns [Indeterminate] instead of [Clockwise] for
-   nearly collinear points whose edge norms are near [DBL_MIN]. *)
+(* Errors smaller than [min_no_underflow_error] cannot be trusted because the intermediate
+   product [e1n2 * e2n2] has already underflowed to zero. Without this guard the
+   stable-sign formula returns [Indeterminate] instead of [Clockwise] for nearly collinear
+   points whose edge norms are near [DBL_MIN]. *)
 let[@inline] [@zero_alloc] min_no_underflow_error () =
   let open Float_u.O in
   (* DBL_MIN = 2.2250738585072014e-308 *)
-  det_error_multiplier () * Float_u.sqrt (Float_u.min_positive_normal_value)
+  det_error_multiplier () * Float_u.sqrt Float_u.min_positive_normal_value
 ;;
 
-(* Second-level stable formula. Uses the two shortest edges of the triangle
-   instead of [A x B] so the rounding error scales with the shortest
-   magnitudes rather than with [|A x B|]. Handles near-collinear points that
-   triage cannot decide. *)
+(* Second-level stable formula. Uses the two shortest edges of the triangle instead of
+   [A x B] so the rounding error scales with the shortest magnitudes rather than with
+   [|A x B|]. Handles near-collinear points that triage cannot decide. *)
 let[@inline] [@zero_alloc] stable_sign a b c =
   let open Float_u.O in
   let ab = V.sub b a in
@@ -83,8 +82,8 @@ let[@inline] [@zero_alloc] stable_sign a b c =
   let bc2 = V.norm2 bc in
   let ca = V.sub a c in
   let ca2 = V.norm2 ca in
-  (* Pick the longest edge and set (e1, e2, op) to the two shorter edges
-     plus the point opposite the longest edge. *)
+  (* Pick the longest edge and set (e1, e2, op) to the two shorter edges plus the point
+     opposite the longest edge. *)
   let #(e1, e2, op) =
     if ab2 >= bc2 && ab2 >= ca2
     then #(ca, bc, c)
@@ -103,13 +102,12 @@ let[@inline] [@zero_alloc] stable_sign a b c =
   else Direction.Indeterminate
 ;;
 
-(* Final tiebreak when the exact determinant is zero. Assigns each coordinate
-   a distinct infinitesimal perturbation and enumerates the resulting
-   polynomial coefficients in order of decreasing magnitude (Simulation of
-   Simplicity, Edelsbrunner and Muecke 1990). Assumes the arguments have been
-   sorted into lex order xa < xb < xc. The cascade of [if s <> 0 then s] tests
-   is inlined rather than expressed as a higher-order combinator to stay
-   zero-alloc. *)
+(* Final tiebreak when the exact determinant is zero. Assigns each coordinate a distinct
+   infinitesimal perturbation and enumerates the resulting polynomial coefficients in
+   order of decreasing magnitude (Simulation of Simplicity, Edelsbrunner and Muecke 1990).
+   Assumes the arguments have been sorted into lex order xa < xb < xc. The cascade of
+   [if s <> 0 then s] tests is inlined rather than expressed as a higher-order combinator
+   to stay zero-alloc. *)
 let[@zero_alloc] symbolically_perturbed_sign
   (a : Exact_vec.t @ local)
   (b : Exact_vec.t @ local)
@@ -117,8 +115,8 @@ let[@zero_alloc] symbolically_perturbed_sign
   (b_cross_c : Exact_vec.t @ local)
   =
   let module D = Dyadic in
-  (* Cascade of sign tests; first non-zero wins. Written as nested ifs rather
-     than a closure-based combinator so the body stays zero-alloc. *)
+  (* Cascade of sign tests; first non-zero wins. Written as nested ifs rather than a
+     closure-based combinator so the body stays zero-alloc. *)
   let s = D.sign b_cross_c.#z in
   (* da.Z *)
   if s <> 0
@@ -179,14 +177,13 @@ let[@zero_alloc] symbolically_perturbed_sign
                         if s <> 0 then s else 1 (* dc.Z * db.Y * da.X *))))))))))))
 ;;
 
-(* Arbitrary-precision determinant evaluation plus symbolic perturbation.
-   Requires pairwise-distinct inputs. Permutation sign tracking is needed
-   because the symbolic perturbation step below requires its inputs in lex
-   order. *)
+(* Arbitrary-precision determinant evaluation plus symbolic perturbation. Requires
+   pairwise-distinct inputs. Permutation sign tracking is needed because the symbolic
+   perturbation step below requires its inputs in lex order. *)
 let[@zero_alloc] exact_sign a b c ~perturb =
-  (* Sort (a, b, c) lexicographically, tracking the sign of the permutation.
-     R3_vector.t has an unboxed layout, so we can't stash it in an ordinary
-     tuple; unboxed tuples keep the sort allocation-free. *)
+  (* Sort (a, b, c) lexicographically, tracking the sign of the permutation. R3_vector.t
+     has an unboxed layout, so we can't stash it in an ordinary tuple; unboxed tuples keep
+     the sort allocation-free. *)
   let #(pa, pb, perm) = if V.compare a b > 0 then #(b, a, -1) else #(a, b, 1) in
   let #(pb, pc, perm) = if V.compare pb c > 0 then #(c, pb, -perm) else #(pb, c, perm) in
   let #(pa, pb, perm) =
@@ -212,8 +209,8 @@ let[@zero_alloc] robust_sign a b c =
   match s with
   | Counter_clockwise | Clockwise -> s
   | Indeterminate ->
-    (* Return zero if and only if two of the points are equal. This lets us
-       assume distinct inputs in [exact_sign] below. *)
+    (* Return zero if and only if two of the points are equal. This lets us assume
+       distinct inputs in [exact_sign] below. *)
     if V.equal a b || V.equal b c || V.equal c a
     then Direction.Indeterminate
     else (
@@ -284,9 +281,9 @@ let[@inline] [@zero_alloc] symbolic_compare_distances _x a b =
   if c < 0 then 1 else if c > 0 then -1 else 0
 ;;
 
-(* Arbitrary-precision comparison of the distances from [x] to [a] and from
-   [x] to [b]. Reduces to a sign test on a polynomial in the exact
-   coordinates (no trig, no square roots). *)
+(* Arbitrary-precision comparison of the distances from [x] to [a] and from [x] to [b].
+   Reduces to a sign test on a polynomial in the exact coordinates (no trig, no square
+   roots). *)
 let[@zero_alloc] exact_compare_distances x a b =
   let module D = Dyadic in
   let xv = Exact_vec.of_r3 x in
@@ -354,8 +351,8 @@ let[@inline] [@zero_alloc] triage_compare_sin2_distance x y r2 =
   if diff > err then 1 else if diff < Float_u.neg err then -1 else 0
 ;;
 
-(* Arbitrary-precision comparison of [d(X, Y)] against a chord angle whose
-   squared length is [r2]. *)
+(* Arbitrary-precision comparison of [d(X, Y)] against a chord angle whose squared length
+   is [r2]. *)
 let[@zero_alloc] exact_compare_distance x y r2 =
   let module D = Dyadic in
   let xv = Exact_vec.of_r3 x in
@@ -391,9 +388,9 @@ let[@zero_alloc] compare_distance x y r =
     if s <> 0 then s else exact_compare_distance x y r2)
 ;;
 
-(* Triage with error bound [3.046875 * DBL_EPSILON]; exact dyadic fallback
-   when the magnitude is below that bound. The bound accommodates inputs up
-   to [|a|^2 <= 2] and [|b|^2 <= 2]. *)
+(* Triage with error bound [3.046875 * DBL_EPSILON]; exact dyadic fallback when the
+   magnitude is below that bound. The bound accommodates inputs up to [|a|^2 <= 2] and
+   [|b|^2 <= 2]. *)
 let[@zero_alloc] sign_dot_prod a b =
   let open Float_u.O in
   let max_error = #3.046875 * Float_u.epsilon_float in
@@ -406,17 +403,17 @@ let[@zero_alloc] sign_dot_prod a b =
     Dyadic.sign (Exact_vec.dot av bv) [@nontail])
 ;;
 
-(* TODO: port CompareEdgeDistance, CompareEdgePairDistance, and
-   CompareEdgeDirections from s2predicates.h:134-165 / s2predicates.cc. *)
-(* TODO: port CircleEdgeIntersectionSign and CircleEdgeIntersectionOrdering
-   from s2predicates.h:205-264 / s2predicates.cc. *)
-(* TODO: port EdgeCircumcenterSign and GetVoronoiSiteExclusion from
-   s2predicates.h:279-316 / s2predicates.cc. *)
+(* TODO: port CompareEdgeDistance, CompareEdgePairDistance, and CompareEdgeDirections from
+   s2predicates.h:134-165 / s2predicates.cc. *)
+(* TODO: port CircleEdgeIntersectionSign and CircleEdgeIntersectionOrdering from
+   s2predicates.h:205-264 / s2predicates.cc. *)
+(* TODO: port EdgeCircumcenterSign and GetVoronoiSiteExclusion from s2predicates.h:279-316
+   / s2predicates.cc. *)
 (* Fast triage that takes a precomputed [a x b] (computed via [V.cross], not
-   [robust_cross_prod]). The det error bound is the same as [triage_sign] above; the
-   only saving here is one cross product. The [a] and [b] arguments are not used at
-   runtime, but are kept in the signature so the precondition [a_cross_b = V.cross a b]
-   stays visible to callers. *)
+   [robust_cross_prod]). The det error bound is the same as [triage_sign] above; the only
+   saving here is one cross product. The [a] and [b] arguments are not used at runtime,
+   but are kept in the signature so the precondition [a_cross_b = V.cross a b] stays
+   visible to callers. *)
 let[@inline] [@zero_alloc] triage_sign_with_cross _a _b c a_cross_b =
   let open Float_u.O in
   let det = V.dot a_cross_b c in
@@ -428,10 +425,10 @@ let[@inline] [@zero_alloc] triage_sign_with_cross _a _b c a_cross_b =
 ;;
 
 let[@zero_alloc] expensive_sign a b c ~perturb =
-  (* [exact_sign] assumes pairwise-distinct inputs because the symbolic perturbation
-     step requires the three points in lexicographic order. Short-circuit when any two
-     points coincide so the public contract is "result is non-zero unless two of the
-     inputs are the same". *)
+  (* [exact_sign] assumes pairwise-distinct inputs because the symbolic perturbation step
+     requires the three points in lexicographic order. Short-circuit when any two points
+     coincide so the public contract is "result is non-zero unless two of the inputs are
+     the same". *)
   if V.equal a b || V.equal b c || V.equal c a
   then Direction.Indeterminate
   else Direction.of_int (exact_sign a b c ~perturb)

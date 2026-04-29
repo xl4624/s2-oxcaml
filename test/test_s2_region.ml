@@ -1,15 +1,15 @@
-(* Tests for S2_region. There is no upstream C++ S2RegionTest with directly
-   matching cases, so this file exercises the Region interface methods on each
-   concrete S2 type (S2Cap, S2LatLngRect, S2Cell, S2CellUnion) against golden data
-   produced by test/gen/s2region.cc.
+(* Tests for S2_region. There is no upstream C++ S2RegionTest with directly matching
+   cases, so this file exercises the Region interface methods on each concrete S2 type
+   (S2Cap, S2LatLngRect, S2Cell, S2CellUnion) against golden data produced by
+   test/gen/s2region.cc.
 
    Coverage:
-   - cap_bound, rect_bound, contains_point, contains_cell, intersects_cell,
-     and cell_union_bound on S2_region.of_cap, of_rect, of_cell, of_cell_union
+   - cap_bound, rect_bound, contains_point, contains_cell, intersects_cell, and
+     cell_union_bound on S2_region.of_cap, of_rect, of_cell, of_cell_union
 
    Deliberately omitted:
-   - rect_bound for the [empty] case is compared via R1/S1 interval equality
-     using the canonical empty representation. *)
+   - rect_bound for the [empty] case is compared via R1/S1 interval equality using the
+     canonical empty representation. *)
 
 open Core
 open Test_helpers

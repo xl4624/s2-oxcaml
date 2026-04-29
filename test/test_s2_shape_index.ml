@@ -1,20 +1,20 @@
 (* C++ test parity: s2geometry/src/s2/mutable_s2shape_index_test.cc plus
-   s2geometry/src/s2/s2contains_point_query_test.cc (the Semi_open subset).
-   Golden data from test/gen/s2shape_index.cc.
+   s2geometry/src/s2/s2contains_point_query_test.cc (the Semi_open subset). Golden data
+   from test/gen/s2shape_index.cc.
 
    Covered:
-   -  Empty-index iteration
-   -  Full-loop index: six face-level cells with contains_center = true
-   -  Small triangle loop: cell structure and point containment queries
-   -  Nested squares: multiple shapes share cells and each query's per-shape
-      containment is verified independently
-   -  Regular octagon and 64-gon: exercises recursive subdivision
-   -  Iterator.locate_cell_id relation (Indexed / Subdivided / Disjoint)
+   - Empty-index iteration
+   - Full-loop index: six face-level cells with contains_center = true
+   - Small triangle loop: cell structure and point containment queries
+   - Nested squares: multiple shapes share cells and each query's per-shape containment is
+     verified independently
+   - Regular octagon and 64-gon: exercises recursive subdivision
+   - Iterator.locate_cell_id relation (Indexed / Subdivided / Disjoint)
 
    Not covered (deferred until the matching porter work lands):
-   -  Shape removal (only add is implemented)
-   -  Encode / decode
-   -  Vertex_model.Open or Closed (only Semi_open supported) *)
+   - Shape removal (only add is implemented)
+   - Encode / decode
+   - Vertex_model.Open or Closed (only Semi_open supported) *)
 
 open Core
 open Stdlib_upstream_compatible

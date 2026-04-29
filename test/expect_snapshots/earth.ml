@@ -17,8 +17,8 @@ let%expect_test "altitude_constants" =
 ;;
 
 let%expect_test "angle_length_roundtrip_on_radius" =
-  (* A length equal to the Earth's radius in meters subtends exactly 1
-     radian at the sphere's center. *)
+  (* A length equal to the Earth's radius in meters subtends exactly 1 radian at the
+     sphere's center. *)
   let angle = S2.Earth.angle_from_length S2.Earth.radius_meters in
   printf "radians=%s\n" (S2.S1_angle.to_string angle);
   printf "back_meters=%s\n" (Float_u.to_string (S2.Earth.length_from_angle angle));
@@ -29,8 +29,7 @@ let%expect_test "angle_length_roundtrip_on_radius" =
 ;;
 
 let%expect_test "steradians_and_area_full_sphere" =
-  (* The full sphere subtends 4 * pi steradians; the surface area is
-     4 * pi * r^2. *)
+  (* The full sphere subtends 4 * pi steradians; the surface area is 4 * pi * r^2. *)
   let four_pi = #12.566370614359172 in
   printf "area_m2=%s\n" (Float_u.to_string (S2.Earth.area_from_steradians four_pi));
   printf
@@ -45,8 +44,8 @@ let%expect_test "steradians_and_area_full_sphere" =
 ;;
 
 let%expect_test "initial_bearing_due_east" =
-  (* Traveling from (0N, 0E) to (0N, 1E) along the equator has an initial
-     bearing of 90 degrees (east). *)
+  (* Traveling from (0N, 0E) to (0N, 1E) along the equator has an initial bearing of 90
+     degrees (east). *)
   let a = S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#0.0 in
   let b = S2.S2_latlng.of_degrees ~lat:#0.0 ~lng:#1.0 in
   let bearing = S2.Earth.initial_bearing_from_latlngs a b in

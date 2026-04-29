@@ -1,20 +1,19 @@
-(* C++ test parity: s2geometry/src/s2/s2shapeutil_edge_iterator_test.cc.
-   Golden data from test/gen/s2shapeutil_edge_iterator.cc.
+(* C++ test parity: s2geometry/src/s2/s2shapeutil_edge_iterator_test.cc. Golden data from
+   test/gen/s2shapeutil_edge_iterator.cc.
 
    Covered:
-   -  TEST(S2ShapeutilEdgeIteratorTest, Empty)
-   -  TEST(S2ShapeutilEdgeIteratorTest, Points)
-   -  TEST(S2ShapeutilEdgeIteratorTest, Lines)
-   -  TEST(S2ShapeutilEdgeIteratorTest, Polygons)
-   -  TEST(S2ShapeutilEdgeIteratorTest, Collection)
-   -  TEST(S2ShapeutilEdgeIteratorTest, AssignmentAndEquality) - simulated
-      directly in OCaml without the C++ assignment operator: the index reuse
-      and stepwise advancement are exercised against [equal].
+   - TEST(S2ShapeutilEdgeIteratorTest, Empty)
+   - TEST(S2ShapeutilEdgeIteratorTest, Points)
+   - TEST(S2ShapeutilEdgeIteratorTest, Lines)
+   - TEST(S2ShapeutilEdgeIteratorTest, Polygons)
+   - TEST(S2ShapeutilEdgeIteratorTest, Collection)
+   - TEST(S2ShapeutilEdgeIteratorTest, AssignmentAndEquality) - simulated directly in
+     OCaml without the C++ assignment operator: the index reuse and stepwise advancement
+     are exercised against [equal].
 
    Not covered:
-   -  TEST(S2ShapeutilEdgeIteratorTest, Remove): requires
-      [S2_shape_index.release], which is not yet implemented (see TODO under
-      "Shape-index scope deferred"). *)
+   - TEST(S2ShapeutilEdgeIteratorTest, Remove): requires [S2_shape_index.release], which
+     is not yet implemented (see TODO under "Shape-index scope deferred"). *)
 
 open Core
 open Alcotest

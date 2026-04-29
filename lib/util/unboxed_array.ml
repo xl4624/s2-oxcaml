@@ -1,11 +1,11 @@
 open Core
 
-(* The ppx_template variant covers the two simple product kinds. The sort
-   body only uses the layout-polymorphic [Array.length] / [Array.get] /
-   [Array.set] primitives, so it specializes correctly for each instance.
+(* The ppx_template variant covers the two simple product kinds. The sort body only uses
+   the layout-polymorphic [Array.length] / [Array.get] / [Array.set] primitives, so it
+   specializes correctly for each instance.
 
-   The hybrid algorithm: insertion sort for small n, iterative heap sort
-   otherwise. Both are in-place and allocation-free. *)
+   The hybrid algorithm: insertion sort for small n, iterative heap sort otherwise. Both
+   are in-place and allocation-free. *)
 
 module%template
   [@kind
@@ -76,9 +76,9 @@ end
 
 (* Manual instantiation for the nested kind
    [((float64 & float64 & float64) & (float64 & float64 & float64)) mod external_].
-   ppx_template cannot represent this because it deliberately flattens adjacent
-   [&] products (see the comment in its [ast_pattern_helpers] parser). The body
-   is textually identical to the ppx_template variant above. *)
+   ppx_template cannot represent this because it deliberately flattens adjacent [&]
+   products (see the comment in its [ast_pattern_helpers] parser). The body is textually
+   identical to the ppx_template variant above. *)
 module Make_3_3 (E : sig
     type t : ((float64 & float64 & float64) & (float64 & float64 & float64)) mod external_
   end) =

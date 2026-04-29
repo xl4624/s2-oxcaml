@@ -5,8 +5,8 @@ module R2_sort = S2.Unboxed_array.Make [@kind (float64 & float64) mod external_]
     type t = S2.R2_point.t
   end)
 
-(* Instantiate the 3-float Make as a build-time sanity check that the kind
-   annotation works. *)
+(* Instantiate the 3-float Make as a build-time sanity check that the kind annotation
+   works. *)
 module _ =
 S2.Unboxed_array.Make [@kind (float64 & float64 & float64) mod external_] (struct
     type t = S2.R3_vector.t
@@ -79,8 +79,8 @@ let%test_unit "sort_is_permutation" =
     let after = build_array pairs in
     R2_sort.sort after ~compare:r2_compare;
     let n = Array.length before in
-    (* Independently sort [before] via a value-typed index permutation so we
-         can compare multisets without relying on [Unboxed_array] itself. *)
+    (* Independently sort [before] via a value-typed index permutation so we can compare
+       multisets without relying on [Unboxed_array] itself. *)
     let idx = Array.init n ~f:Fn.id in
     Array.sort idx ~compare:(fun a b -> r2_compare before.(a) before.(b));
     for i = 0 to n - 1 do
@@ -89,8 +89,8 @@ let%test_unit "sort_is_permutation" =
 ;;
 
 let%test_unit "sort_cross_threshold_sizes" =
-  (* Exercise both insertion-sort and heap-sort branches by spanning the
-     threshold (16) with a range of sizes. *)
+  (* Exercise both insertion-sort and heap-sort branches by spanning the threshold (16)
+     with a range of sizes. *)
   Base_quickcheck.Test.run_exn
     (module struct
       type t = int * Float_pairs.t [@@deriving sexp_of]
@@ -119,8 +119,8 @@ let%test_unit "sort_cross_threshold_sizes" =
       assert (is_sorted arr))
 ;;
 
-(* Edge arrays use the nested kind handled by [Make_3_3]. Property-test it
-   end-to-end on random S2_point pairs. *)
+(* Edge arrays use the nested kind handled by [Make_3_3]. Property-test it end-to-end on
+   random S2_point pairs. *)
 module Edge_sort = S2.Unboxed_array.Make_3_3 (struct
     type t = S2.S2_shape.Edge.t
   end)

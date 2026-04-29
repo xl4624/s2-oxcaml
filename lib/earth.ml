@@ -30,13 +30,11 @@ let[@inline] [@zero_alloc] steradians_from_area m2 =
   Float_u.O.(m2 / (radius_meters * radius_meters))
 ;;
 
-(* Numerically stable forward azimuth on a sphere. The standard
-   atan2(sin(dlng) * cos(lat2),
-         cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlng))
-   is rewritten in terms of the haversine of dlng so that small longitude
-   differences do not cancel catastrophically: cos(dlng) is replaced by
-   1 - 2 * sin^2(dlng/2), which turns the subtraction into an addition of
-   a small positive term. See s2earth.cc:52-66. *)
+(* Numerically stable forward azimuth on a sphere. The standard atan2(sin(dlng) *
+   cos(lat2), cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlng)) is rewritten in
+   terms of the haversine of dlng so that small longitude differences do not cancel
+   catastrophically: cos(dlng) is replaced by 1 - 2 * sin^2(dlng/2), which turns the
+   subtraction into an addition of a small positive term. See s2earth.cc:52-66. *)
 let[@inline] [@zero_alloc] initial_bearing_from_latlngs a b =
   let open Float_u.O in
   let lat1 = S1_angle.radians (S2_latlng.lat a) in

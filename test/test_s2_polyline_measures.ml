@@ -1,14 +1,14 @@
 (* C++ test parity: s2geometry/src/s2/s2polyline_measures_test.cc
-   -  TEST(GetLengthAndCentroid, GreatCircles) - substituted with a set of
-      deterministic great-circle cases that exercise the same invariants
-      (length = 2*pi, centroid norm ~ 0).
+   - TEST(GetLengthAndCentroid, GreatCircles) - substituted with a set of deterministic
+     great-circle cases that exercise the same invariants (length = 2*pi, centroid norm ~
+     0).
 
    Extra coverage:
-   -  empty, single-vertex, and two-point degenerate polylines
-   -  antipodal two-point polyline
-   -  quarter, half, and full great-circle subdivisions
-   -  a short-edge case
-   -  a tilted great circle with 32 vertices *)
+   - empty, single-vertex, and two-point degenerate polylines
+   - antipodal two-point polyline
+   - quarter, half, and full great-circle subdivisions
+   - a short-edge case
+   - a tilted great circle with 32 vertices *)
 
 open Core
 open Test_helpers
@@ -54,8 +54,8 @@ let test_fixture_cases () =
     let expected_centroid = r3_vector_of_json (member "centroid" c) in
     let expected_norm = float_u_of_json_exn (member "centroid_norm" c) in
     let actual_length = S2.S1_angle.radians (S2.S2_polyline_measures.length polyline) in
-    (* Length accumulates roundoff proportional to the number of edges. Use
-       a slightly looser tolerance for the 32-vertex tilted great circle. *)
+    (* Length accumulates roundoff proportional to the number of edges. Use a slightly
+       looser tolerance for the 32-vertex tilted great circle. *)
     let eps = if String.is_prefix label ~prefix:"great_circle" then 1e-13 else 1e-15 in
     check_float_u ~eps (label ^ " length") ~expected:expected_length ~actual:actual_length;
     let actual_centroid = S2.S2_polyline_measures.centroid polyline in

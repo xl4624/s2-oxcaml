@@ -115,21 +115,21 @@ let cid_buf_to_array buf = (Array.sub [@kind bits64]) buf.data ~pos:0 ~len:buf.l
 
 let empty () = { cell_ids = [||] }
 
-(* True when the current top of [out] already contains [id], so [id] can be
-   dropped entirely. *)
+(* True when the current top of [out] already contains [id], so [id] can be dropped
+   entirely. *)
 let[@inline] is_contained_or_absorbed (out : S2_cell_id.t array) out_len id =
   out_len > 0 && S2_cell_id.contains out.(out_len - 1) id
 ;;
 
-(* True when the top three cells of [out] plus [id] form a complete set of
-   four siblings that should collapse into their common parent. *)
+(* True when the top three cells of [out] plus [id] form a complete set of four siblings
+   that should collapse into their common parent. *)
 let[@inline] are_merged_siblings (out : S2_cell_id.t array) out_len id =
   out_len >= 3 && are_siblings out.(out_len - 3) out.(out_len - 2) out.(out_len - 1) id
 ;;
 
 (* Append [id] to the [(out, out_len)] accumulator, applying the
-   ancestor-absorbs-descendant and four-siblings-collapse rules. Assumes ids
-   are pushed in sorted order; returns the new length. *)
+   ancestor-absorbs-descendant and four-siblings-collapse rules. Assumes ids are pushed in
+   sorted order; returns the new length. *)
 let[@inline] push_normalized (out : S2_cell_id.t array) out_len id =
   if is_contained_or_absorbed out out_len id
   then out_len
@@ -346,10 +346,10 @@ let contains_point t p = contains_cell_id t (S2_cell_id.from_point p)
 
 (* {1 Set Operations} *)
 
-(* Both inputs are already sorted and individually normalized. Walk the two
-   runs in lockstep, pushing the smaller head through [push_normalized] to
-   handle the rare ancestor-absorbs-descendant and four-siblings-collapse
-   cases that can arise at the boundary between the two inputs. *)
+(* Both inputs are already sorted and individually normalized. Walk the two runs in
+   lockstep, pushing the smaller head through [push_normalized] to handle the rare
+   ancestor-absorbs-descendant and four-siblings-collapse cases that can arise at the
+   boundary between the two inputs. *)
 let union t other =
   let a = t.cell_ids in
   let b = other.cell_ids in

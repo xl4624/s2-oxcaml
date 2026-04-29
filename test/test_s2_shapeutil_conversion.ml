@@ -1,6 +1,5 @@
-(* C++ test parity:
-   s2geometry/src/s2/s2shapeutil_conversion_test.cc.
-   Golden data from test/gen/s2shapeutil_conversion.cc.
+(* C++ test parity: s2geometry/src/s2/s2shapeutil_conversion_test.cc. Golden data from
+   test/gen/s2shapeutil_conversion.cc.
 
    Covered:
    - TEST(S2ShapeConversionUtilTest, PointVectorShapeToPoints)

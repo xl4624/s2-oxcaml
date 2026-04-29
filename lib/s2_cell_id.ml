@@ -1,17 +1,17 @@
 open Core
 
-(* Tables and lookup arrays used to convert between [(i, j)] cell coordinates and
-   Hilbert curve positions in chunks of [lookup_bits] bits at a time.  The tables
-   encode the four Hilbert-curve orientations: [swap_mask] swaps the [i]/[j] axes
-   when set, [invert_mask] reverses the traversal direction.
+(* Tables and lookup arrays used to convert between [(i, j)] cell coordinates and Hilbert
+   curve positions in chunks of [lookup_bits] bits at a time. The tables encode the four
+   Hilbert-curve orientations: [swap_mask] swaps the [i]/[j] axes when set, [invert_mask]
+   reverses the traversal direction.
 
-   [pos_to_ij.(orient).(k)] gives the [(i, j)] offset of the [k]-th cell in Hilbert
-   order under orientation [orient] (packed as [2*i+j]).  [pos_to_orientation.(k)] is
-   the orientation tweak applied when descending into the [k]-th child.
+   [pos_to_ij.(orient).(k)] gives the [(i, j)] offset of the [k]-th cell in Hilbert order
+   under orientation [orient] (packed as [2*i+j]). [pos_to_orientation.(k)] is the
+   orientation tweak applied when descending into the [k]-th child.
 
-   The two lookup arrays let us convert [lookup_bits]-bit chunks of [(i, j)] to a
-   Hilbert offset (and vice versa) in a single table lookup rather than recursing
-   through four levels bit-by-bit. *)
+   The two lookup arrays let us convert [lookup_bits]-bit chunks of [(i, j)] to a Hilbert
+   offset (and vice versa) in a single table lookup rather than recursing through four
+   levels bit-by-bit. *)
 module Hilbert = struct
   let swap_mask = 0x01
   let invert_mask = 0x02
@@ -73,10 +73,9 @@ let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t 
   Sexp.Atom (Int64_u.to_string t) [@exclave_if_stack a]
 ;;
 
-(* The [@alloc] template above generates a [sexp_of_t__stack] companion that
-   the .mli does not re-export; silence the unused-value warning. *)
+(* The [@alloc] template above generates a [sexp_of_t__stack] companion that the .mli does
+   not re-export; silence the unused-value warning. *)
 let _ = sexp_of_t__stack
-
 let[@inline] [@zero_alloc ignore] hash t = Int64.hash (Int64_u.to_int64 t)
 
 let[@inline] [@zero_alloc ignore] hash_fold_t state t =
@@ -95,8 +94,8 @@ let none : t = #0L
 let sentinel : t = -#1L
 let[@inline] [@zero_alloc] lsb t = Int64_u.O.(t land Int64_u.neg t)
 
-(* Valid iff the face is in range and the low-bit tag indicates a level
-   between 0 and [max_level]. *)
+(* Valid iff the face is in range and the low-bit tag indicates a level between 0 and
+   [max_level]. *)
 let[@inline] [@zero_alloc] is_valid t =
   let face = Int64_u.to_int_trunc Int64_u.O.(t lsr pos_bits) in
   face < num_faces
@@ -148,11 +147,11 @@ let[@inline] [@zero_alloc] lsb_for_level level =
   Int64_u.O.(#1L lsl n)
 ;;
 
-(* Walk the [(i, j)] coordinates from most-significant nibble to least-significant
-   in 4-bit chunks, using [Hilbert.lookup.pos] to convert each chunk plus the
-   running orientation bits into the corresponding Hilbert-position nibble.  The
-   final id has the face in the top bits and [pos | 1] in the low bits, where the
-   trailing "1" marks the leaf level. *)
+(* Walk the [(i, j)] coordinates from most-significant nibble to least-significant in
+   4-bit chunks, using [Hilbert.lookup.pos] to convert each chunk plus the running
+   orientation bits into the corresponding Hilbert-position nibble. The final id has the
+   face in the top bits and [pos | 1] in the low bits, where the trailing "1" marks the
+   leaf level. *)
 let[@inline] [@zero_alloc] from_face_ij face i j =
   let hi_shift = pos_bits - 1 in
   let mutable n = Int64_u.O.(Int64_u.of_int face lsl hi_shift) in
@@ -172,8 +171,8 @@ let[@inline] [@zero_alloc] from_face_ij face i j =
   Int64_u.O.((n lsl 1) lor #1L)
 ;;
 
-(* Clamps (i, j) to one cell beyond the face boundary, then reprojects via XYZ
-   to find the adjacent face and corresponding (i', j'). *)
+(* Clamps (i, j) to one cell beyond the face boundary, then reprojects via XYZ to find the
+   adjacent face and corresponding (i', j'). *)
 let[@zero_alloc] from_face_ij_wrap face i j =
   let limit_ij = max_size in
   let i = Int.max (-1) (Int.min limit_ij i) in
@@ -234,8 +233,8 @@ let[@inline] [@zero_alloc] parent_level t level =
   Int64_u.O.(t land Int64_u.neg lsb_val lor lsb_val)
 ;;
 
-(* Construct from face, Hilbert position, and level: place [pos | 1] at the face
-   position, then snap to [level] by calling [parent_level]. *)
+(* Construct from face, Hilbert position, and level: place [pos | 1] at the face position,
+   then snap to [level] by calling [parent_level]. *)
 let[@inline] [@zero_alloc] from_face_pos_level face (pos : int64#) level =
   let open Int64_u.O in
   let cell = (Int64_u.of_int face lsl pos_bits) + (pos lor #1L) in
@@ -353,8 +352,8 @@ let[@inline] [@zero_alloc] advance t (steps : int64#) =
 ;;
 
 (* [S2CellId::advance_wrap]: reduce [steps] mod wrap only when past hemisphere bound.
-   Unlike [advance], the positive branch uses [wrap - id] without [+ lsb] so that
-   we never land exactly on End(level). *)
+   Unlike [advance], the positive branch uses [wrap - id] without [+ lsb] so that we never
+   land exactly on End(level). *)
 let[@inline] [@zero_alloc] advance_wrap t (steps : int64#) =
   if Int64_u.equal steps #0L
   then t
@@ -453,9 +452,9 @@ let[@inline] [@zero_alloc] to_face_ij_orientation t =
           lsl (k * Hilbert.lookup_bits));
     bits <- bits land (Hilbert.swap_mask lor Hilbert.invert_mask)
   done;
-  (* For non-leaf cells the Hilbert position suffix "10" causes one extra swap.
-     Detect this by testing whether any of the bits in 0x1111111111111110 are set
-     in the least significant bit of the cell id, then flip swap_mask accordingly. *)
+  (* For non-leaf cells the Hilbert position suffix "10" causes one extra swap. Detect
+     this by testing whether any of the bits in 0x1111111111111110 are set in the least
+     significant bit of the cell id, then flip swap_mask accordingly. *)
   let orientation =
     if not (Int64_u.equal Int64_u.O.(lsb t land #0x1111111111111110L) #0L)
     then bits lxor Hilbert.swap_mask
@@ -464,8 +463,8 @@ let[@inline] [@zero_alloc] to_face_ij_orientation t =
   #(face_val, i, j, orientation)
 ;;
 
-(* Returns the cells at [level] that share the closest cell vertex to [t].
-   Result has 3 or 4 entries. *)
+(* Returns the cells at [level] that share the closest cell vertex to [t]. Result has 3 or
+   4 entries. *)
 let[@zero_alloc ignore] vertex_neighbors t level =
   let #(face, i, j, _) = to_face_ij_orientation t in
   let halfsize = size_ij (level + 1) in

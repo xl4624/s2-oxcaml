@@ -1,11 +1,11 @@
 (* C++ test parity: s2geometry/src/s2/s2region_coverer_test.cc
-   - TEST(S2RegionCoverer, RandomCells)              - random_cells
-   - TEST(S2RegionCoverer, RandomCaps)               - cap_coverings
-   - TEST(IsCanonical, ...)                          - is_canonical
-   - TEST(CanonicalizeCovering, ...)                 - canonicalize
-   - TEST(S2RegionCoverer, InteriorCovering)         - interior_covering
-   - TEST(GetFastCovering, HugeFixedLevelCovering)   - fast_covering
-   - Region coverings (cell union, single cell)      - region_coverings
+   - TEST(S2RegionCoverer, RandomCells) - random_cells
+   - TEST(S2RegionCoverer, RandomCaps) - cap_coverings
+   - TEST(IsCanonical, ...) - is_canonical
+   - TEST(CanonicalizeCovering, ...) - canonicalize
+   - TEST(S2RegionCoverer, InteriorCovering) - interior_covering
+   - TEST(GetFastCovering, HugeFixedLevelCovering) - fast_covering
+   - Region coverings (cell union, single cell) - region_coverings
 
    Extra coverage:
    - Determinism check in cap_coverings
@@ -76,10 +76,10 @@ let test_random_cells () =
 
 (* {1 Cap coverings test} *)
 
-(* Check that a covering satisfies the region coverer constraints. The
-   [max_cells] bound only applies to interior coverings at levels above
-   [max_level]; for exterior coverings it is the hint upper bound. Here we
-   check it only for exterior coverings (pass [~enforce_max_cells:true]). *)
+(* Check that a covering satisfies the region coverer constraints. The [max_cells] bound
+   only applies to interior coverings at levels above [max_level]; for exterior coverings
+   it is the hint upper bound. Here we check it only for exterior coverings (pass
+   [~enforce_max_cells:true]). *)
 let check_covering_properties
   msg
   ~min_level
@@ -106,14 +106,13 @@ let check_covering_properties
   then Alcotest.fail (sprintf "%s: covering size %d exceeds max_cells %d" msg n max_cells)
 ;;
 
-(* We intentionally do not [check_cell_ids_match] against the fixture's
-   canonical [covering] / [interior] arrays. Region coverings for caps choose
-   between cell candidates by comparing cell bounds to the cap boundary, and
-   when the cap grazes a cell boundary the decision lives on double-precision
-   edges; the OCaml port's intermediate arithmetic legitimately lands on the
-   other side of some of those decisions and produces a different (equally
-   valid) covering. The generator still stores [covering] and [interior] in
-   the fixture as a canonical snapshot, but we verify the port via
+(* We intentionally do not [check_cell_ids_match] against the fixture's canonical
+   [covering] / [interior] arrays. Region coverings for caps choose between cell
+   candidates by comparing cell bounds to the cap boundary, and when the cap grazes a cell
+   boundary the decision lives on double-precision edges; the OCaml port's intermediate
+   arithmetic legitimately lands on the other side of some of those decisions and produces
+   a different (equally valid) covering. The generator still stores [covering] and
+   [interior] in the fixture as a canonical snapshot, but we verify the port via
    property/containment checks plus a same-process determinism run. *)
 let test_cap_coverings () =
   let data = to_list (member "cap_coverings" (Lazy.force fixture)) in

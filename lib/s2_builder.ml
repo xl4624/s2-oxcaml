@@ -84,9 +84,8 @@ end
 let k_max_input_edge_id = Int.max_value
 let k_no_input_edge_id = Int.max_value - 1
 
-(* Minimal growing array for values whose layout cannot be stored in
-   [Dynarray.t] (which requires a value layout). We use this for S2_point.t
-   which is a float64 product. *)
+(* Minimal growing array for values whose layout cannot be stored in [Dynarray.t] (which
+   requires a value layout). We use this for S2_point.t which is a float64 product. *)
 module Point_buffer = struct
   type t =
     { mutable arr : S2_point.t array
@@ -132,8 +131,8 @@ module Point_buffer = struct
 end
 
 module Id_set_lexicon = struct
-  (* Interns sorted integer sets so many edges sharing the same set can share
-     storage. Id [0] is reserved for the empty set. *)
+  (* Interns sorted integer sets so many edges sharing the same set can share storage. Id
+     [0] is reserved for the empty set. *)
   type t =
     { sets : int array Dynarray.t
     ; index : (string, int) Hashtbl.t
@@ -418,12 +417,12 @@ module Graph = struct
       | Circuit
   end
 
-  (* Build a left-turn map: for each edge e = (v0, v1), which outgoing edge
-     around v1 follows e in clockwise order. This is a simplified version of
-     s2builder_graph.cc:236-320 that works for graphs without degenerate
-     edges or duplicate edges (i.e., the output of ProcessEdges for the
-     polygon layer options). For each vertex, we sort incoming and outgoing
-     edges CCW around the vertex and pair them up. *)
+  (* Build a left-turn map: for each edge e = (v0, v1), which outgoing edge around v1
+     follows e in clockwise order. This is a simplified version of
+     s2builder_graph.cc:236-320 that works for graphs without degenerate edges or
+     duplicate edges (i.e., the output of ProcessEdges for the polygon layer options). For
+     each vertex, we sort incoming and outgoing edges CCW around the vertex and pair them
+     up. *)
   let get_left_turn_map t _in_edge_ids =
     let n = num_edges t in
     let left = Array.create ~len:n (-1) in
@@ -488,8 +487,8 @@ module Graph = struct
           best <- i;
           best_id <- id)
       done;
-      (* We want the "best" edge at the last position (index n-1), so rotate
-         by (best + 1) positions. *)
+      (* We want the "best" edge at the last position (index n-1), so rotate by (best + 1)
+         positions. *)
       let rotated = Array.create ~len:n loop.(0) in
       for i = 0 to n - 1 do
         rotated.(i) <- loop.((i + best + 1) mod n)
@@ -792,32 +791,29 @@ let add_is_full_polygon_predicate t predicate =
   state.predicate <- predicate
 ;;
 
-(* Site selection and snapping pipeline. This is the core of [build]; it
-   replaces roughly 1500 lines of C++ Voronoi machinery with the minimum
-   needed to pass the polygon-layer tests:
+(* Site selection and snapping pipeline. This is the core of [build]; it replaces roughly
+   1500 lines of C++ Voronoi machinery with the minimum needed to pass the polygon-layer
+   tests:
 
-   - When snap_radius = 0 and idempotent = true (the default identity snap
-     function), emit the "ChooseAllVerticesAsSites" path from
-     s2builder.cc:587-613: exact dedup of input vertices, then route each
-     input edge through the deduplicated site ids.
+   - When snap_radius = 0 and idempotent = true (the default identity snap function), emit
+     the "ChooseAllVerticesAsSites" path from s2builder.cc:587-613: exact dedup of input
+     vertices, then route each input edge through the deduplicated site ids.
 
-   - When snap_radius > 0, fall back to a simple O(n^2) cluster merge: every
-     input vertex joins the first existing site within snap_radius. The
-     result is topology-preserving for well-separated inputs but NOT
-     bit-exact with the Voronoi-based s2builder.cc pipeline
-     (ChooseInitialSites + AddExtraSites + SnapEdge). Near-degenerate
-     configurations - particularly ones where three or more sites fall
-     within [min_vertex_separation, snap_radius] of each other - can choose
-     different representative sites than the C++ reference.
+   - When snap_radius > 0, fall back to a simple O(n^2) cluster merge: every input vertex
+     joins the first existing site within snap_radius. The result is topology-preserving
+     for well-separated inputs but NOT bit-exact with the Voronoi-based s2builder.cc
+     pipeline (ChooseInitialSites + AddExtraSites + SnapEdge). Near-degenerate
+     configurations - particularly ones where three or more sites fall within
+     [min_vertex_separation, snap_radius] of each other - can choose different
+     representative sites than the C++ reference.
 
-   - When split_crossing_edges = true, enumerate all pairwise interior
-     crossings before site selection and add each intersection point as an
-     extra input vertex.
+   - When split_crossing_edges = true, enumerate all pairwise interior crossings before
+     site selection and add each intersection point as an extra input vertex.
 
    TODO: port the full Voronoi site selection pipeline from s2builder.cc
-   (ChooseInitialSites, CollectSiteEdges, AddExtraSites, SnapEdge) for
-   bit-exact parity. Requires S2PointIndex, GetVoronoiSiteExclusion, and
-   EdgeCircumcenterSign, which are not yet ported. *)
+   (ChooseInitialSites, CollectSiteEdges, AddExtraSites, SnapEdge) for bit-exact parity.
+   Requires S2PointIndex, GetVoronoiSiteExclusion, and EdgeCircumcenterSign, which are not
+   yet ported. *)
 
 let add_edge_crossings t =
   let n_edges = Dynarray.length t.input_edges in
