@@ -10,8 +10,10 @@
    - TEST(S2, UpdateMinInteriorDistanceLowerBoundOptimizationIsConservative)
    - TEST(S2, DistanceFraction) (via project fixture)
    - TEST(S2, GetPointToLeftS1Angle)
+   - TEST(S2, GetPointToLeftS1ChordAngle)
    - TEST(S2, GetPointToRightS1Angle)
-   - GetPointOnLine
+   - TEST(S2, GetPointToRightS1ChordAngle)
+   - GetPointOnLine (S1Angle and S1ChordAngle overloads)
 
    Deliberately omitted:
    - TEST(S2, GetUpdateMinInteriorDistanceMaxError) - randomized stress test
@@ -255,7 +257,20 @@ let test_get_point_on_line () =
       Float_u.to_float (S2.S1_angle.radians (S2.S2_point.distance actual expected))
     in
     if Float.( > ) angle 3e-15
-    then Alcotest.fail (sprintf "point_on_line[%d]: angle=%g > 3e-15" i angle))
+    then Alcotest.fail (sprintf "point_on_line[%d]: angle=%g > 3e-15" i angle);
+    (* Chord-angle overload: the C++ test only checks distances < 0.99*pi because the
+       chord representation collapses near 180 degrees. *)
+    if Float_u.O.(r >= #0.0) && Float.( < ) (Float_u.to_float r) (0.99 *. Float.pi)
+    then (
+      let r_ca = S2.S1_chord_angle.of_angle (S2.S1_angle.of_radians r) in
+      let actual_chord = S2.S2_edge_distances.get_point_on_line_chord a b r_ca in
+      let angle_chord =
+        Float_u.to_float
+          (S2.S1_angle.radians (S2.S2_point.distance actual_chord expected))
+      in
+      if Float.( > ) angle_chord 3e-15
+      then
+        Alcotest.fail (sprintf "point_on_line_chord[%d]: angle=%g > 3e-15" i angle_chord)))
 ;;
 
 (* ---------- GetPointToLeft / GetPointToRight ---------- *)
@@ -284,7 +299,18 @@ let test_point_to_left_right () =
   check_bool
     "right_approx"
     ~expected:true
-    ~actual:(S2.S2_point.approx_equal ~max_error:me actual_right expected_right)
+    ~actual:(S2.S2_point.approx_equal ~max_error:me actual_right expected_right);
+  let r_ca = S2.S1_chord_angle.of_angle angle in
+  let actual_left_chord = S2.S2_edge_distances.get_point_to_left_chord a b r_ca in
+  let actual_right_chord = S2.S2_edge_distances.get_point_to_right_chord a b r_ca in
+  check_bool
+    "left_chord_approx"
+    ~expected:true
+    ~actual:(S2.S2_point.approx_equal ~max_error:me actual_left_chord expected_left);
+  check_bool
+    "right_chord_approx"
+    ~expected:true
+    ~actual:(S2.S2_point.approx_equal ~max_error:me actual_right_chord expected_right)
 ;;
 
 (* ---------- IsEdgeBNearEdgeA ---------- *)

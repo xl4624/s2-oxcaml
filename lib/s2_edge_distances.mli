@@ -29,9 +29,6 @@
 
     {2 Limitations}
 
-    - The [S1ChordAngle]-argument variants of {!get_point_on_line}, {!get_point_on_ray},
-      {!get_point_to_left}, and {!get_point_to_right} are not exposed; only the
-      [S1Angle]-argument versions are available.
     - The constants [kProjectPerpendicularError], [kGetPointOnLineError], and
       [kGetPointOnRayPerpendicularError] are not exposed. *)
 
@@ -166,6 +163,18 @@ val get_point_to_left : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
 (** [get_point_to_right a b r] returns the point to the right of edge [ab] at distance [r]
     from [a], orthogonal to the edge. *)
 val get_point_to_right : S2_point.t -> S2_point.t -> S1_angle.t -> S2_point.t
+
+(** Chord-angle variants of {!get_point_on_ray}, {!get_point_on_line},
+    {!get_point_to_left}, {!get_point_to_right}. They take the input distance as an
+    {!S1_chord_angle.t} and use its native [sin]/[cos] accessors, which are cheaper than
+    the radian-based trig calls. Accuracy degrades for distances close to 180 degrees
+    because the chord-angle representation collapses there; callers that may pass
+    distances near pi should prefer the {!S1_angle.t} forms. *)
+val get_point_on_ray_chord : S2_point.t -> S2_point.t -> S1_chord_angle.t -> S2_point.t
+
+val get_point_on_line_chord : S2_point.t -> S2_point.t -> S1_chord_angle.t -> S2_point.t
+val get_point_to_left_chord : S2_point.t -> S2_point.t -> S1_chord_angle.t -> S2_point.t
+val get_point_to_right_chord : S2_point.t -> S2_point.t -> S1_chord_angle.t -> S2_point.t
 
 (** {1 Edge-Pair Distance} *)
 

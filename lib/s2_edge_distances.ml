@@ -161,10 +161,6 @@ let[@inline] [@zero_alloc] get_distance_fraction x a b =
   da / (da + db)
 ;;
 
-(* TODO: port the S1ChordAngle-argument overloads of GetPointOnRay, GetPointOnLine,
-   GetPointToLeft, and GetPointToRight from s2edge_distances.h:155-177,201-203. They are
-   faster because S1ChordAngle sin/cos are cheaper than S1Angle's, but lose accuracy near
-   180 degrees. *)
 let[@inline] [@zero_alloc] get_point_on_ray origin dir r =
   let cos_r = Float_u.cos (S1_angle.radians r) in
   let sin_r = Float_u.sin (S1_angle.radians r) in
@@ -198,6 +194,33 @@ let[@inline] [@zero_alloc] get_point_to_left a b r =
 let[@inline] [@zero_alloc] get_point_to_right a b r =
   let dir = R3_vector.normalize (S2_point.robust_cross_prod b a) in
   get_point_on_ray a dir r
+;;
+
+(* Chord-angle variants: sine and cosine come straight from [S1_chord_angle], avoiding the
+   trig calls on the wrapped radian value. They lose accuracy near 180 degrees because the
+   chord-angle representation collapses there, so callers that may pass distances close to
+   pi should prefer the [S1_angle] forms above. *)
+let[@inline] [@zero_alloc] get_point_on_ray_chord origin dir r =
+  let cos_r = S1_chord_angle.cos r in
+  let sin_r = S1_chord_angle.sin r in
+  R3_vector.normalize
+    (R3_vector.add (R3_vector.mul origin cos_r) (R3_vector.mul dir sin_r))
+;;
+
+let[@inline] [@zero_alloc] get_point_on_line_chord a b r =
+  let rcp = S2_point.robust_cross_prod a b in
+  let dir = R3_vector.normalize (R3_vector.cross rcp a) in
+  get_point_on_ray_chord a dir r
+;;
+
+let[@inline] [@zero_alloc] get_point_to_left_chord a b r =
+  let dir = R3_vector.normalize (S2_point.robust_cross_prod a b) in
+  get_point_on_ray_chord a dir r
+;;
+
+let[@inline] [@zero_alloc] get_point_to_right_chord a b r =
+  let dir = R3_vector.normalize (S2_point.robust_cross_prod b a) in
+  get_point_on_ray_chord a dir r
 ;;
 
 type closest_points =

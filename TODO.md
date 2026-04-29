@@ -361,8 +361,11 @@ track which types still lack Encode/Decode:
 
 ### Distance and projection APIs
 
-- [ ] `s2_edge_distances`: `S1ChordAngle`-argument overloads of `GetPointOnRay`,
-      `GetPointOnLine`, `GetPointToLeft`, `GetPointToRight`
+- [x] `s2_edge_distances`: `S1ChordAngle`-argument overloads of `GetPointOnRay`,
+      `GetPointOnLine`, `GetPointToLeft`, `GetPointToRight` exposed as
+      `*_chord` siblings using `S1_chord_angle.sin`/`cos` directly. Loses
+      accuracy near 180 degrees; the `S1_angle` forms remain for
+      callers that may pass distances close to pi.
 - [x] `s2_edge_distances`: expose `project_with_cross` as a public API mirroring
       the C++ overload in `s2edge_distances.h:119-120`
 - [x] `s2_edge_crossings`: expose standalone `SignedVertexCrossing` (currently
