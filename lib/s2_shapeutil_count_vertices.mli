@@ -13,8 +13,6 @@
     [[p, p, p]] still contributes three vertices (two edges plus one chain), and a
     degenerate polygon with four identical vertices contributes four. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** [of_shape shape] returns the number of vertices in [shape]. Requires

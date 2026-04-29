@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S1_angle. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

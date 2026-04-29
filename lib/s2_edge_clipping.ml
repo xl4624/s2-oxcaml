@@ -126,7 +126,6 @@ let[@inline] exit_point (n : R3_vector.t) axis : R2_point.t =
 (* --- Face clipping ---------------------------------------------------- *)
 
 let[@inline] clamp_uv (p : R2_point.t) : R2_point.t =
-  let open Float_u.O in
   let x = R2_point.x p in
   let y = R2_point.y p in
   let x' = Float_util.max_u (-#1.0) (Float_util.min_u #1.0 x) in

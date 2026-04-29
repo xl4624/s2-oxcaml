@@ -332,40 +332,6 @@ let[@inline] [@zero_alloc] cap_bound t = S2_latlng_rect.cap_bound t.bound
 let[@inline] [@zero_alloc] rect_bound t = t.bound
 let cell_union_bound t = S2_latlng_rect.cell_union_bound t.bound
 
-(* Brute-force boundary intersection: scan loop edges against the four cell
-   edges. The cell vertices are fetched once and indexed cyclically; the cache
-   is stack-allocated so the function stays zero-alloc. *)
-let[@zero_alloc] any_loop_edge_crosses_cell ~vertices cell =
-  let n = Array.length vertices in
-  if n = 0
-  then false
-  else (
-    let cv0 = S2_cell.vertex cell 0 in
-    let cv1 = S2_cell.vertex cell 1 in
-    let cv2 = S2_cell.vertex cell 2 in
-    let cv3 = S2_cell.vertex cell 3 in
-    let local_ cell_vs = [| cv0; cv1; cv2; cv3 |] in
-    let mutable hit = false in
-    let mutable k = 0 in
-    while (not hit) && k < 4 do
-      let a = cell_vs.(k) in
-      let b = cell_vs.((k + 1) land 3) in
-      let mutable crosser = S2_edge_crosser.create_with_chain ~a ~b ~c:vertices.(0) in
-      let mutable i = 1 in
-      while (not hit) && i <= n do
-        let next = if i = n then vertices.(0) else vertices.(i) in
-        let (#{ state; sign } : S2_edge_crosser.with_sign) =
-          S2_edge_crosser.chain_crossing_sign crosser next
-        in
-        crosser <- state;
-        if sign >= 0 then hit <- true;
-        i <- i + 1
-      done;
-      k <- k + 1
-    done;
-    hit)
-;;
-
 (* contains_cell and may_intersect_cell are defined after contains_point
    (and the index cache) so they can reuse the shared shape index. *)
 

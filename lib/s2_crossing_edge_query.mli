@@ -19,8 +19,6 @@
     - There is no in-place variant that writes into a caller-provided buffer; every query
       allocates a fresh result list. *)
 
-open Core
-
 (** A (shape_id, edge_id) pair identifying one edge of an indexed shape. *)
 module Shape_edge_id = S2_shapeutil_shape_edge_id
 

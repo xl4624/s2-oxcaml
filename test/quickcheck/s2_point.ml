@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_point. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

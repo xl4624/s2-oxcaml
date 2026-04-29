@@ -14,8 +14,6 @@
     at infinity" guaranteed to lie outside a loop, so the algorithm must inspect the local
     edge geometry around an unbalanced vertex via {!S2_contains_vertex_query}. *)
 
-open Core
-
 (** [get_reference_point shape] returns a {!S2_shape.Reference_point.t} for [shape]. The
     caller is responsible for ensuring [shape] has dimension [2]; behaviour is otherwise
     unspecified.

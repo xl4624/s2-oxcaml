@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_latlng_rect_bounder. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

@@ -35,8 +35,6 @@
     - The constants [kProjectPerpendicularError], [kGetPointOnLineError], and
       [kGetPointOnRayPerpendicularError] are not exposed. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** {1 Point-to-Edge Distance} *)

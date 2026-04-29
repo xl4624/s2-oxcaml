@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_latlng. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

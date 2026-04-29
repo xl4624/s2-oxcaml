@@ -32,8 +32,6 @@
     - Only the in-memory flavor (equivalent to C++ [MutableS2ShapeIndex]) is provided;
       there is no [EncodedS2ShapeIndex] analogue yet. *)
 
-open Core
-
 (** Relationship between a query [S2_cell_id.t] and the index:
     - [Indexed]: the query cell (or an ancestor) is itself an index cell.
     - [Subdivided]: the query cell is split across multiple index cells that are its

@@ -558,59 +558,6 @@ let to_region t : S2_region.t =
 
 (* --- Polygon relations --------------------------------------------------- *)
 
-let any_loop_contains t o = Array.exists t.loops ~f:(fun l -> S2_loop.contains l o)
-let any_loop_intersects t o = Array.exists t.loops ~f:(fun l -> S2_loop.intersects l o)
-
-let compare_boundary_loop t o =
-  let mutable result = -1 in
-  let i = ref 0 in
-  let n = Array.length t.loops in
-  while result <> 0 && !i < n do
-    result <- result * -S2_loop.compare_boundary t.loops.(!i) o;
-    incr i
-  done;
-  result
-;;
-
-let contains_boundary t o =
-  Array.for_all o.loops ~f:(fun l -> compare_boundary_loop t l > 0)
-;;
-
-let excludes_boundary t o =
-  Array.for_all o.loops ~f:(fun l -> compare_boundary_loop t l < 0)
-;;
-
-let contains_non_crossing_boundary t o ~reverse =
-  Array.fold t.loops ~init:false ~f:(fun inside l ->
-    Bool.( <> ) inside (S2_loop.contains_non_crossing_boundary l o ~reverse))
-;;
-
-let excludes_non_crossing_shells t o =
-  (* [t] excludes all shells of [o]? *)
-  Array.for_all o.loops ~f:(fun l ->
-    S2_loop.is_hole l || not (contains_non_crossing_boundary t l ~reverse:false))
-;;
-
-let excludes_non_crossing_complement_shells t o =
-  if is_empty o
-  then not (is_full t)
-  else if is_full o
-  then true
-  else (
-    let n = Array.length o.loops in
-    let mutable ok = true in
-    for j = 0 to n - 1 do
-      if ok
-      then (
-        let l = o.loops.(j) in
-        if j > 0 && not (S2_loop.is_hole l)
-        then ()
-        else if contains_non_crossing_boundary t l ~reverse:(j = 0)
-        then ok <- false)
-    done;
-    ok)
-;;
-
 (* Contains / Intersects route through S2_boolean_operation so that the
    shared-boundary semantics (shells touch but do not cross each other,
    holes handled as inverted shells) match the canonical implementation

@@ -6,8 +6,6 @@
     higher-level {!S2_polyline} / {!S2_lax_polyline} types or any custom carrier that
     exposes a vertex sequence. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** [length polyline] returns the total geodesic length of the polyline: the sum of the

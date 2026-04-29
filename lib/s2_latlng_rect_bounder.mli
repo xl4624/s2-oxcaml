@@ -13,8 +13,6 @@
     then read {!get_bound}. The type is a small unboxed record updated functionally, so
     "feeding a vertex" returns a new value. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** Bounder state: the last vertex added (as an {!S2_point.t} and as an {!S2_latlng.t}),

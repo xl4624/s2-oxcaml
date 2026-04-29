@@ -19,8 +19,6 @@
     {!S2_shape.t} is an unboxed record, so it cannot inhabit a polymorphic container
     directly. {!Loop.t} is a thin value-layout wrapper for that purpose. *)
 
-open Core
-
 module Loop : sig
   type t
 

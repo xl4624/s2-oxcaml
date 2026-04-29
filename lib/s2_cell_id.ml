@@ -73,6 +73,10 @@ let%template[@alloc a = (heap, stack)] [@inline] [@zero_alloc ignore] sexp_of_t 
   Sexp.Atom (Int64_u.to_string t) [@exclave_if_stack a]
 ;;
 
+(* The [@alloc] template above generates a [sexp_of_t__stack] companion that
+   the .mli does not re-export; silence the unused-value warning. *)
+let _ = sexp_of_t__stack
+
 let[@inline] [@zero_alloc ignore] hash t = Int64.hash (Int64_u.to_int64 t)
 
 let[@inline] [@zero_alloc ignore] hash_fold_t state t =

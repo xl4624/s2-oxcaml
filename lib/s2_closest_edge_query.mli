@@ -27,8 +27,6 @@
       [ShapeFilter] parameter present in the C++ library are not exposed; results are
       always materialized as a list. *)
 
-open Core
-
 (** Target geometry to which distances are measured. *)
 module Target : sig
   type t

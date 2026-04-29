@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_edge_crossings. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

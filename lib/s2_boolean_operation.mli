@@ -32,8 +32,6 @@
     library. Build polygons via {!S2_polygon.of_loops} or {!S2_polygon.of_oriented_loops}
     (which normalise the winding order) so they are well-formed before calling. *)
 
-open Core
-
 (** Which boolean operation to evaluate. *)
 module Op_type : sig
   type t =

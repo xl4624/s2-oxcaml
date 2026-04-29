@@ -210,21 +210,6 @@ let test_interpolate_double () =
     check_float_u_exact name ~expected ~actual)
 ;;
 
-let unit_uv_rect =
-  R2_rect.create_intervals_exn
-    ~x:(S2.R1_interval.create ~lo:(-#1.0) ~hi:#1.0)
-    ~y:(S2.R1_interval.create ~lo:(-#1.0) ~hi:#1.0)
-;;
-
-let in_unit_uv p =
-  let x = Float_u.to_float (R2_point.x p) in
-  let y = Float_u.to_float (R2_point.y p) in
-  Float.( >= ) x (-1.0 -. 1e-14)
-  && Float.( <= ) x (1.0 +. 1e-14)
-  && Float.( >= ) y (-1.0 -. 1e-14)
-  && Float.( <= ) y (1.0 +. 1e-14)
-;;
-
 let () =
   Alcotest.run
     "s2_edge_clipping"

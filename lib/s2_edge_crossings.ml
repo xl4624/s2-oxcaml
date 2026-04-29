@@ -152,7 +152,6 @@ let sign_of_terms (buf : float# array @ local) (n : int) : int =
 ;;
 
 let exact_det_sign (a : S2_point.t) (b : S2_point.t) (c : S2_point.t) =
-  let open Float_u.O in
   let ax = S2_point.x a in
   let ay = S2_point.y a in
   let az = S2_point.z a in

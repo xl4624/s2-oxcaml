@@ -43,7 +43,6 @@ let[@inline] [@zero_alloc] radians t = t
 let[@inline] [@zero_alloc] degrees t = Float_u.O.(#180.0 / Float_u.pi * t)
 
 module Int_option = struct
-  type value = int
   type t = int
 
   let none = Int.min_value

@@ -478,7 +478,7 @@ let test_expanded f () =
   (check bool)
     "expanded0_approx_cap50"
     true
-    (S2.S2_cap.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) exp0 cap50);
+    (S2.S2_cap.approx_equal ~max_error:(Packed_float_option.Unboxed.none) exp0 cap50);
   check_float_u
     "cap50_exp0_len2"
     ~expected:(float_u_of_json_exn (member "cap50_exp0_len2" e))

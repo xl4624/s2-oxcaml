@@ -1,5 +1,3 @@
-open Core
-
 (* Mean radius: 6371.01 km == 6371010 meters. Equivalent-area sphere per NASA. *)
 let radius_meters = #6_371_010.0
 let radius_km = #6_371.01

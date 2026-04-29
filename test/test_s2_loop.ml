@@ -366,7 +366,7 @@ let test_approx_equality_perturbed () =
     ~expected:(bool_of_json_exn (member "approx_equal_tight" case))
     ~actual:
       (S2.S2_loop.boundary_approx_equals
-         ~max_error:(Packed_float_option.Unboxed.none ())
+         ~max_error:(Packed_float_option.Unboxed.none)
          la
          lb)
 ;;

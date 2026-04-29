@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_latlng_rect. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 
@@ -134,7 +133,7 @@ let%test_unit "expanded_zero_identity" =
         let e = S2.S2_latlng_rect.expanded rect zero in
         assert (
           S2.S2_latlng_rect.approx_equal
-            ~max_error:(Packed_float_option.Unboxed.none ())
+            ~max_error:(Packed_float_option.Unboxed.none)
             rect
             e)))
 ;;

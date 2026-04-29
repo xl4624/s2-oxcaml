@@ -228,7 +228,7 @@ let test_approx_equal fixture () =
       name
       ~expected
       ~actual:
-        (S2.S2_latlng.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) a b))
+        (S2.S2_latlng.approx_equal ~max_error:(Packed_float_option.Unboxed.none) a b))
 ;;
 
 let test_unsigned_e_constructors fixture () =

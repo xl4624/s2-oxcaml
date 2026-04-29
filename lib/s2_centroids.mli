@@ -16,8 +16,6 @@
     do not. The surface centroid can also land far from the intuitive "center" of a large
     spherical triangle, so it is rarely the right choice. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** [planar_centroid a b c] returns the centroid of the planar triangle ABC. This can be

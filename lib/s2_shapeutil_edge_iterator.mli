@@ -19,8 +19,6 @@
     The iterator holds a reference to the index but does not own it; the caller must keep
     the index alive and unmodified for the iterator's lifetime. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 type t

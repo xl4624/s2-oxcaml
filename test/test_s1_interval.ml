@@ -280,7 +280,7 @@ let test_approx_equal fixture () =
     (check bool)
       (sprintf "approx %s %s" (S2.S1_interval.to_string x) (S2.S1_interval.to_string y))
       expected
-      (S2.S1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) x y))
+      (S2.S1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.none) x y))
 ;;
 
 let test_directed_hausdorff fixture () =

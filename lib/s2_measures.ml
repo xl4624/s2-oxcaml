@@ -1,5 +1,3 @@
-open Core
-
 let[@inline] angle a b c =
   (* Cross products are stable when the two input points are nearly
      (anti-)parallel; the naive cross product loses precision there. *)

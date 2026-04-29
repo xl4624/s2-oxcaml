@@ -8,22 +8,11 @@ let rand_state = Random.State.make [| 0x13375eed |]
 let num_regions = 1000
 let uniform_float ~lo ~hi = lo +. (Random.State.float rand_state 1.0 *. (hi -. lo))
 
-let random_point () =
-  let x = Float_u.of_float (uniform_float ~lo:(-1.0) ~hi:1.0) in
-  let y = Float_u.of_float (uniform_float ~lo:(-1.0) ~hi:1.0) in
-  let z = Float_u.of_float (uniform_float ~lo:(-1.0) ~hi:1.0) in
-  S2_point.of_coords ~x ~y ~z
-;;
-
 let random_cell_id_for_level level =
   let face = Random.State.int rand_state S2_cell_id.num_faces in
   let pos_mask = Int64.( - ) (Int64.shift_left 1L S2_cell_id.pos_bits) 1L in
   let pos = Int64.bit_and (Random.State.int64 rand_state Int64.max_value) pos_mask in
   S2_cell_id.from_face_pos_level face (Int64_u.of_int64 pos) level
-;;
-
-let random_cell_id () =
-  random_cell_id_for_level (Random.State.int rand_state (S2_cell_id.max_level + 1))
 ;;
 
 (* Random cell union with all cells at [level]. Using a fixed level avoids pathological
@@ -37,12 +26,6 @@ let random_cell_union_at_level ~level n =
     ids.(i) <- random_cell_id_for_level level
   done;
   S2_cell_union.create ids
-;;
-
-let random_cap ~min_area ~max_area =
-  let r = Random.State.float rand_state 1.0 in
-  let area = max_area *. Float.( ** ) (min_area /. max_area) r in
-  S2_cap.of_center_area (random_point ()) (Float_u.of_float area)
 ;;
 
 (* Matches Go's 0.1*AvgAreaMetric.Value(MaxLevel). *)

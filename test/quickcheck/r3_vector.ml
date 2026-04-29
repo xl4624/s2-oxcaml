@@ -1,6 +1,4 @@
 (* Quickcheck property tests for R3_vector. *)
-open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

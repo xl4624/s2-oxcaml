@@ -28,8 +28,6 @@
     time and [O(n)] space, where [n] is the total number of vertices added. Not
     thread-safe: every method is mutating. *)
 
-open Core
-
 type t
 
 (** [create ()] constructs an empty query. *)

@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_edge_distances. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

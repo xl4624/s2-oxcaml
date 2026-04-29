@@ -29,8 +29,6 @@
     Robust cross-product utilities live in {!S2_point} (see {!S2_point.robust_cross_prod})
     rather than being re-exported here. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** {1 Orientation predicate}

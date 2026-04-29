@@ -29,8 +29,6 @@
     - Undirected input edges (the layer always uses directed edges).
     - Per-edge label tracking ([LabelSetIds] / [IdSetLexicon]). *)
 
-open Core
-
 (** Mutable output slot. {!S2_builder.build} populates this through the layer callback. *)
 type output
 

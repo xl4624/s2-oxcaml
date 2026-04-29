@@ -8,8 +8,6 @@
 
     All inputs are assumed to be unit-length. No two inputs should be antipodal. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** [angle a b c] returns the interior angle at vertex [b] in the spherical triangle

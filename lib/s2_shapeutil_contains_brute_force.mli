@@ -13,8 +13,6 @@
     {!S2_contains_point_query}; this helper exists for the rare cases where the shape has
     very few edges or the index has not been built yet. *)
 
-open Core
-
 (** [contains_brute_force shape ~point] returns [true] when [point] lies inside [shape]
     under the semi-open boundary rule. *)
 val contains_brute_force : S2_shape.t -> point:S2_point.t -> bool

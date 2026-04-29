@@ -16,8 +16,6 @@
     [chain_edge]) calls. This is intended for one-off probes; iterate the chain directly
     if you need many lookups. *)
 
-open Core
-
 (** [next_edge_wrap shape ~edge_id] returns the edge id immediately following [edge_id]
     within its chain, or [-1] when no such edge exists (open polylines reaching their last
     edge, or any point shape). The caller is responsible for ensuring

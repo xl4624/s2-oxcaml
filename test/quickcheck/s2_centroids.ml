@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_centroids. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 
@@ -58,7 +57,6 @@ let qc_config =
 ;;
 
 let vec_max_abs v =
-  let open Float_u.O in
   let ax = Float_u.abs (S2.R3_vector.x v) in
   let ay = Float_u.abs (S2.R3_vector.y v) in
   let az = Float_u.abs (S2.R3_vector.z v) in

@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_cap. *)
 open Core
-open Test_helpers
 
 (* --- Generators ----------------------------------------------------------- *)
 

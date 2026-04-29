@@ -13,8 +13,6 @@
     [((float64 & float64 & float64) & (float64 & float64 & float64))] kind that
     [ppx_template] cannot express because it flattens adjacent [&] products. *)
 
-open Core
-
 module%template
   [@kind
     k = ((float64 & float64) mod external_, (float64 & float64 & float64) mod external_)] Make : functor

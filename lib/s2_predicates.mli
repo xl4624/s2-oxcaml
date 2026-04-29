@@ -19,8 +19,6 @@
     - [CircleEdgeIntersectionSign], [CircleEdgeIntersectionOrdering]
     - [EdgeCircumcenterSign], [GetVoronoiSiteExclusion] *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** {1 Orientation} *)

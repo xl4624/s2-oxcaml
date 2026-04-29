@@ -19,8 +19,6 @@
     query object across many point tests against the same index is faster than building a
     fresh one each time. *)
 
-open Core
-
 module Vertex_model : sig
   type t =
     | Open

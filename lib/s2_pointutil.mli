@@ -5,8 +5,6 @@
     a top-level [S2::] namespace rather than on [S2Point] itself; grouping them here makes
     porting code that uses [S2::Origin()], [S2::Ortho()], etc. straightforward. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** [origin ()] is the fixed "point at infinity" used by edge-crossing algorithms such as

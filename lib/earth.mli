@@ -18,8 +18,6 @@
       {!S2_cap.t} or to call one of the [_within_distance] queries.
     - Turning the steradian result of {!S2_polygon.area} into square meters. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** {1 Constants} *)

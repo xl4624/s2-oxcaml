@@ -165,7 +165,7 @@ let test_from_center_size () =
         ~expected:(bool_of_json_exn (member "approx_equals" case))
         ~actual:
           (S2.S2_latlng_rect.approx_equal
-             ~max_error:(Packed_float_option.Unboxed.none ())
+             ~max_error:(Packed_float_option.Unboxed.none)
              result
              expected))
 ;;
@@ -420,8 +420,8 @@ let test_area () =
   (* quarter sphere: lat=[0,pi/2], lng=[0,pi/2] *)
   let quarter =
     S2.S2_latlng_rect.create
-      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
-      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
+      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi / #2.0))
+      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi / #2.0))
   in
   check_float_u "quarter" ~expected:quarter_area ~actual:(S2.S2_latlng_rect.area quarter)
 ;;
@@ -437,8 +437,8 @@ let test_centroid () =
   let quarter_c = r3_vector_of_json (member "quarter" d) in
   let quarter =
     S2.S2_latlng_rect.create
-      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
-      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi () / #2.0))
+      ~lat:(S2.R1_interval.create ~lo:#0.0 ~hi:Float_u.(pi / #2.0))
+      ~lng:(S2.S1_interval.create ~lo:#0.0 ~hi:Float_u.(pi / #2.0))
   in
   let actual_quarter_c = S2.S2_latlng_rect.centroid quarter in
   check_r3_vector "quarter centroid" ~expected:quarter_c ~actual:actual_quarter_c
@@ -456,7 +456,7 @@ let test_approx_equals () =
       ~expected
       ~actual:
         (S2.S2_latlng_rect.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none ())
+           ~max_error:(Packed_float_option.Unboxed.none)
            a
            b))
 ;;

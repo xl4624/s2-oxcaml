@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_edge_clipping. *)
 open Core
-open Test_helpers
 module S2_edge_clipping = S2.S2_edge_clipping
 module R2_point = S2.R2_point
 module R2_rect = S2.R2_rect

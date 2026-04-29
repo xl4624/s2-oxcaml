@@ -52,7 +52,7 @@ let[@inline] [@zero_alloc] ortho a =
     | 2 -> R3_vector.create ~x:tx ~y:ty ~z:#1.0
     | _ -> assert false
   in
-  R3_vector.(R3_vector.normalize (R3_vector.cross a temp))
+  R3_vector.normalize (R3_vector.cross a temp)
 ;;
 
 let[@inline] [@zero_alloc] compare_lex a b = R3_vector.compare a b
@@ -66,12 +66,6 @@ let[@inline] [@zero_alloc] symbolic_cross_prod_sorted a b =
   else if R3_vector.x a <> #0.0 || R3_vector.y a <> #0.0
   then R3_vector.create ~x:(R3_vector.y a) ~y:(Float_u.neg (R3_vector.x a)) ~z:#0.0
   else R3_vector.create ~x:#1.0 ~y:#0.0 ~z:#0.0
-;;
-
-let[@inline] [@zero_alloc] symbolic_cross_prod a b =
-  if compare_lex a b < 0
-  then symbolic_cross_prod_sorted a b
-  else R3_vector.(R3_vector.neg (symbolic_cross_prod_sorted b a))
 ;;
 
 (* Arbitrary-precision fallback used when the double-precision
@@ -141,7 +135,7 @@ let[@inline] [@zero_alloc] rotate p ~axis ~angle =
   let t1 = R3_vector.mul dx cos_a in
   let t2 = R3_vector.mul dy sin_a in
   let t3 = R3_vector.add t1 t2 in
-  R3_vector.(R3_vector.normalize (R3_vector.add t3 center))
+  R3_vector.normalize (R3_vector.add t3 center)
 ;;
 
 let[@inline] [@zero_alloc] add a b = R3_vector.add a b

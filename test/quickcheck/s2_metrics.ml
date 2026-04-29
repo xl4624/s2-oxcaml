@@ -1,6 +1,5 @@
 (* Quickcheck property tests for S2_metrics. *)
 open Core
-open Test_helpers
 module M = S2.S2_metrics
 
 (* --- Generators ----------------------------------------------------------- *)

@@ -35,8 +35,6 @@
     would amortise the cost - but the simpler strategy is correct and adequate for the
     polygon-validation workloads this module currently serves. *)
 
-open Core
-
 (** Re-exported for convenience: identical to {!S2_crossing_edge_query.Crossing_type}. *)
 module Crossing_type = S2_crossing_edge_query.Crossing_type
 

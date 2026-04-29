@@ -10,8 +10,6 @@
     [float64 & float64 & float64] (both [mod external_], i.e. not scanned by the GC). If
     we end up needing more kinds, extend the [@kind] list at the definition site. *)
 
-open Core
-
 module%template
   [@kind
     k = ((float64 & float64) mod external_, (float64 & float64 & float64) mod external_)] Make : functor

@@ -29,8 +29,6 @@
     All operations are pure with respect to external state. The module is safe to use
     across threads as long as each thread has its own crosser value. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** Full crosser state: fixed edge AB, cached outward tangents at A and B, the previous

@@ -9,8 +9,6 @@
     declared [num_edges]. A point shape contributes one "edge" per point (degenerate
     edge), matching the C++ convention. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** [count_edges idx] returns the total number of edges across every shape in [idx]. Runs

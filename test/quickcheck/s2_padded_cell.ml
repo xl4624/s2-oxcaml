@@ -45,7 +45,7 @@ let%test_unit "bound_matches_s2cell" =
     let got = S2.S2_padded_cell.bound pc in
     assert (
       S2.R2_rect.approx_equal
-        ~max_error:(Packed_float_option.Unboxed.none ())
+        ~max_error:(Packed_float_option.Unboxed.none)
         expected
         got);
     let padding = #0.01 in
@@ -54,7 +54,7 @@ let%test_unit "bound_matches_s2cell" =
     let got2 = S2.S2_padded_cell.bound pc2 in
     assert (
       S2.R2_rect.approx_equal
-        ~max_error:(Packed_float_option.Unboxed.none ())
+        ~max_error:(Packed_float_option.Unboxed.none)
         expanded
         got2))
 ;;

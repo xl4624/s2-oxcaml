@@ -68,7 +68,6 @@ let reverse_array (a : S2.S2_point.t array) : S2.S2_point.t array =
 ;;
 
 let vec_max_abs v =
-  let open Float_u.O in
   let ax = Float_u.abs (S2.R3_vector.x v) in
   let ay = Float_u.abs (S2.R3_vector.y v) in
   let az = Float_u.abs (S2.R3_vector.z v) in

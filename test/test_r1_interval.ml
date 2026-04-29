@@ -220,7 +220,7 @@ let test_approx_equal fixture () =
          (S2.R1_interval.to_string x)
          (S2.R1_interval.to_string y))
       expected
-      (S2.R1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.none ()) x y))
+      (S2.R1_interval.approx_equal ~max_error:(Packed_float_option.Unboxed.none) x y))
 ;;
 
 let test_approx_equal_custom fixture () =

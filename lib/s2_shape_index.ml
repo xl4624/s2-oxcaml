@@ -279,7 +279,7 @@ let count_shapes (edges : clipped_edge list) shape_ids =
   !count + (n_ids - !shape_id_idx)
 ;;
 
-let add_shape_internal (idx : index) shape_id (shape : S2_shape.t) all_edges t =
+let add_shape_internal (_idx : index) shape_id (shape : S2_shape.t) all_edges t =
   let has_interior = shape.#dimension = 2 in
   if has_interior
   then tracker_add_shape t ~shape_id ~contains_focus:(contains_brute_force shape t.b);

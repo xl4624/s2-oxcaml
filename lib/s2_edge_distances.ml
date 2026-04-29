@@ -103,7 +103,6 @@ let[@inline] [@zero_alloc] update_max_distance x a b max_dist =
 ;;
 
 let[@inline] [@zero_alloc] update_min_interior_distance x a b min_dist =
-  let open Float_u.O in
   let xa2 = R3_vector.norm2 (R3_vector.sub x a) in
   let xb2 = R3_vector.norm2 (R3_vector.sub x b) in
   update_min_interior_distance_impl ~always_update:false x a b xa2 xb2 min_dist

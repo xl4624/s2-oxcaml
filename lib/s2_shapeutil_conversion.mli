@@ -1,8 +1,6 @@
 (** Conversions from a generic {!S2_shape.t} to typed geometry containers ({!S2_point.t}
     list, {!S2_polyline.t}, {!S2_polygon.t}). *)
 
-open Core
-
 (** [shape_to_points shape] returns the vertices of a 0-dimensional [shape] (one [v0] per
     edge). The empty shape returns an empty array. Caller must pass a shape with
     [dimension = 0]; behaviour is otherwise unspecified. *)

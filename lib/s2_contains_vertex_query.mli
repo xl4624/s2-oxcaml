@@ -18,8 +18,6 @@
 
     This type is not thread-safe; each thread should construct its own instance. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 type t

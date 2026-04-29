@@ -128,7 +128,7 @@ let test_project () =
           ~expected:true
           ~actual:
             (S2.S2_point.approx_equal
-               ~max_error:(Packed_float_option.Unboxed.none ())
+               ~max_error:(Packed_float_option.Unboxed.none)
                closest
                expected_closest))
 ;;
@@ -324,7 +324,7 @@ let test_project_fixture () =
       ~expected:true
       ~actual:
         (S2.S2_point.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none ())
+           ~max_error:(Packed_float_option.Unboxed.none)
            actual
            expected))
 ;;
@@ -343,7 +343,7 @@ let test_project_with_cross_fixture () =
       ~expected:true
       ~actual:
         (S2.S2_point.approx_equal
-           ~max_error:(Packed_float_option.Unboxed.none ())
+           ~max_error:(Packed_float_option.Unboxed.none)
            actual
            expected))
 ;;

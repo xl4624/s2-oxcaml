@@ -80,10 +80,6 @@ let[@inline] [@zero_alloc] edge t k = R3_vector.normalize (edge_raw t k)
 let[@inline] [@zero_alloc] center_raw t = S2_cell_id.to_point_raw t.#id
 let[@inline] [@zero_alloc] center t = S2_cell_id.to_point t.#id
 
-let[@inline] [@zero_alloc] uv_endpoint interval i =
-  if i = 0 then R1_interval.lo interval else R1_interval.hi interval
-;;
-
 let[@inline] [@zero_alloc] average_area level =
   (* AvgArea = 4*pi / (6 * 4^level): divide the sphere (area 4*pi) evenly over
      the 6 * 4^level cells at the given level. *)

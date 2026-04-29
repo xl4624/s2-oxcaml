@@ -82,7 +82,7 @@ let[@inline] [@zero_alloc] add_point t p : t =
 
 let[@inline] [@zero_alloc] project t p : Packed_float_option.Unboxed.t =
   if is_empty t
-  then Packed_float_option.Unboxed.none ()
+  then Packed_float_option.Unboxed.none
   else Packed_float_option.Unboxed.some (Float_u.clamp_exn p ~min:t.#lo ~max:t.#hi)
 ;;
 

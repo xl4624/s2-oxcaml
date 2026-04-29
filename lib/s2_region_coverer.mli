@@ -33,8 +33,6 @@
     Always set a finite [max_level] when computing interior coverings; otherwise the
     search can drill all the way to leaf level in regions with no interior. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 type t

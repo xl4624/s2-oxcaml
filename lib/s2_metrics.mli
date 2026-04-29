@@ -18,8 +18,6 @@
     - The constants assume the quadratic cell projection. The S2 library supports only
       this projection at runtime, so there is no way to select another. *)
 
-open Core
-
 [@@@zero_alloc all]
 
 (** A cell metric. [dim] is 1 for length metrics and 2 for area metrics. [deriv] is a
