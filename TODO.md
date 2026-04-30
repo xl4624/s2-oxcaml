@@ -89,14 +89,13 @@ pulls them out as first-class ports so callers can use them directly.
   - Deps: `s2_shape`
 
 - [x] **s2_shapeutil_conversion** - `S2_shapeutil_conversion`
-      (`shape_to_points`, `shape_to_polyline`, `shape_to_polygon`. Inlines a
-      private `chain_vertices` helper since `s2_shape_measures` (Tier 10) is
-      not yet ported. `shape_to_polygon` recognises the full-polygon
-      convention up front and routes single-loop shapes through
-      `S2_polygon.of_loops` and multi-loop shapes through
-      `S2_polygon.of_oriented_loops`.)
+      (`shape_to_points`, `shape_to_polyline`, `shape_to_polygon`. Now uses
+      `S2_shape_measures.chain_vertices` for the per-chain vertex walk.
+      `shape_to_polygon` recognises the full-polygon convention up front
+      and routes single-loop shapes through `S2_polygon.of_loops` and
+      multi-loop shapes through `S2_polygon.of_oriented_loops`.)
   - C++: `s2shapeutil_conversion.h`, `.cc`
-  - Deps: `s2_shape`, `s2_polygon`, `s2_polyline`
+  - Deps: `s2_shape`, `s2_polygon`, `s2_polyline`, `s2_shape_measures`
 
 - [x] **s2_shapeutil_build_polygon_boundaries** -
       `S2_shapeutil_build_polygon_boundaries.build_polygon_boundaries`
@@ -127,9 +126,14 @@ pulls them out as first-class ports so callers can use them directly.
 
 ## Tier 10 - Shape-index measures and regions
 
-- [ ] **s2_shape_measures** - `S2_shape_measures`
-  - C++: `s2shape_measures.h`, `.cc` (~160 lines)
-  - Deps: `s2_shape`, `s2_measures`, `s2_loop_measures`
+- [x] **s2_shape_measures** - `S2_shape_measures` (`length`, `perimeter`,
+      `area`, `approx_area`, `centroid`, `chain_vertices`). The
+      area/perimeter helpers route through `S2_loop_measures` per chain so
+      holes cancel against shells via `signed_area`. `chain_vertices` is
+      now exposed and replaces the duplicated helper that lived inside
+      `s2_shapeutil_conversion`.
+  - C++: `s2shape_measures.h`, `.cc`
+  - Deps: `s2_shape`, `s2_loop_measures`, `s2_polyline_measures`
 
 - [ ] **s2_shape_index_measures** - `S2_shape_index_measures`
   - C++: `s2shape_index_measures.h`, `.cc` (~100 lines)
