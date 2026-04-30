@@ -571,9 +571,13 @@ for large indexes.
 - [ ] `clipped_edge = { face_edge : face_edge; bound : R2_rect.t }`
       (depends on the previous item).
 - [ ] `build_entry = { cell_id : S2_cell_id.t; cell : Index_cell.t }`:
-      paired with its parallel array during intermediate sort; either mark
-      `[@@unboxed]` once `cell_id` lives in a struct field supporting it,
-      or migrate to two parallel arrays.
+      record itself stays boxed (mixed `bits64 & value` layout, can't be
+      unboxed for list/array storage), but storage moved from
+      `build_entry list` to `build_entry Dynarray.t`. Drops the per-cell
+      list-cons cell; the `Array.sort` in `rebuild_cell_ids` now operates
+      on a copied flat array. Same change applied to `face_edge list array`
+      (per-face accumulator in `apply_updates_internal`) -> `face_edge
+      Dynarray.t array`.
 
 ### Callback / closure allocation on shape conversion
 

@@ -68,8 +68,9 @@ end
 type shape_box = { shape : S2_shape.t }
 
 (* Boxed (cell_id, cell) pair so that bits64-layout cell ids can participate in the
-   intermediate list used while the build is in progress. The sorted arrays produced by
-   [rebuild_cell_ids] drop this wrapper. *)
+   intermediate buffer used while the build is in progress. The sorted arrays produced by
+   [rebuild_cell_ids] drop this wrapper. Stored in a [Dynarray] (not a list) so the
+   per-cell push avoids the list-cons allocation; the boxed record itself stays. *)
 type build_entry =
   { cell_id : S2_cell_id.t
   ; cell : Index_cell.t
@@ -96,7 +97,7 @@ type index =
   ; mutable next_shape_id : int
   ; max_edges_per_cell : int
   ; cell_padding : float#
-  ; mutable build_entries : build_entry list
+  ; build_entries : build_entry Dynarray.t
   ; mutable cell_ids_sorted : S2_cell_id.t array
   ; mutable cells_sorted : Index_cell.t array
   ; mutable fresh : bool
@@ -224,7 +225,7 @@ let tracker_test_edge t fe =
    [cell_padding]. If both endpoints lie strictly inside one face (with room for padding)
    we take the fast path and skip the 6-way clip. The resulting (per-face) lists drive the
    face-by-face recursive subdivision in [update_face_edges]. *)
-let add_face_edge (fe : face_edge) (all_edges : face_edge list array) =
+let add_face_edge (fe : face_edge) (all_edges : face_edge Dynarray.t array) =
   let v0 = fe.v0 in
   let v1 = fe.v1 in
   let a_face = S2_coords.get_face (S2_point.to_r3 v0) in
@@ -241,7 +242,7 @@ let add_face_edge (fe : face_edge) (all_edges : face_edge list array) =
          && Float_u.abs (R2_point.y b) <= max_uv)
     then (
       let fe = { fe with a; b } in
-      all_edges.(a_face) <- fe :: all_edges.(a_face))
+      Dynarray.add_last all_edges.(a_face) fe)
     else
       for face = 0 to 5 do
         match%optional_u.S2_edge_clipping.Clipped_uv.Option
@@ -255,7 +256,7 @@ let add_face_edge (fe : face_edge) (all_edges : face_edge list array) =
             ; b = S2_edge_clipping.Clipped_uv.b clipped
             }
           in
-          all_edges.(face) <- fe :: all_edges.(face)
+          Dynarray.add_last all_edges.(face) fe
       done)
   else
     for face = 0 to 5 do
@@ -270,7 +271,7 @@ let add_face_edge (fe : face_edge) (all_edges : face_edge list array) =
           ; b = S2_edge_clipping.Clipped_uv.b clipped
           }
         in
-        all_edges.(face) <- fe :: all_edges.(face)
+        Dynarray.add_last all_edges.(face) fe
     done
 ;;
 
@@ -325,18 +326,17 @@ let add_shape_internal (_idx : index) shape_id (shape : S2_shape.t) all_edges t 
 ;;
 
 let rebuild_cell_ids (t : index) =
-  let entries =
-    List.sort t.build_entries ~compare:(fun a b -> S2_cell_id.compare a.cell_id b.cell_id)
-  in
-  let n = List.length entries in
+  let n = Dynarray.length t.build_entries in
+  let entries = Array.init n ~f:(fun i -> Dynarray.get t.build_entries i) in
+  Array.sort entries ~compare:(fun a b -> S2_cell_id.compare a.cell_id b.cell_id);
   let ids = Array.create ~len:n S2_cell_id.none in
   let cells = Array.create ~len:n #{ Index_cell.shapes = [||] } in
-  List.iteri entries ~f:(fun i e ->
+  Array.iteri entries ~f:(fun i e ->
     ids.(i) <- e.cell_id;
     cells.(i) <- e.cell);
   t.cell_ids_sorted <- ids;
   t.cells_sorted <- cells;
-  t.build_entries <- []
+  Dynarray.clear t.build_entries
 ;;
 
 let shrink_to_fit_index (_t : index) pcell bound ~is_first_update:_ =
@@ -500,8 +500,9 @@ let make_index_cell (t : index) pcell edges tracker : bool =
         shapes_arr.(i) <- clipped
       done;
       let icell : Index_cell.t = #{ shapes = shapes_arr } in
-      t.build_entries
-      <- { cell_id = S2_padded_cell.id pcell; cell = icell } :: t.build_entries;
+      Dynarray.add_last
+        t.build_entries
+        { cell_id = S2_padded_cell.id pcell; cell = icell };
       if tracker.is_active && not (List.is_empty edges)
       then (
         tracker_draw_to tracker (S2_padded_cell.exit_vertex pcell);
@@ -598,17 +599,24 @@ and update_edges t pcell edges tracker ~disjoint_from_index:_ =
     done)
 ;;
 
-let update_face_edges (t : index) face face_edges tracker ~is_first_update =
-  let face_edges = List.rev face_edges in
-  let num_edges = List.length face_edges in
+let update_face_edges
+  (t : index)
+  face
+  (face_edges : face_edge Dynarray.t)
+  tracker
+  ~is_first_update
+  =
+  let num_edges = Dynarray.length face_edges in
   if num_edges = 0 && List.is_empty tracker.shape_ids
   then ()
   else (
-    let clipped_edges =
-      List.map face_edges ~f:(fun (fe : face_edge) ->
-        let bound = R2_rect.from_point_pair fe.a fe.b in
-        { face_edge = fe; bound })
-    in
+    let clipped_edges = ref [] in
+    for i = num_edges - 1 downto 0 do
+      let fe = Dynarray.get face_edges i in
+      let bound = R2_rect.from_point_pair fe.a fe.b in
+      clipped_edges := { face_edge = fe; bound } :: !clipped_edges
+    done;
+    let clipped_edges = !clipped_edges in
     let clipped_edges =
       List.sort clipped_edges ~compare:(fun x y ->
         let c = Int.compare x.face_edge.shape_id y.face_edge.shape_id in
@@ -647,11 +655,11 @@ let update_face_edges (t : index) face face_edges tracker ~is_first_update =
    sweep along the Hilbert curve, so containment flags for polygon shapes emerge naturally
    as the tracker's focus crosses edges. *)
 let apply_updates_internal (t : index) =
-  t.build_entries <- [];
+  Dynarray.clear t.build_entries;
   t.cell_ids_sorted <- [||];
   t.cells_sorted <- [||];
   let tracker = create_tracker () in
-  let all_edges = Array.init 6 ~f:(fun _ -> []) in
+  let all_edges = Array.init 6 ~f:(fun _ -> Dynarray.create ()) in
   for id = 0 to t.next_shape_id - 1 do
     let { shape } = t.shapes.(id) in
     add_shape_internal t id shape all_edges tracker
@@ -671,7 +679,7 @@ let create ?(max_edges_per_cell = 10) () =
   ; next_shape_id = 0
   ; max_edges_per_cell
   ; cell_padding
-  ; build_entries = []
+  ; build_entries = Dynarray.create ()
   ; cell_ids_sorted = [||]
   ; cells_sorted = [||]
   ; fresh = true
