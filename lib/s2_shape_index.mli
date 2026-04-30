@@ -48,7 +48,7 @@ end
     flag indicating whether the cell's center lies inside the shape, and the ids of edges
     that actually intersect the cell. Edges are sorted by ascending edge id. *)
 module Clipped_shape : sig
-  type t
+  type t : value & value & value [@@deriving unboxed_option { none = #{ shape_id = -1 } }]
 
   (** [shape_id t] returns the shape id this clipped view refers to. *)
   val shape_id : t -> int
@@ -77,9 +77,10 @@ module Index_cell : sig
       if [i] is out of range. *)
   val clipped : t -> int -> Clipped_shape.t
 
-  (** [find_clipped t ~shape_id] returns the clipped view for [shape_id], or [None] if the
-      shape does not intersect this cell. *)
-  val find_clipped : t -> shape_id:int -> Clipped_shape.t option
+  (** [find_clipped t ~shape_id] returns the clipped view for [shape_id], or
+      [Clipped_shape.Option.none] if the shape does not intersect this cell. Branch via
+      [match%optional_u.Clipped_shape.Option] to avoid allocation. *)
+  val find_clipped : t -> shape_id:int -> Clipped_shape.Option.t
 end
 
 (** A random-access iterator over index cells in ascending {!S2_cell_id.t} order. *)

@@ -597,15 +597,15 @@ Several public APIs return a value-layout `option` that allocates a `Some _`
 on every successful call. Each one wants either an `unboxed_option` deriver
 on the result type, or a sentinel-style API rewrite.
 
-- [ ] `S2_shape_index.Index_cell.find_clipped : t -> shape_id:int ->
-      Clipped_shape.t option`. Called per cell from
-      `S2_crossing_edge_query.get_candidates_for_shape` and (less hot) from
-      `S2_shape_index_region` / `S2_validation_query` when those land.
-      `Clipped_shape.t` is a value-layout abstract type; the simplest fix
-      is to derive `unboxed_option` on `Clipped_shape.t` (it has an obvious
-      sentinel since `shape_id = -1` is unused). Failing that, expose a
-      sentinel-checking accessor (e.g., `find_clipped_or_empty`) so callers
-      can branch without an `option` wrapper.
+- [x] `S2_shape_index.Index_cell.find_clipped` now returns
+      `Clipped_shape.Option.t`. `Clipped_shape.t` was converted to an unboxed
+      record `#{ shape_id : int [@uopt.sentinel]; contains_center : bool;
+      edges : int array }` and derives `unboxed_option` with an explicit
+      `none = #{ shape_id = -1; ... }`. The `[@uopt.sentinel]` attribute
+      (added in `ppx_uopt`) restricts `is_none` to a single integer compare
+      on `shape_id`, so the lookup is zero-alloc by construction. The build
+      pipeline switched from a list accumulator to a pre-sized array because
+      lists require value-layout elements.
 - [x] `S2_edge_clipping.clip_to_face` and `S2_edge_clipping.clip_edge`
       now return `Clipped_uv.Option.t`. `Clipped_uv` lives as a submodule of
       `S2_edge_clipping`, with `t = #{ a : R2_point.t; b : R2_point.t }` and

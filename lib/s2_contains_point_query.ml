@@ -89,7 +89,7 @@ let shape_contains t ~shape_id p =
   if not (S2_shape_index.Iterator.locate_point t.iter p)
   then false
   else (
-    match
+    match%optional_u.S2_shape_index.Clipped_shape.Option
       S2_shape_index.Index_cell.find_clipped
         (S2_shape_index.Iterator.index_cell t.iter)
         ~shape_id

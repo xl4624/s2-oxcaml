@@ -8,16 +8,22 @@ module Cell_relation = struct
 end
 
 module Clipped_shape = struct
+  (* [shape_id < 0] is the [none] sentinel. Real ids are dense and non-negative, so they
+     never collide with the sentinel; [some] is the identity, so a successful lookup
+     allocates nothing. The partial [none] override lists only [shape_id], so [is_none] is
+     a single integer compare on that field; the other fields take placeholder values in
+     the synthesised [none] but are never inspected at runtime. *)
   type t =
-    { shape_id : int
-    ; contains_center : bool
-    ; edges : int array
-    }
+    #{ shape_id : int
+     ; contains_center : bool
+     ; edges : int array
+     }
+  [@@deriving unboxed_option { none = #{ shape_id = -1 } }]
 
-  let shape_id t = t.shape_id
-  let contains_center t = t.contains_center
-  let num_edges t = Array.length t.edges
-  let edge t i = t.edges.(i)
+  let[@inline] [@zero_alloc] shape_id t = t.#shape_id
+  let[@inline] [@zero_alloc] contains_center t = t.#contains_center
+  let[@inline] [@zero_alloc] num_edges t = Array.length t.#edges
+  let[@inline] [@zero_alloc] edge t i = t.#edges.(i)
 end
 
 module Index_cell = struct
@@ -40,9 +46,9 @@ module Index_cell = struct
     let n = Array.length t.shapes in
     let rec loop i =
       if i >= n
-      then None
-      else if t.shapes.(i).shape_id = shape_id
-      then Some t.shapes.(i)
+      then Clipped_shape.Option.none
+      else if t.shapes.(i).#shape_id = shape_id
+      then Clipped_shape.Option.some t.shapes.(i)
       else loop (i + 1)
     in
     loop 0
@@ -439,14 +445,18 @@ let make_index_cell (t : index) pcell edges tracker : bool =
         test_all_edges edges tracker);
       let cshape_ids = tracker.shape_ids in
       let num_shapes = count_shapes edges cshape_ids in
-      let cell_shapes = ref [] in
+      let shapes_arr =
+        Array.create
+          ~len:num_shapes
+          #{ Clipped_shape.shape_id = 0; contains_center = false; edges = [||] }
+      in
       let e_next = ref 0 in
       let edges_arr = Array.of_list edges in
       let n_e = Array.length edges_arr in
       let c_next_idx = ref 0 in
       let cshape_ids_arr = Array.of_list cshape_ids in
       let n_c = Array.length cshape_ids_arr in
-      for _i = 0 to num_shapes - 1 do
+      for i = 0 to num_shapes - 1 do
         let eshape_id =
           if !e_next >= n_e
           then t.next_shape_id
@@ -460,7 +470,7 @@ let make_index_cell (t : index) pcell edges tracker : bool =
           if cshape_id < eshape_id
           then (
             incr c_next_idx;
-            { shape_id = cshape_id; contains_center = true; edges = [||] })
+            #{ shape_id = cshape_id; contains_center = true; edges = [||] })
           else (
             while !e_next < n_e && edges_arr.(!e_next).face_edge.shape_id = eshape_id do
               incr e_next
@@ -477,11 +487,10 @@ let make_index_cell (t : index) pcell edges tracker : bool =
                 true)
               else false
             in
-            { shape_id = eshape_id; contains_center; edges = ed })
+            #{ shape_id = eshape_id; contains_center; edges = ed })
         in
-        cell_shapes := clipped :: !cell_shapes
+        shapes_arr.(i) <- clipped
       done;
-      let shapes_arr = Array.of_list (List.rev !cell_shapes) in
       let icell : Index_cell.t = { shapes = shapes_arr } in
       t.build_entries
       <- { cell_id = S2_padded_cell.id pcell; cell = icell } :: t.build_entries;

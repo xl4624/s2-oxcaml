@@ -361,7 +361,9 @@ let get_candidates_for_shape t ~a ~b ~shape_id ~(shape : S2_shape.t) =
   else (
     let buf = id_buf_create () in
     visit_cells t ~a ~b ~visit:(fun cell ->
-      match S2_shape_index.Index_cell.find_clipped cell ~shape_id with
+      match%optional_u.S2_shape_index.Clipped_shape.Option
+        S2_shape_index.Index_cell.find_clipped cell ~shape_id
+      with
       | None -> true
       | Some clipped ->
         let ne = S2_shape_index.Clipped_shape.num_edges clipped in
