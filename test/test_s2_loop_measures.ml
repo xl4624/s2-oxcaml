@@ -99,7 +99,7 @@ let test_canonical_loop_order () =
     let expected_first = int_of_json_exn (member "first" c) in
     let expected_dir = int_of_json_exn (member "dir" c) in
     let loop = make_char_loop input in
-    let { S2.S2_loop_measures.first; dir } =
+    let #{ S2.S2_loop_measures.first; dir } =
       S2.S2_loop_measures.canonical_loop_order loop
     in
     (check int) (sprintf "canonical(%s).first" input) expected_first first;
@@ -197,7 +197,7 @@ let check_measures label c =
     (sprintf "%s is_normalized" label)
     expected_is_normalized
     actual_is_normalized;
-  let { S2.S2_loop_measures.first; dir } =
+  let #{ S2.S2_loop_measures.first; dir } =
     S2.S2_loop_measures.canonical_loop_order loop
   in
   (check int) (sprintf "%s canonical.first" label) expected_first first;

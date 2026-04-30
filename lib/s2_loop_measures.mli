@@ -93,9 +93,9 @@ val is_normalized : S2_point.t array -> bool
     direction [dir] (either [+1] or [-1]). The sequence of [n] vertices visited is
     [(first, first + dir, ..., first + (n - 1) * dir)], interpreted modulo [n]. *)
 type loop_order =
-  { first : int
-  ; dir : int
-  }
+  #{ first : int
+   ; dir : int
+   }
 [@@deriving sexp_of]
 
 val sexp_of_loop_order : loop_order -> Sexp.t [@@zero_alloc ignore]
