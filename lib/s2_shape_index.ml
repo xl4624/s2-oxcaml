@@ -718,7 +718,7 @@ module Iterator = struct
     { index : index
     ; mutable position : int
     ; mutable cur_id : S2_cell_id.t
-    ; mutable cur_cell : Index_cell.t option
+    ; mutable cur_cell : Index_cell.Option.t
     }
 
   let refresh it =
@@ -727,13 +727,15 @@ module Iterator = struct
     if it.position < n
     then (
       it.cur_id <- cells.(it.position);
-      it.cur_cell <- Some it.index.cells_sorted.(it.position))
+      it.cur_cell <- Index_cell.Option.some it.index.cells_sorted.(it.position))
     else (
       it.cur_id <- S2_cell_id.sentinel;
-      it.cur_cell <- None)
+      it.cur_cell <- Index_cell.Option.none)
   ;;
 
-  let create index = { index; position = 0; cur_id = S2_cell_id.none; cur_cell = None }
+  let create index =
+    { index; position = 0; cur_id = S2_cell_id.none; cur_cell = Index_cell.Option.none }
+  ;;
 
   let begin_at it =
     it.position <- 0;
@@ -777,7 +779,7 @@ module Iterator = struct
   let cell_id it = it.cur_id
 
   let index_cell it =
-    match it.cur_cell with
+    match%optional_u.Index_cell.Option it.cur_cell with
     | Some c -> c
     | None -> raise_s [%message "S2_shape_index.Iterator.index_cell: iterator at end"]
   ;;

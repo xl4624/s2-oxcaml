@@ -550,10 +550,13 @@ These wrap one value-layout field and exist only for typing. Marking them
       and the deriver applies `[@@zero_alloc assume]` (runtime cost is zero
       because the empty array is shared and the comparison short-circuits
       on length).
-- [ ] `s2_closest_edge_query.t.iter : S2_shape_index.Iterator.t option`
-      still boxes on iterator creation; needs an `Unboxed_option` on
-      `S2_shape_index.Iterator` (or an explicit "valid" flag) - more
-      involved because `Iterator` carries internal mutable state.
+- [x] `s2_closest_edge_query.t.iter` is now constructed eagerly at query
+      creation, so the field is `Iterator.t` (not `option`) and `ensure_iter`
+      is a single field load. The iterator is a small mutable struct and
+      `S2_shape_index.iterator` is idempotent over `build`, so the up-front
+      cost is negligible. Separately, `Iterator`'s internal
+      `cur_cell : Index_cell.t option` was migrated to `Index_cell.Option.t`,
+      so `next` / `seek` / `refresh` no longer allocate per cell-id move.
 
 ### Value-layout intermediates inside shape-index builds
 

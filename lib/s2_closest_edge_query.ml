@@ -111,7 +111,7 @@ end
 type t =
   { index : S2_shape_index.t
   ; mutable options : Options.t
-  ; mutable iter : S2_shape_index.Iterator.t option
+  ; iter : S2_shape_index.Iterator.t
   ; mutable index_num_edges : int
   ; mutable index_num_edges_limit : int
   ; mutable index_covering : S2_cell_id.t array
@@ -366,10 +366,14 @@ module Cell_queue = struct
 end
 
 let create ?(options = Options.create ()) index () =
-  S2_shape_index.build index;
+  (* [S2_shape_index.iterator] calls [build] internally and is idempotent, so constructing
+     the iterator eagerly avoids both the [Some _]-on-first-use allocation and the
+     lazy-init bookkeeping. The iterator is a small mutable struct, so the up-front cost
+     is negligible even for queries that never run. *)
+  let iter = S2_shape_index.iterator index in
   { index
   ; options
-  ; iter = None
+  ; iter
   ; index_num_edges = 0
   ; index_num_edges_limit = 0
   ; index_covering = [||]
@@ -380,15 +384,7 @@ let create ?(options = Options.create ()) index () =
 let index t = t.index
 let options t = t.options
 let set_options t o = t.options <- o
-
-let ensure_iter t =
-  match t.iter with
-  | Some it -> it
-  | None ->
-    let it = S2_shape_index.iterator t.index in
-    t.iter <- Some it;
-    it
-;;
+let[@inline] [@zero_alloc] ensure_iter t = t.iter
 
 let count_edges_up_to index ~limit =
   let n = S2_shape_index.num_shape_ids index in
