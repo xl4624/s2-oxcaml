@@ -599,11 +599,12 @@ on the result type, or a sentinel-style API rewrite.
 
 - [x] `S2_shape_index.Index_cell.find_clipped` now returns
       `Clipped_shape.Option.t`. `Clipped_shape.t` was converted to an unboxed
-      record `#{ shape_id : int [@uopt.sentinel]; contains_center : bool;
-      edges : int array }` and derives `unboxed_option` with an explicit
-      `none = #{ shape_id = -1; ... }`. The `[@uopt.sentinel]` attribute
-      (added in `ppx_uopt`) restricts `is_none` to a single integer compare
-      on `shape_id`, so the lookup is zero-alloc by construction. The build
+      record `#{ shape_id : int; contains_center : bool; edges : int array }`
+      and derives `unboxed_option { none = #{ shape_id = -1 } }`. Under
+      `ppx_uopt`'s partial-override semantics, fields listed in `none = ...`
+      are the `is_none` discriminators and omitted fields are payload-only
+      (placeholder `Obj.magic 0`, never observed); `is_none` here is one
+      integer compare on `shape_id`, statically `[@@zero_alloc]`. The build
       pipeline switched from a list accumulator to a pre-sized array because
       lists require value-layout elements.
 - [x] `S2_edge_clipping.clip_to_face` and `S2_edge_clipping.clip_edge`
@@ -620,12 +621,14 @@ on the result type, or a sentinel-style API rewrite.
 Current usages key by `int` or a value-layout wrapper. A bits64-keyed or
 `(int & int)`-keyed hash set is needed to avoid wrapping:
 
-- [ ] `s2_closest_edge_query.tested_edges : (int * int, unit) Hashtbl.t`
-      allocates a fresh boxed `(shape_id, edge_id)` pair on every
-      `maybe_add_result` call (see `s2_closest_edge_query.ml:415` and
-      `s2_closest_edge_query.ml:823-832`). Replace with an unboxed-key
-      `Int_pair_hash_set` helper in `util/` once it exists. The same
-      helper would benefit `s2_validation_query` when it lands.
+- [x] `s2_closest_edge_query.tested_edges` keys `(shape_id, edge_id)` pairs
+      packed into a single `int` via `pack_edge_key` (high 31 bits =
+      shape_id, low 32 bits = edge_id). The hashtable is now keyed by
+      `int` (immediate), so `Hashtbl.mem` / `Hashtbl.set` allocate
+      nothing. Aliases only if a single index has more than 2G shapes or
+      a single shape has more than 4G edges; both are far above any
+      realistic input. A future `s2_validation_query` can reuse the same
+      helper.
 
 ### Test-side boxing
 

@@ -1,5 +1,14 @@
 open Core
 
+(* Pack a (shape_id, edge_id) pair into a single OCaml int so a [Hashtbl.t] keyed by the
+   pair never has to allocate a boxed tuple per [mem]/[set]. Both ids are dense
+   non-negative integers; OCaml ints are 63 bits on 64-bit, so [shape_id] takes the high
+   31 bits and [edge_id] the low 32 bits without overlap for any realistic index (a shape
+   with > 4G edges, or > 2G shapes in one index, would alias). *)
+let[@inline] [@zero_alloc] pack_edge_key ~shape_id ~edge_id =
+  (shape_id lsl 32) lor edge_id
+;;
+
 module Options = struct
   type t =
     { mutable max_results : int
@@ -409,8 +418,10 @@ type ctx =
       (* [tested_edges] deduplicates (shape_id, edge_id) lookups when the target may
          re-enqueue the same edge across multiple cells. Only populated when
          [avoid_duplicates] is set, which happens for [Shape_index] targets with
-         [max_results > 1] and a non-zero [max_error]. *)
-  ; tested_edges : (int * int, unit) Hashtbl.t
+         [max_results > 1] and a non-zero [max_error]. The key is the pair packed into a
+         single int via [pack_edge_key] so the hashtable is keyed by an immediate (no
+         per-lookup tuple allocation). *)
+  ; tested_edges : (int, unit) Hashtbl.t
   ; queue : Cell_queue.t
   }
 
@@ -426,7 +437,7 @@ let make_ctx query target opts =
   ; result_singleton = Result.empty
   ; result_vector = []
   ; result_set = []
-  ; tested_edges = Hashtbl.Poly.create ()
+  ; tested_edges = Hashtbl.create (module Int)
   ; queue
   }
 ;;
@@ -821,7 +832,7 @@ and maybe_add_result ctx (shape : S2_shape.t) shape_id edge_id =
   let seen =
     if ctx.avoid_duplicates
     then (
-      let key = shape_id, edge_id in
+      let key = pack_edge_key ~shape_id ~edge_id in
       if Hashtbl.mem ctx.tested_edges key
       then true
       else (
