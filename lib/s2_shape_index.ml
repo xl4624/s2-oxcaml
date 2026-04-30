@@ -27,28 +27,36 @@ module Clipped_shape = struct
 end
 
 module Index_cell = struct
-  type t = { shapes : Clipped_shape.t array } [@@unboxed]
+  (* Empty [shapes] is the [none] sentinel: real index cells are never constructed empty
+     (the build code emits a cell only when at least one clipped shape or a tracked
+     containing shape exists), so [num_clipped = 0] unambiguously means [none]. The
+     discriminator is opaque to [ppx_uopt] (it's an array), so [is_none] uses
+     [Stdlib.( = ) v.#shapes [||]] which lowers to [caml_equal]; in practice the static
+     checker can't see specialisation but the runtime cost is zero, so [ppx_uopt] applies
+     [@@zero_alloc assume]. *)
+  type t = #{ shapes : Clipped_shape.t array }
+  [@@deriving unboxed_option { none = #{ shapes = [||] } }]
 
-  let num_clipped t = Array.length t.shapes
+  let num_clipped t = Array.length t.#shapes
 
   let clipped t i =
-    if i < 0 || i >= Array.length t.shapes
+    if i < 0 || i >= Array.length t.#shapes
     then
       raise_s
         [%message
           "S2_shape_index.Index_cell.clipped: index out of range"
             (i : int)
-            ~num_clipped:(Array.length t.shapes : int)];
-    t.shapes.(i)
+            ~num_clipped:(Array.length t.#shapes : int)];
+    t.#shapes.(i)
   ;;
 
   let find_clipped t ~shape_id =
-    let n = Array.length t.shapes in
+    let n = Array.length t.#shapes in
     let rec loop i =
       if i >= n
       then Clipped_shape.Option.none
-      else if t.shapes.(i).#shape_id = shape_id
-      then Clipped_shape.Option.some t.shapes.(i)
+      else if t.#shapes.(i).#shape_id = shape_id
+      then Clipped_shape.Option.some t.#shapes.(i)
       else loop (i + 1)
     in
     loop 0
@@ -322,7 +330,7 @@ let rebuild_cell_ids (t : index) =
   in
   let n = List.length entries in
   let ids = Array.create ~len:n S2_cell_id.none in
-  let cells = Array.create ~len:n { Index_cell.shapes = [||] } in
+  let cells = Array.create ~len:n #{ Index_cell.shapes = [||] } in
   List.iteri entries ~f:(fun i e ->
     ids.(i) <- e.cell_id;
     cells.(i) <- e.cell);
@@ -491,7 +499,7 @@ let make_index_cell (t : index) pcell edges tracker : bool =
         in
         shapes_arr.(i) <- clipped
       done;
-      let icell : Index_cell.t = { shapes = shapes_arr } in
+      let icell : Index_cell.t = #{ shapes = shapes_arr } in
       t.build_entries
       <- { cell_id = S2_padded_cell.id pcell; cell = icell } :: t.build_entries;
       if tracker.is_active && not (List.is_empty edges)

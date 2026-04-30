@@ -115,7 +115,7 @@ type t =
   ; mutable index_num_edges : int
   ; mutable index_num_edges_limit : int
   ; mutable index_covering : S2_cell_id.t array
-  ; mutable index_cells : S2_shape_index.Index_cell.t option array
+  ; mutable index_cells : S2_shape_index.Index_cell.Option.t array
   }
 
 module Target = struct
@@ -245,20 +245,20 @@ let visit_containing_shape_ids (target : Target.t) query_index ~f =
 
 (* Min-heap of cell frontier entries keyed on lower-bound distance. Stored as three
    parallel arrays rather than an array of records so that S1_chord_angle (a float#) and
-   S2_cell_id (int64#) slots stay tightly packed, and so that the [Index_cell.t option]
+   S2_cell_id (int64#) slots stay tightly packed, and so that the [Index_cell.Option.t]
    slot is only written when an indexed cell is known. Standard binary-heap layout:
    children of index i are at 2i+1 and 2i+2. *)
 module Cell_queue = struct
   type entry =
     #{ distance : S1_chord_angle.t
      ; id : S2_cell_id.t
-     ; index_cell : S2_shape_index.Index_cell.t option
+     ; index_cell : S2_shape_index.Index_cell.Option.t
      }
 
   type t =
     { mutable distances : S1_chord_angle.t array
     ; mutable ids : S2_cell_id.t array
-    ; mutable cells : S2_shape_index.Index_cell.t option array
+    ; mutable cells : S2_shape_index.Index_cell.Option.t array
     ; mutable size : int
     }
 
@@ -268,7 +268,7 @@ module Cell_queue = struct
 
   let clear t =
     for i = 0 to t.size - 1 do
-      t.cells.(i) <- None
+      t.cells.(i) <- S2_shape_index.Index_cell.Option.none
     done;
     t.size <- 0
   ;;
@@ -278,7 +278,7 @@ module Cell_queue = struct
     let new_cap = if cap = 0 then initial_cap else cap * 2 in
     let new_d = Array.create ~len:new_cap S1_chord_angle.zero in
     let new_i = Array.create ~len:new_cap S2_cell_id.none in
-    let new_c = Array.create ~len:new_cap None in
+    let new_c = Array.create ~len:new_cap S2_shape_index.Index_cell.Option.none in
     for i = 0 to t.size - 1 do
       new_d.(i) <- t.distances.(i);
       new_i.(i) <- t.ids.(i);
@@ -358,7 +358,7 @@ module Cell_queue = struct
       t.distances.(0) <- t.distances.(last);
       t.ids.(0) <- t.ids.(last);
       t.cells.(0) <- t.cells.(last));
-    t.cells.(last) <- None;
+    t.cells.(last) <- S2_shape_index.Index_cell.Option.none;
     t.size <- last;
     sift_down t;
     #{ distance = d; id; index_cell = cell }
@@ -489,7 +489,7 @@ let init_covering t =
   let _ = S2_shape_index.Iterator.prev last_iter in
   let cov_cap = 6 in
   let cov_arr = Array.create ~len:cov_cap S2_cell_id.none in
-  let cell_arr = Array.create ~len:cov_cap None in
+  let cell_arr = Array.create ~len:cov_cap S2_shape_index.Index_cell.Option.none in
   let count = ref 0 in
   let push_cover id cell_opt =
     cov_arr.(!count) <- id;
@@ -498,10 +498,12 @@ let init_covering t =
   in
   let add_initial_range first_id first_cell last_id =
     if S2_cell_id.equal first_id last_id
-    then push_cover first_id (Some first_cell)
+    then push_cover first_id (S2_shape_index.Index_cell.Option.some first_cell)
     else (
       let level = S2_cell_id.get_common_ancestor_level first_id last_id in
-      push_cover (S2_cell_id.parent_level first_id level) None)
+      push_cover
+        (S2_cell_id.parent_level first_id level)
+        S2_shape_index.Index_cell.Option.none)
   in
   if not (S2_shape_index.Iterator.is_done next)
   then (
@@ -647,7 +649,7 @@ and find_edges_optimized ctx =
       Cell_queue.clear ctx.queue;
       stop := true)
     else (
-      match entry.#index_cell with
+      match%optional_u.S2_shape_index.Index_cell.Option entry.#index_cell with
       | Some _ -> process_edges ctx entry
       | None ->
         let iter = ensure_iter ctx.query in
@@ -687,7 +689,7 @@ and find_edges_optimized ctx =
   done
 
 and process_edges ctx (entry : Cell_queue.entry) =
-  match entry.#index_cell with
+  match%optional_u.S2_shape_index.Index_cell.Option entry.#index_cell with
   | None -> ()
   | Some cell ->
     let nc = S2_shape_index.Index_cell.num_clipped cell in
@@ -704,17 +706,27 @@ and process_edges ctx (entry : Cell_queue.entry) =
 
 and process_or_enqueue_from_iter ctx iter id =
   if S2_cell_id.equal (S2_shape_index.Iterator.cell_id iter) id
-  then process_or_enqueue ctx id (Some (S2_shape_index.Iterator.index_cell iter))
-  else process_or_enqueue ctx id None
+  then
+    process_or_enqueue
+      ctx
+      id
+      (S2_shape_index.Index_cell.Option.some (S2_shape_index.Iterator.index_cell iter))
+  else process_or_enqueue ctx id S2_shape_index.Index_cell.Option.none
 
 and process_or_enqueue ctx id index_cell =
-  match index_cell with
+  match%optional_u.S2_shape_index.Index_cell.Option index_cell with
   | Some cell ->
     let n = count_cell_edges cell in
     if n = 0
     then ()
     else if n < 10
-    then process_edges ctx #{ distance = S1_chord_angle.zero; id; index_cell = Some cell }
+    then
+      process_edges
+        ctx
+        #{ distance = S1_chord_angle.zero
+         ; id
+         ; index_cell = S2_shape_index.Index_cell.Option.some cell
+         }
     else (
       let cell_shape = S2_cell.of_cell_id id in
       match%optional_u.S1_chord_angle.Option
@@ -727,7 +739,9 @@ and process_or_enqueue ctx id index_cell =
           then S1_chord_angle.sub d ctx.opts.max_error
           else d
         in
-        Cell_queue.add ctx.queue #{ distance = d; id; index_cell = Some cell })
+        Cell_queue.add
+          ctx.queue
+          #{ distance = d; id; index_cell = S2_shape_index.Index_cell.Option.some cell })
   | None ->
     let cell_shape = S2_cell.of_cell_id id in
     (match%optional_u.S1_chord_angle.Option
@@ -740,7 +754,9 @@ and process_or_enqueue ctx id index_cell =
          then S1_chord_angle.sub d ctx.opts.max_error
          else d
        in
-       Cell_queue.add ctx.queue #{ distance = d; id; index_cell = None })
+       Cell_queue.add
+         ctx.queue
+         #{ distance = d; id; index_cell = S2_shape_index.Index_cell.Option.none })
 
 and init_queue ctx =
   let cap = target_cap_bound ctx.target in
@@ -758,7 +774,9 @@ and init_queue ctx =
           ctx
           #{ distance = S1_chord_angle.zero
            ; id = S2_shape_index.Iterator.cell_id iter
-           ; index_cell = Some (S2_shape_index.Iterator.index_cell iter)
+           ; index_cell =
+               S2_shape_index.Index_cell.Option.some
+                 (S2_shape_index.Iterator.index_cell iter)
            });
     if S1_chord_angle.is_zero ctx.distance_limit
     then ()
@@ -814,7 +832,8 @@ and init_queue ctx =
                 process_or_enqueue
                   ctx
                   (S2_shape_index.Iterator.cell_id iter)
-                  (Some (S2_shape_index.Iterator.index_cell iter));
+                  (S2_shape_index.Index_cell.Option.some
+                     (S2_shape_index.Iterator.index_cell iter));
                 let last_id =
                   S2_cell_id.range_max (S2_shape_index.Iterator.cell_id iter)
                 in
@@ -823,7 +842,7 @@ and init_queue ctx =
                   incr i
                 done
               | Subdivided ->
-                process_or_enqueue ctx id_i None;
+                process_or_enqueue ctx id_i S2_shape_index.Index_cell.Option.none;
                 incr i
               | Disjoint -> incr i))
         done)))

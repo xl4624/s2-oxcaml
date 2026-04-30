@@ -66,9 +66,10 @@ module Clipped_shape : sig
 end
 
 (** The payload stored at a single {!S2_cell_id.t} key: a collection of {!Clipped_shape.t}
-    values, sorted by ascending [shape_id]. *)
+    values, sorted by ascending [shape_id]. The empty cell is reserved as the [none]
+    sentinel for {!Index_cell.Option}; real cells always have at least one clipped shape. *)
 module Index_cell : sig
-  type t
+  type t : value [@@deriving unboxed_option { none = #{ shapes = [||] } }]
 
   (** [num_clipped t] is the number of shapes that intersect this cell. *)
   val num_clipped : t -> int

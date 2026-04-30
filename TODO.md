@@ -539,11 +539,21 @@ These wrap one value-layout field and exist only for typing. Marking them
       Both share the dominant cost (the shape index build), so an unused
       crossing query just costs one iterator allocation, and the per-loop
       `Some _` allocation is gone.
-- [ ] `s2_closest_edge_query.t.iter : S2_shape_index.Iterator.t option` and
-      its per-entry `S2_shape_index.Index_cell.t option` array box on
-      iterator creation. Give `S2_shape_index.Iterator` and `Index_cell` a
-      dedicated `Unboxed_option` (or switch to an explicit "valid" flag)
-      and migrate the caller.
+- [x] `s2_closest_edge_query` per-entry `S2_shape_index.Index_cell.t option`
+      slots dropped: `S2_shape_index.Index_cell` now derives
+      `unboxed_option { none = #{ shapes = [||] } }`, with the empty cell as
+      the sentinel (real index cells always have at least one clipped
+      shape). The per-entry `Some _ / None` allocations on the
+      `process_or_enqueue` and queue paths are gone; pattern matches use
+      `match%optional_u.S2_shape_index.Index_cell.Option`. `is_none` uses
+      `Stdlib.( = )` on the array sentinel, so it lowers to `caml_equal`
+      and the deriver applies `[@@zero_alloc assume]` (runtime cost is zero
+      because the empty array is shared and the comparison short-circuits
+      on length).
+- [ ] `s2_closest_edge_query.t.iter : S2_shape_index.Iterator.t option`
+      still boxes on iterator creation; needs an `Unboxed_option` on
+      `S2_shape_index.Iterator` (or an explicit "valid" flag) - more
+      involved because `Iterator` carries internal mutable state.
 
 ### Value-layout intermediates inside shape-index builds
 
