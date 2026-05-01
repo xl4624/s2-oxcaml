@@ -135,8 +135,13 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shape_measures.h`, `.cc`
   - Deps: `s2_shape`, `s2_loop_measures`, `s2_polyline_measures`
 
-- [ ] **s2_shape_index_measures** - `S2_shape_index_measures`
-  - C++: `s2shape_index_measures.h`, `.cc` (~100 lines)
+- [x] **s2_shape_index_measures** - `S2_shape_index_measures` (`dimension`,
+      `num_points`, `length`, `perimeter`, `area`, `approx_area`, `centroid`).
+      Each function walks every shape in the index and folds the per-shape
+      result from `S2_shape_measures`. `centroid` ignores shapes whose
+      dimension is below the index-wide maximum, matching the documented
+      "centroid of the maximal-dimension shapes" semantics.
+  - C++: `s2shape_index_measures.h`, `.cc`
   - Deps: `s2_shape_index`, `s2_shape_measures`
 
 - [ ] **s2_shape_index_region** - `S2_shape_index_region`
