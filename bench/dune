@@ -1,5 +1,5 @@
 (executables
- (names bench_region_coverer profile_cap)
+ (names bench_region_coverer bench_misc profile_cap)
  (libraries
   core
   core_bench

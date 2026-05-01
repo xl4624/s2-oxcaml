@@ -49,5 +49,4 @@ test/gen/*
 .worktrees
 .envrc
 
-bench/compare_go.py
 bench/compare.json
