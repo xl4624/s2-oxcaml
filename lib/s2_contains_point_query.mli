@@ -40,6 +40,19 @@ val index : t -> S2_shape_index.t
     result is [false]. *)
 val shape_contains : t -> shape_id:int -> S2_point.t -> bool
 
+(** [shape_contains_at t cell_id clipped p] is the lower-level helper used by
+    {!shape_contains} once the caller has already located the index cell that contains
+    [p]. [cell_id] must be the id of an index cell that contains [p], and [clipped] must
+    be the [shape_id]-clipped view of that cell. Useful when iterating the clipped shapes
+    of a cell directly (e.g. inside an {!S2_shape_index_region} cell-containment test):
+    skipping the second [locate_point] avoids redundant work. *)
+val shape_contains_at
+  :  t
+  -> S2_cell_id.t
+  -> S2_shape_index.Clipped_shape.t
+  -> S2_point.t
+  -> bool
+
 (** [visit_containing_shapes t p ~f] calls [f shape_id] once for each indexed shape that
     contains [p] under the configured vertex model. Each shape is visited at most once.
     Iteration stops early if [f] returns [false]; the return value is [false] iff [f]

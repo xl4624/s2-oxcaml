@@ -144,12 +144,22 @@ pulls them out as first-class ports so callers can use them directly.
   - C++: `s2shape_index_measures.h`, `.cc`
   - Deps: `s2_shape_index`, `s2_shape_measures`
 
-- [ ] **s2_shape_index_region** - `S2_shape_index_region`
-      (wraps an `S2_shape_index` as an `S2_region` - supplies `Contains`,
-      `MayIntersect`, bounds for cells. Required before layered operations
-      that expect a generic region.)
+- [x] **s2_shape_index_region** - `S2_shape_index_region` (wraps an
+      `S2_shape_index` as an `S2_region` via `to_region`; exposes
+      `cap_bound`, `rect_bound`, `cell_union_bound`, `contains_cell`,
+      `may_intersect_cell`, and `contains_point`). Containment / intersection
+      tests reuse the iterator from a private `S2_contains_point_query`
+      configured with the `Semi_open` vertex model. Edge-vs-cell intersection
+      uses `S2_edge_clipping.clip_to_padded_face` followed by
+      `intersects_rect` on the cell's UV bound padded by the doc'd error.
+      The lower-level helper `shape_contains_at` was promoted to the public
+      `S2_contains_point_query` API so the region can answer cell containment
+      against an already-located clipped shape without redoing
+      `locate_point`. The C++ `VisitIntersectingShapes`/`VisitIntersectingShapeIds`
+      helpers are deferred (the upstream tests for them rely on `S2Fractal`,
+      which has not been ported).
   - Go: `s2/shapeindex_region.go` | C++: `s2shape_index_region.h` (header-only, ~475 lines)
-  - Deps: `s2_shape_index`, `s2_region`, `s2_contains_point_query`, `s2_crossing_edge_query`
+  - Deps: `s2_shape_index`, `s2_region`, `s2_contains_point_query`, `s2_edge_clipping`, `s2_cell_union`
 
 - [ ] **s2_shape_index_buffered_region** - `S2_shape_index_buffered_region`
   - C++: `s2shape_index_buffered_region.h`, `.cc` (~130 lines)

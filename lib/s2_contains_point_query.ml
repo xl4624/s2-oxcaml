@@ -85,6 +85,12 @@ let shape_contains_cell
     | None -> inside)
 ;;
 
+let shape_contains_at t cell_id clipped p =
+  let shape_id = S2_shape_index.Clipped_shape.shape_id clipped in
+  let shape = S2_shape_index.shape t.index shape_id in
+  shape_contains_cell ~vertex_model:t.vertex_model ~shape cell_id clipped p
+;;
+
 let shape_contains t ~shape_id p =
   if not (S2_shape_index.Iterator.locate_point t.iter p)
   then false
