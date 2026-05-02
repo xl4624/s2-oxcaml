@@ -26,11 +26,14 @@
    - TEST(S2LatLngRect, GetDirectHausdorffDistancePointToRect)
    - TEST(S2LatLngRect, GetHausdorffDistance)
 
+   - TEST(BoundaryIntersects, ...) -- empty/full, spherical lune, north/south hemisphere,
+     antimeridian crossings
+   - TEST(ExpandedByDistance, PositiveDistance / NegativeDistance...)
+   - TEST(S2LatLngRect, CellOps) -- contains/intersects/may-intersect on every upstream
+     sub-case
+
    Deliberately omitted:
-   - TEST(S2LatLngRect, CellOps) requires S2_cell.rect_bound (not yet ported)
    - TEST(S2LatLngRect, EncodeDecode) not ported yet
-   - TEST(BoundaryIntersects) requires S2_edge_crossings (not yet ported)
-   - TEST(ExpandedByDistance) requires S2_cell.rect_bound
    - TEST(S2LatLngRect, GetDistanceRandomPairs) randomized, verified by brute-force
    - TEST(S2LatLngRect, GetDirectedHausdorffDistanceRandomPairs) randomized
    - TEST(S2LatLngRect, S2CoderWorks)
@@ -596,6 +599,87 @@ let test_hausdorff_point_to_rect () =
     check_float_u (label ^ " h=d") ~eps:1e-10 ~expected:expected_h ~actual:actual_h)
 ;;
 
+let test_boundary_intersects () =
+  let cases = to_list (get "boundary_intersects") in
+  List.iter cases ~f:(fun case ->
+    let label = string_of_json_exn (member "label" case) in
+    let rect = latlng_rect_of_json (member "rect" case) in
+    let v0 = r3_vector_of_json (member "v0" case) in
+    let v1 = r3_vector_of_json (member "v1" case) in
+    let expected = bool_of_json_exn (member "expected" case) in
+    check_bool label ~expected ~actual:(S2.S2_latlng_rect.boundary_intersects rect v0 v1))
+;;
+
+let test_expanded_by_distance () =
+  let cases = to_list (get "expanded_by_distance") in
+  List.iter cases ~f:(fun case ->
+    let label = string_of_json_exn (member "label" case) in
+    let input = latlng_rect_of_json (member "input" case) in
+    let distance_deg = float_u_of_json_exn (member "distance_deg" case) in
+    let is_roundtrip =
+      match member "is_roundtrip" case with
+      | `Bool b -> b
+      | _ -> false
+    in
+    let actual =
+      if is_roundtrip
+      then (
+        let pos = S2.S1_angle.of_degrees (Float_u.neg distance_deg) in
+        let neg = S2.S1_angle.of_degrees distance_deg in
+        S2.S2_latlng_rect.expanded_by_distance
+          (S2.S2_latlng_rect.expanded_by_distance input pos)
+          neg)
+      else
+        S2.S2_latlng_rect.expanded_by_distance input (S2.S1_angle.of_degrees distance_deg)
+    in
+    let is_empty = bool_of_json_exn (member "is_empty" case) in
+    check_bool
+      (label ^ " is_empty")
+      ~expected:is_empty
+      ~actual:(S2.S2_latlng_rect.is_empty actual);
+    if not is_empty
+    then (
+      let expected = latlng_rect_of_json (member "expected" case) in
+      check_bool
+        (label ^ " approx_equals")
+        ~expected:true
+        ~actual:
+          (S2.S2_latlng_rect.approx_equal
+             ~max_error:Packed_float_option.Unboxed.none
+             actual
+             expected)))
+;;
+
+let test_cell_ops () =
+  let cases = to_list (get "cell_ops") in
+  List.iter cases ~f:(fun case ->
+    let label = string_of_json_exn (member "label" case) in
+    let rect = latlng_rect_of_json (member "rect" case) in
+    let cell_id = s2_cell_id_of_json (member "cell_id" case) in
+    let cell = S2.S2_cell.of_cell_id cell_id in
+    let level = int_of_json_exn (member "level" case) in
+    check_bool
+      (label ^ " contains")
+      ~expected:(bool_of_json_exn (member "contains" case))
+      ~actual:(S2.S2_latlng_rect.contains_cell rect cell);
+    check_bool
+      (label ^ " intersects")
+      ~expected:(bool_of_json_exn (member "intersects" case))
+      ~actual:(S2.S2_latlng_rect.intersects_s2_cell rect cell);
+    check_bool
+      (label ^ " may_intersect")
+      ~expected:(bool_of_json_exn (member "may_intersect" case))
+      ~actual:(S2.S2_latlng_rect.intersects_cell rect cell);
+    check_bool
+      (label ^ " contains_iff_level_4")
+      ~expected:(level >= 4)
+      ~actual:(S2.S2_latlng_rect.contains_cell rect cell);
+    check_bool
+      (label ^ " intersects_iff_level_2")
+      ~expected:(level >= 2)
+      ~actual:(S2.S2_latlng_rect.intersects_s2_cell rect cell))
+;;
+
 let test_hausdorff_distance () =
   let d = get "hausdorff_distance" in
   let a =
@@ -646,8 +730,13 @@ let () =
         ; test_case "centroid" `Quick test_centroid
         ; test_case "approx_equals" `Quick test_approx_equals
         ; test_case "approx_equals_margin" `Quick test_approx_equals_margin
+        ; test_case "expanded_by_distance" `Quick test_expanded_by_distance
         ] )
-    ; "bounding", [ test_case "cap_bound" `Quick test_cap_bound ]
+    ; "boundary", [ test_case "boundary_intersects" `Quick test_boundary_intersects ]
+    ; ( "bounding"
+      , [ test_case "cap_bound" `Quick test_cap_bound
+        ; test_case "cell_ops" `Quick test_cell_ops
+        ] )
     ; ( "distance"
       , [ test_case "distance_to_latlng" `Quick test_distance_to_latlng
         ; test_case "distance_overlapping" `Quick test_distance_overlapping

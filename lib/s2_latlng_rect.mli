@@ -161,11 +161,43 @@ val expanded : t -> S2_latlng.t -> t
     every longitude at a contained pole. *)
 val polar_closure : t -> t
 
-(** [expanded_by_distance t distance] expands [t] by the given spherical [distance]
-    measured along the surface of the sphere (rather than independently in latitude and
-    longitude). [distance] must be non-negative; the negative-distance shrink branch is
-    not yet implemented. *)
+(** [expanded_by_distance t distance] expands [t] so that it contains every point within
+    the given spherical [distance] of the rectangle (measured along the sphere, rather
+    than independently in latitude and longitude).
+
+    A negative [distance] shrinks the rectangle so that it excludes every point within
+    [|distance|] of the original boundary, and may collapse to {!empty} when [|distance|]
+    exceeds half the rectangle's latitude or longitude width. The full and empty
+    rectangles, and rectangles that cover the full longitude range and include a pole,
+    have no boundary at the corresponding side and are not adjusted there. *)
 val expanded_by_distance : t -> S1_angle.t -> t
+
+(** {1 Boundary intersections} *)
+
+(** [boundary_intersects t v0 v1] reports whether the boundary of [t] intersects the
+    geodesic edge from [v0] to [v1]. Returns [false] for empty and full rectangles, which
+    have no boundary on the sphere. *)
+val boundary_intersects : t -> S2_point.t -> S2_point.t -> bool
+
+(** [intersects_lng_edge a b ~lat ~lng] reports whether the geodesic edge from [a] to [b]
+    intersects the rectangle edge of constant longitude [lng] spanning the latitude
+    interval [lat]. *)
+val intersects_lng_edge
+  :  S2_point.t
+  -> S2_point.t
+  -> lat:R1_interval.t
+  -> lng:float#
+  -> bool
+
+(** [intersects_lat_edge a b ~lat ~lng] reports whether the geodesic edge from [a] to [b]
+    intersects the (curved) rectangle edge of constant latitude [lat] spanning the
+    longitude interval [lng]. [a] and [b] must be unit length. *)
+val intersects_lat_edge
+  :  S2_point.t
+  -> S2_point.t
+  -> lat:float#
+  -> lng:S1_interval.t
+  -> bool
 
 (** {1 Bounding} *)
 
@@ -188,8 +220,19 @@ val rect_bound : t -> t
 (** [contains_cell t c] reports whether the rectangle contains the given cell. *)
 val contains_cell : t -> S2_cell.t -> bool
 
-(** [intersects_cell t c] reports whether the rectangle intersects the given cell. *)
+(** [intersects_cell t c] is a conservative cheap rect-vs-cell test: returns [true]
+    whenever [t] could intersect [c]. May return [true] for cells whose spherical geometry
+    does not actually intersect [t] but whose lat/lng bound does. Used by region coverers
+    and by other modules' bound-rejection paths; for a precise answer use
+    {!intersects_s2_cell}. *)
 val intersects_cell : t -> S2_cell.t -> bool
+
+(** [intersects_s2_cell t c] reports whether [t] and [c] share any point. Exact (modulo
+    cell vertex rounding): handles the curved nature of latitude edges, so unlike
+    {!intersects_cell} it does not return [true] for spherically disjoint cells whose
+    lat/lng bound merely overlaps [t]. *)
+val intersects_s2_cell : t -> S2_cell.t -> bool
+[@@zero_alloc ignore]
 
 (** [cell_union_bound t] returns a small set of cell ids whose union covers [t]. *)
 val cell_union_bound : t -> S2_cell_id.t array
@@ -232,8 +275,4 @@ val approx_equal_latlng : max_error:S2_latlng.t -> t -> t -> bool
 (** {1 Limitations}
 
     The following C++ features are not exposed:
-    - [ExpandedByDistance] with a negative argument (shrink): only the non-negative
-      expansion branch is currently implemented.
-    - [BoundaryIntersects]: test whether a geodesic edge crosses the rectangle boundary.
-    - [IntersectsLngEdge] / [IntersectsLatEdge]: lower-level edge-vs-boundary helpers.
     - [Encode] / [Decode]: binary serialization. *)

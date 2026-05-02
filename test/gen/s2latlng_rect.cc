@@ -11,6 +11,8 @@
 #include "s2/s1angle.h"
 #include "s2/s1interval.h"
 #include "s2/s2cap.h"
+#include "s2/s2cell.h"
+#include "s2/s2cell_id.h"
 #include "s2/s2latlng.h"
 #include "s2/s2point.h"
 
@@ -531,6 +533,253 @@ int main() {
         hd["ab"] = a.GetHausdorffDistance(b).radians();
         hd["ba"] = b.GetHausdorffDistance(a).radians();
         out["hausdorff_distance"] = hd;
+    }
+
+    // TEST(BoundaryIntersects, *) -- one fixture entry per upstream sub-case.
+    {
+        json bi = json::array();
+        auto emit_bi = [&](const S2LatLngRect &rect, double lat0, double lng0,
+                           double lat1, double lng1, bool expected,
+                           const std::string &label) {
+            S2Point v0 = S2LatLng::FromDegrees(lat0, lng0).ToPoint();
+            S2Point v1 = S2LatLng::FromDegrees(lat1, lng1).ToPoint();
+            bi.push_back({{"label", label},
+                          {"rect", rect_json(rect)},
+                          {"v0", point_json(v0)},
+                          {"v1", point_json(v1)},
+                          {"expected", expected},
+                          {"actual", rect.BoundaryIntersects(v0, v1)}});
+            (void)expected;
+        };
+        // TEST(BoundaryIntersects, EmptyRectangle) and FullRectangle:
+        // degenerate edges built from rect.lo()/rect.hi() points. We synthesise
+        // concrete points instead since the empty/full rectangles have no
+        // boundary and the result is unconditionally false.
+        {
+            S2LatLngRect empty = S2LatLngRect::Empty();
+            S2Point lo = empty.lo().ToPoint();
+            S2Point hi = empty.hi().ToPoint();
+            bi.push_back({{"label", "empty_lo_lo"},
+                          {"rect", rect_json(empty)},
+                          {"v0", point_json(lo)},
+                          {"v1", point_json(lo)},
+                          {"expected", false},
+                          {"actual", empty.BoundaryIntersects(lo, lo)}});
+            bi.push_back({{"label", "empty_lo_hi"},
+                          {"rect", rect_json(empty)},
+                          {"v0", point_json(lo)},
+                          {"v1", point_json(hi)},
+                          {"expected", false},
+                          {"actual", empty.BoundaryIntersects(lo, hi)}});
+
+            S2LatLngRect full = S2LatLngRect::Full();
+            S2Point flo = full.lo().ToPoint();
+            S2Point fhi = full.hi().ToPoint();
+            bi.push_back({{"label", "full_lo_lo"},
+                          {"rect", rect_json(full)},
+                          {"v0", point_json(flo)},
+                          {"v1", point_json(flo)},
+                          {"expected", false},
+                          {"actual", full.BoundaryIntersects(flo, flo)}});
+            bi.push_back({{"label", "full_lo_hi"},
+                          {"rect", rect_json(full)},
+                          {"v0", point_json(flo)},
+                          {"v1", point_json(fhi)},
+                          {"expected", false},
+                          {"actual", full.BoundaryIntersects(flo, fhi)}});
+        }
+        // TEST(BoundaryIntersects, SphericalLune)
+        {
+            S2LatLngRect rect = RectFromDegrees(-90, 100, 90, 120);
+            emit_bi(rect, 60, 60, 90, 60, false, "lune_60_60_90_60");
+            emit_bi(rect, -60, 110, 60, 110, false, "lune_inside");
+            emit_bi(rect, -60, 95, 60, 110, true, "lune_cross_west");
+            emit_bi(rect, 60, 115, 80, 125, true, "lune_cross_east");
+        }
+        // TEST(BoundaryIntersects, NorthHemisphere)
+        {
+            S2LatLngRect rect = RectFromDegrees(0, -180, 90, 180);
+            emit_bi(rect, 60, -180, 90, -180, false, "north_polar_edge");
+            emit_bi(rect, 60, -170, 60, 170, false, "north_above_eq");
+            emit_bi(rect, -10, -180, 10, -180, true, "north_cross_eq");
+        }
+        // TEST(BoundaryIntersects, SouthHemisphere)
+        {
+            S2LatLngRect rect = RectFromDegrees(-90, -180, 0, 180);
+            emit_bi(rect, -90, -180, -60, -180, false, "south_polar_edge");
+            emit_bi(rect, -60, -170, -60, 170, false, "south_below_eq");
+            emit_bi(rect, -10, -180, 10, -180, true, "south_cross_eq");
+        }
+        // TEST(BoundaryIntersects, RectCrossingAntiMeridian)
+        {
+            S2LatLngRect rect = RectFromDegrees(20, 170, 40, -170);
+            emit_bi(rect, 25, 160, 25, 180, true, "antimeridian_w_lng");
+            emit_bi(rect, 25, -160, 25, -180, true, "antimeridian_e_lng");
+            emit_bi(rect, 15, 175, 30, 175, true, "antimeridian_s_lat");
+            emit_bi(rect, 45, 175, 30, 175, true, "antimeridian_n_lat");
+            emit_bi(rect, 25, -20, 25, 0, false, "antipode_w_lng");
+            emit_bi(rect, 25, 20, 25, 0, false, "antipode_e_lng");
+            emit_bi(rect, 15, -5, 30, -5, false, "antipode_s_lat");
+            emit_bi(rect, 45, -5, 30, -5, false, "antipode_n_lat");
+        }
+        out["boundary_intersects"] = bi;
+    }
+
+    // TEST(ExpandedByDistance, *) -- positive and negative cases.
+    {
+        json ed = json::array();
+        auto emit_ed = [&](const S2LatLngRect &input, double distance_deg,
+                           const S2LatLngRect &expected,
+                           const std::string &label) {
+            S2LatLngRect actual =
+                input.ExpandedByDistance(S1Angle::Degrees(distance_deg));
+            json item;
+            item["label"] = label;
+            item["input"] = rect_json(input);
+            item["distance_deg"] = distance_deg;
+            item["result"] = rect_json(actual);
+            item["expected"] = rect_json(expected);
+            item["is_empty"] = actual.is_empty();
+            item["approx_equals"] = actual.ApproxEquals(expected);
+            ed.push_back(item);
+        };
+        auto emit_ed_empty = [&](const S2LatLngRect &input, double distance_deg,
+                                 const std::string &label) {
+            S2LatLngRect actual =
+                input.ExpandedByDistance(S1Angle::Degrees(distance_deg));
+            json item;
+            item["label"] = label;
+            item["input"] = rect_json(input);
+            item["distance_deg"] = distance_deg;
+            item["result"] = rect_json(actual);
+            item["is_empty"] = actual.is_empty();
+            ed.push_back(item);
+        };
+
+        // PositiveDistance.
+        emit_ed(RectFromDegrees(0, 170, 0, -170), 15,
+                RectFromDegrees(-15, 155, 15, -155), "positive_around_180");
+        emit_ed(RectFromDegrees(60, 150, 80, 10), 15,
+                RectFromDegrees(45, -180, 90, 180), "positive_to_pole");
+
+        // NegativeDistance round-trips.
+        {
+            S2LatLngRect in_rect = RectFromDegrees(0, 0, 30, 90);
+            S1Angle d = S1Angle::Degrees(5);
+            S2LatLngRect roundtrip =
+                in_rect.ExpandedByDistance(d).ExpandedByDistance(-d);
+            ed.push_back({{"label", "neg_roundtrip_north_east"},
+                          {"input", rect_json(in_rect)},
+                          {"distance_deg", -5.0},
+                          {"result", rect_json(roundtrip)},
+                          {"expected", rect_json(in_rect)},
+                          {"is_empty", roundtrip.is_empty()},
+                          {"approx_equals", roundtrip.ApproxEquals(in_rect)},
+                          {"is_roundtrip", true}});
+        }
+        {
+            S2LatLngRect in_rect = RectFromDegrees(-30, -90, 0, 0);
+            S1Angle d = S1Angle::Degrees(5);
+            S2LatLngRect roundtrip =
+                in_rect.ExpandedByDistance(d).ExpandedByDistance(-d);
+            ed.push_back({{"label", "neg_roundtrip_south_west"},
+                          {"input", rect_json(in_rect)},
+                          {"distance_deg", -5.0},
+                          {"result", rect_json(roundtrip)},
+                          {"expected", rect_json(in_rect)},
+                          {"is_empty", roundtrip.is_empty()},
+                          {"approx_equals", roundtrip.ApproxEquals(in_rect)},
+                          {"is_roundtrip", true}});
+        }
+
+        // NegativeDistance -- direct shrink cases that pin specific outputs.
+        emit_ed(RectFromDegrees(0, -90, 90, 180), -5,
+                RectFromDegrees(5, 0, 85, 90), "neg_lat_north_pole");
+        emit_ed(RectFromDegrees(0, -180, 90, 180), -5,
+                RectFromDegrees(5, -180, 90, 180),
+                "neg_lat_north_pole_lng_full");
+        emit_ed(RectFromDegrees(-90, -90, 0, 180), -5,
+                RectFromDegrees(-85, 0, -5, 90), "neg_lat_south_pole");
+        emit_ed(RectFromDegrees(-90, -180, 0, 180), -5,
+                RectFromDegrees(-90, -180, -5, 180),
+                "neg_lat_south_pole_lng_full");
+        emit_ed(RectFromDegrees(0, -180, 30, 180), -5,
+                RectFromDegrees(5, -180, 25, 180), "neg_lng_full");
+        emit_ed_empty(RectFromDegrees(0, 0, 9.9, 90), -5, "neg_lat_to_empty");
+        emit_ed_empty(RectFromDegrees(0, 0, 30, 11), -5, "neg_lng_to_empty");
+
+        out["expanded_by_distance"] = ed;
+    }
+
+    // TEST(S2LatLngRect, CellOps) -- mirrors TestCellOps from upstream.
+    {
+        json co = json::array();
+        auto emit_cell = [&](const S2LatLngRect &rect, const S2Cell &cell,
+                             int level, const std::string &label) {
+            // Mirrors the TestCellOps body so we capture every relationship.
+            bool vertex_contained = false;
+            for (int i = 0; i < 4; ++i) {
+                if (rect.Contains(cell.GetVertexRaw(i))
+                    || (!rect.is_empty()
+                        && cell.Contains(rect.GetVertex(i).ToPoint())))
+                    vertex_contained = true;
+            }
+            json item;
+            item["label"] = label;
+            item["rect"] = rect_json(rect);
+            item["cell_id"] = std::to_string(cell.id().id());
+            item["level"] = level;
+            item["may_intersect"] = rect.MayIntersect(cell);
+            item["intersects"] = rect.Intersects(cell);
+            item["vertex_contained"] = vertex_contained;
+            item["contains"] = rect.Contains(cell);
+            co.push_back(item);
+        };
+
+        emit_cell(S2LatLngRect::Empty(), S2Cell::FromFacePosLevel(3, 0, 0), 0,
+                  "empty_face3");
+        emit_cell(S2LatLngRect::Full(), S2Cell::FromFacePosLevel(2, 0, 0), 4,
+                  "full_face2");
+        emit_cell(S2LatLngRect::Full(), S2Cell::FromFacePosLevel(5, 0, 25), 4,
+                  "full_face5_l25");
+
+        S2LatLngRect r4 = RectFromDegrees(-45.1, -45.1, 0.1, 0.1);
+        emit_cell(r4, S2Cell::FromFacePosLevel(0, 0, 0), 3, "r4_face0_l0");
+        emit_cell(r4, S2Cell::FromFacePosLevel(0, 0, 1), 4, "r4_face0_l1");
+        emit_cell(r4, S2Cell::FromFacePosLevel(1, 0, 1), 0, "r4_face1_l1");
+
+        S2LatLngRect r5 = RectFromDegrees(-10, -45, 10, 0);
+        emit_cell(r5, S2Cell::FromFacePosLevel(0, 0, 0), 3, "r5_face0_l0");
+        emit_cell(r5, S2Cell::FromFacePosLevel(0, 0, 1), 3, "r5_face0_l1");
+        emit_cell(r5, S2Cell::FromFacePosLevel(1, 0, 1), 0, "r5_face1_l1");
+
+        emit_cell(RectFromDegrees(4, 4, 4, 4), S2Cell::FromFace(0), 3,
+                  "point_face0");
+        emit_cell(RectFromDegrees(41, -87, 42, -79), S2Cell::FromFace(2), 1,
+                  "rect_vs_face2_bound_only");
+        emit_cell(RectFromDegrees(-41, 160, -40, -160), S2Cell::FromFace(5), 1,
+                  "rect_vs_face5_bound_only");
+
+        // Leaf cell at the top right hand corner of face 0.
+        S2Cell cell0tr(S2Point(1 + 1e-12, 1, 1));
+        S2LatLng v0(cell0tr.GetVertexRaw(0));
+        emit_cell(RectFromDegrees(
+                      v0.lat().degrees() - 1e-8, v0.lng().degrees() - 1e-8,
+                      v0.lat().degrees() - 2e-10, v0.lng().degrees() + 1e-10),
+                  cell0tr, 1, "cell0tr_corner");
+
+        emit_cell(RectFromDegrees(-37, -70, -36, -20), S2Cell::FromFace(5), 2,
+                  "rect_through_face5_corner");
+
+        S2Cell cell202 = S2Cell::FromFacePosLevel(2, 0, 2);
+        S2LatLngRect bound202 = cell202.GetRectBound();
+        emit_cell(RectFromDegrees(bound202.lo().lat().degrees() + 3,
+                                  bound202.lo().lng().degrees() + 3,
+                                  bound202.hi().lat().degrees() - 3,
+                                  bound202.hi().lng().degrees() - 3),
+                  cell202, 2, "diamond_vs_square");
+
+        out["cell_ops"] = co;
     }
 
     std::cout << out.dump(2) << std::endl;

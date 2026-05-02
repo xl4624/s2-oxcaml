@@ -409,10 +409,12 @@ track which types still lack Encode/Decode:
 - [ ] `s2_polyline`: `NearlyCovers` / `ApproxEquals` polyline-to-polyline
 - [ ] `s2_polygon`: `GetDistance` / `GetDistanceToBoundary` / `Project`
 - [ ] `s2_polygon`: `ApproxContains` / `ApproxDisjoint` / `BoundaryNear`
-- [ ] `s2_latlng_rect`: exact `Intersects(const S2Cell&)`
-- [ ] `s2_latlng_rect`: `ExpandedByDistance` negative-distance shrink branch
-      (positive expansion is implemented), `BoundaryIntersects`,
-      `IntersectsLngEdge`, `IntersectsLatEdge`
+- [x] `s2_latlng_rect`: exact `Intersects(const S2Cell&)` exposed as
+      `intersects_s2_cell`. The conservative `intersects_cell` is kept as the
+      cheap rect-bound test used by `S2_region` and other early-rejection
+      paths.
+- [x] `s2_latlng_rect`: `ExpandedByDistance` negative-distance shrink branch,
+      `BoundaryIntersects`, `IntersectsLngEdge`, `IntersectsLatEdge`
 
 ### Predicates
 

@@ -265,21 +265,20 @@ let[@inline] [@zero_alloc] from_cap c =
      })
 ;;
 
-(* Build the smallest cap centered at each rectangle vertex with the given spherical
-   radius, take the lat/lng bound of each, and union them with the original rectangle.
-   Including the original is necessary for very large rectangles, where the four vertex
-   caps may not yet cover the interior. *)
-let expanded_by_distance t distance =
-  if S1_angle.compare distance S1_angle.zero < 0
+(* For a non-negative [distance], builds the smallest cap centered at each rectangle
+   vertex with that spherical radius, takes the lat/lng bound of each, and unions them
+   with the original rectangle. Including the original is necessary for very large
+   rectangles, where the four vertex caps may not yet cover the interior.
+
+   For a negative [distance], shrinks the latitude interval by [|distance|] on each side
+   unless the corresponding side is on the pole and the longitude interval is full (in
+   which case the rectangle has no boundary at that pole). The longitude interval is then
+   shrunk by the maximum longitude margin spanned by a cap of radius [|distance|] at the
+   shrunk latitude where it is widest. Either reduction may collapse the rectangle to
+   empty. *)
+let[@zero_alloc] expanded_by_distance t distance =
+  if Stdlib.( >= ) (S1_angle.compare distance S1_angle.zero) 0
   then (
-    match
-      raise_s
-        [%message
-          "S2_latlng_rect.expanded_by_distance: negative distance not supported"
-            ~radians:(Float_u.to_float (S1_angle.radians distance) : float)]
-    with
-    | (_ : Nothing.t) -> .)
-  else (
     let radius = S1_chord_angle.of_angle distance in
     let mutable r = t in
     for k = 0 to 3 do
@@ -287,6 +286,34 @@ let expanded_by_distance t distance =
       r <- union r (from_cap cap)
     done;
     r)
+  else
+    let open Float_u.O in
+    let abs_dist = Float_u.neg (S1_angle.radians distance) in
+    let lat_full_lo = R1_interval.lo full_lat in
+    let lat_full_hi = R1_interval.hi full_lat in
+    let lng_full = S1_interval.is_full t.#lng in
+    let lat_lo_in = R1_interval.lo t.#lat in
+    let lat_hi_in = R1_interval.hi t.#lat in
+    let new_lat_lo =
+      if lat_lo_in <= lat_full_lo && lng_full then lat_full_lo else lat_lo_in + abs_dist
+    in
+    let new_lat_hi =
+      if lat_hi_in >= lat_full_hi && lng_full then lat_full_hi else lat_hi_in - abs_dist
+    in
+    let lat_result = R1_interval.create ~lo:new_lat_lo ~hi:new_lat_hi in
+    if R1_interval.is_empty lat_result
+    then empty
+    else (
+      let max_abs_lat = Float_u.max (Float_u.neg new_lat_lo) new_lat_hi in
+      let sin_a = Float_u.sin abs_dist in
+      let sin_c = Float_u.cos max_abs_lat in
+      let max_lng_margin =
+        if sin_a < sin_c then Float_u.asin (sin_a / sin_c) else Float_u.pi / #2.0
+      in
+      let lng_result = S1_interval.expanded t.#lng (Float_u.neg max_lng_margin) in
+      if S1_interval.is_empty lng_result
+      then empty
+      else #{ lat = lat_result; lng = lng_result })
 ;;
 
 let pole_min_lat =
@@ -381,13 +408,144 @@ let[@zero_alloc] from_cell cell =
 
 let[@zero_alloc] contains_cell t cell = contains t (from_cell cell)
 
-(* NOTE: This is the cheap lat/lng-rectangle test used by MayIntersect. It is conservative
-   (never reports disjoint when the cell actually intersects) but may return true for
-   cells whose spherical geometry does not intersect [t]. A tighter test (matching the C++
-   Intersects(S2Cell)) would require checking each cell edge against the rectangle
-   boundary. TODO: port exact S2LatLngRect::Intersects(const S2Cell&) from
-   s2latlng_rect.cc. *)
+(* Edges of constant longitude are great-circle arcs (geodesics), so a single
+   [crossing_sign] against the segment from [(lat.lo, lng)] to [(lat.hi, lng)] is
+   sufficient. *)
+let[@zero_alloc] intersects_lng_edge a b ~lat ~lng =
+  let lo_pt = S2_latlng.to_point (S2_latlng.of_radians ~lat:(R1_interval.lo lat) ~lng) in
+  let hi_pt = S2_latlng.to_point (S2_latlng.of_radians ~lat:(R1_interval.hi lat) ~lng) in
+  Stdlib.( > ) (S2_edge_crossings.crossing_sign a b lo_pt hi_pt) 0
+;;
+
+(* Edges of constant latitude are not great circles, so we work in a frame where the great
+   circle through (a, b) is the x-y plane. The two intersection candidates with the
+   latitude line lie at angles +/- theta from the x axis, where cos theta = sin(lat) /
+   x.z. For each candidate we check that it falls within both the AB edge's parametric
+   range and the longitude interval. *)
+let[@zero_alloc] intersects_lat_edge a b ~lat ~lng =
+  let open Float_u.O in
+  let z0 = R3_vector.normalize (S2_point.robust_cross_prod a b) in
+  let z = if R3_vector.z z0 < #0.0 then R3_vector.neg z0 else z0 in
+  let north = S2_point.of_coords ~x:#0.0 ~y:#0.0 ~z:#1.0 in
+  let y = R3_vector.normalize (S2_point.robust_cross_prod z north) in
+  let x = R3_vector.cross y z in
+  let xz = R3_vector.z x in
+  let sin_lat = Float_u.sin lat in
+  if Float_u.abs sin_lat >= xz
+  then false
+  else (
+    let cos_theta = sin_lat / xz in
+    let sin_theta = Float_u.sqrt (#1.0 - (cos_theta * cos_theta)) in
+    let theta = Float_u.atan2 sin_theta cos_theta in
+    let ab_theta =
+      S1_interval.from_point_pair
+        (Float_u.atan2 (R3_vector.dot a y) (R3_vector.dot a x))
+        (Float_u.atan2 (R3_vector.dot b y) (R3_vector.dot b x))
+    in
+    let mutable result = false in
+    if S1_interval.contains ab_theta theta
+    then (
+      let isect = R3_vector.add (R3_vector.mul x cos_theta) (R3_vector.mul y sin_theta) in
+      if S1_interval.contains lng (Float_u.atan2 (R3_vector.y isect) (R3_vector.x isect))
+      then result <- true);
+    if (not result) && S1_interval.contains ab_theta (Float_u.neg theta)
+    then (
+      let isect = R3_vector.sub (R3_vector.mul x cos_theta) (R3_vector.mul y sin_theta) in
+      if S1_interval.contains lng (Float_u.atan2 (R3_vector.y isect) (R3_vector.x isect))
+      then result <- true);
+    result)
+;;
+
+let[@zero_alloc] boundary_intersects t v0 v1 =
+  let open Float_u.O in
+  if is_empty t
+  then false
+  else (
+    let mutable hit = false in
+    if not (S1_interval.is_full t.#lng)
+    then
+      if intersects_lng_edge v0 v1 ~lat:t.#lat ~lng:(S1_interval.lo t.#lng)
+      then hit <- true
+      else if intersects_lng_edge v0 v1 ~lat:t.#lat ~lng:(S1_interval.hi t.#lng)
+      then hit <- true;
+    if (not hit)
+       && R1_interval.lo t.#lat <> Float_u.neg (Float_u.pi / #2.0)
+       && intersects_lat_edge v0 v1 ~lat:(R1_interval.lo t.#lat) ~lng:t.#lng
+    then hit <- true;
+    if (not hit)
+       && R1_interval.hi t.#lat <> Float_u.pi / #2.0
+       && intersects_lat_edge v0 v1 ~lat:(R1_interval.hi t.#lat) ~lng:t.#lng
+    then hit <- true;
+    hit)
+;;
+
+(* Conservative rect-vs-cell test used by region operations: returns [true] whenever the
+   rectangle could possibly intersect [cell]. False positives are allowed (cells whose
+   spherical geometry is disjoint from [t] but whose lat/lng bound overlaps [t]); false
+   negatives are not. Kept cheap because region coverers subdivide on every [true]. *)
 let[@zero_alloc] intersects_cell t cell = intersects t (from_cell cell)
+
+(* Exact rect-vs-cell intersection. Disposes first of containment in either direction
+   (which would otherwise be missed by the boundary-only edge tests below); then runs the
+   cheap [intersects_cell] rejection on the cell's lat/lng bound; then handles vertex
+   containment in either direction; then tests each cell edge against each non-degenerate
+   rectangle boundary edge.
+
+   Latitude-longitude rectangles do not have straight edges -- the latitude edges are
+   curves, and at least one of them is concave -- so we use [intersects_lat_edge] /
+   [intersects_lng_edge] rather than a generic geodesic crossing for those boundaries. *)
+let[@zero_alloc ignore] intersects_s2_cell t cell =
+  if is_empty t
+  then false
+  else if contains_point t (S2_cell.center_raw cell)
+  then true
+  else if S2_cell.contains_point cell (S2_latlng.to_point (center t))
+  then true
+  else if not (intersects t (from_cell cell))
+  then false
+  else (
+    let cell_v0 = S2_cell.vertex cell 0 in
+    let cell_v1 = S2_cell.vertex cell 1 in
+    let cell_v2 = S2_cell.vertex cell 2 in
+    let cell_v3 = S2_cell.vertex cell 3 in
+    let cell_ll0 = S2_latlng.of_point cell_v0 in
+    let cell_ll1 = S2_latlng.of_point cell_v1 in
+    let cell_ll2 = S2_latlng.of_point cell_v2 in
+    let cell_ll3 = S2_latlng.of_point cell_v3 in
+    let corner_hit i ll =
+      contains_latlng t ll
+      || S2_cell.contains_point cell (S2_latlng.to_point (vertex t i))
+    in
+    if corner_hit 0 cell_ll0
+       || corner_hit 1 cell_ll1
+       || corner_hit 2 cell_ll2
+       || corner_hit 3 cell_ll3
+    then true
+    else (
+      let edge_hit a b ll_a ll_b =
+        let edge_lng =
+          S1_interval.from_point_pair
+            (S1_angle.radians (S2_latlng.lng ll_a))
+            (S1_angle.radians (S2_latlng.lng ll_b))
+        in
+        if not (S1_interval.intersects t.#lng edge_lng)
+        then false
+        else if S1_interval.contains edge_lng (S1_interval.lo t.#lng)
+                && intersects_lng_edge a b ~lat:t.#lat ~lng:(S1_interval.lo t.#lng)
+        then true
+        else if S1_interval.contains edge_lng (S1_interval.hi t.#lng)
+                && intersects_lng_edge a b ~lat:t.#lat ~lng:(S1_interval.hi t.#lng)
+        then true
+        else if intersects_lat_edge a b ~lat:(R1_interval.lo t.#lat) ~lng:t.#lng
+        then true
+        else intersects_lat_edge a b ~lat:(R1_interval.hi t.#lat) ~lng:t.#lng
+      in
+      edge_hit cell_v0 cell_v1 cell_ll0 cell_ll1
+      || edge_hit cell_v1 cell_v2 cell_ll1 cell_ll2
+      || edge_hit cell_v2 cell_v3 cell_ll2 cell_ll3
+      || edge_hit cell_v3 cell_v0 cell_ll3 cell_ll0))
+;;
+
 let[@zero_alloc ignore] cell_union_bound t = S2_cap.cell_union_bound (cap_bound t)
 
 (* Distance helpers used by [distance] and [hausdorff_distance] below. *)
@@ -653,5 +811,4 @@ let[@inline] [@zero_alloc] approx_equal_latlng ~max_error t other =
        other.#lng
 ;;
 
-(* TODO: port ExpandedByDistance, BoundaryIntersects, IntersectsLngEdge,
-   IntersectsLatEdge, Encode, and Decode from s2latlng_rect.cc. *)
+(* TODO: port Encode and Decode from s2latlng_rect.cc. *)
