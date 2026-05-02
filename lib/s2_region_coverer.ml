@@ -34,34 +34,32 @@ let adjust_level t level =
   else level
 ;;
 
-(* A candidate cell being considered for the covering. Children live in the coverer's flat
-   [children_buf]; [children_start] and [num_children] mark this candidate's contiguous
-   slice of that buffer. *)
-type candidate =
-  { cell : S2_cell.t
-  ; mutable is_terminal : bool
-  ; mutable num_children : int
-  ; mutable children_start : int
-  ; mutable priority : int
-  }
-
-module Candidate_heap = Binary_heap.Make (struct
-    type t = candidate
-
-    let[@inline] higher_priority a b = a.priority > b.priority
-  end)
-
-(* Internal coverer state. Holding the [S2_region.t] directly (rather than extracting
-   callbacks) avoids allocating closures and lets the compiler specialize each dispatch
-   via pattern match on the variant tag. *)
+(* The covering algorithm tracks "candidate cells" with five fields each: the cell, a
+   terminal flag, a child count, a slice offset into [children_*], and a priority. Storing
+   them as parallel arrays (rather than as boxed records in a heap) drops the per-cell
+   allocation. The heap and the children buffer share the same parallel-arrays pattern;
+   only the heap stores all five fields, since [num_children], [children_start], and
+   [priority] are produced lazily by [add_candidate] and never needed in the children
+   buffer. *)
 type coverer =
   { opts : t
   ; region : S2_region.t
   ; mutable result : S2_cell_id.t array
   ; mutable result_len : int
-  ; mutable children_buf : candidate array
+  ; (* Children buffer: a flat list of (cell_id, is_terminal) pairs that [expand_children]
+       appends to. Heap entries point into this buffer via [children_start] +
+       [num_children]. *)
+    mutable children_cell_ids : S2_cell_id.t array
+  ; mutable children_is_terminal : bool array
   ; mutable children_len : int
-  ; pq : Candidate_heap.t
+  ; (* Max-priority binary heap as four parallel arrays. Larger [pq_priority] is higher
+       priority. Heap entries are always non-terminal: [add_candidate] handles the
+       terminal case before reaching the heap, so there is no need to store a flag. *)
+    mutable pq_cell_ids : S2_cell_id.t array
+  ; mutable pq_num_children : int array
+  ; mutable pq_children_start : int array
+  ; mutable pq_priority : int array
+  ; mutable pq_size : int
   ; mutable interior_covering : bool
   }
 
@@ -87,36 +85,132 @@ let new_coverer opts (region : S2_region.t) =
   ; region
   ; result = Array.create ~len:8 S2_cell_id.none
   ; result_len = 0
-  ; children_buf = [||]
+  ; children_cell_ids = [||]
+  ; children_is_terminal = [||]
   ; children_len = 0
-  ; pq = Candidate_heap.create ()
+  ; pq_cell_ids = [||]
+  ; pq_num_children = [||]
+  ; pq_children_start = [||]
+  ; pq_priority = [||]
+  ; pq_size = 0
   ; interior_covering = false
   }
 ;;
 
-(* Append [child] to the flat children buffer, growing it on demand. The first-ever append
-   fills the freshly allocated slots with [child]; since we overwrite slot [children_len]
-   immediately and never read beyond [children_len], the fill value is inert. *)
-let push_child c child =
-  let cap = Array.length c.children_buf in
+(* Append [(cell_id, is_terminal)] to the children buffer, growing it on demand. *)
+let push_child c cell_id ~is_terminal =
+  let cap = Array.length c.children_cell_ids in
   if c.children_len >= cap
   then (
     let new_cap = if cap = 0 then 32 else cap * 2 in
-    let new_arr = Array.create ~len:new_cap child in
+    let new_ids = Array.create ~len:new_cap S2_cell_id.none in
+    let new_terms = Array.create ~len:new_cap false in
     if cap > 0
-    then Array.blit ~src:c.children_buf ~src_pos:0 ~dst:new_arr ~dst_pos:0 ~len:cap;
-    c.children_buf <- new_arr);
-  c.children_buf.(c.children_len) <- child;
+    then (
+      (Array.unsafe_blit [@kind bits64])
+        ~src:c.children_cell_ids
+        ~src_pos:0
+        ~dst:new_ids
+        ~dst_pos:0
+        ~len:cap;
+      Array.blit ~src:c.children_is_terminal ~src_pos:0 ~dst:new_terms ~dst_pos:0 ~len:cap);
+    c.children_cell_ids <- new_ids;
+    c.children_is_terminal <- new_terms);
+  c.children_cell_ids.(c.children_len) <- cell_id;
+  c.children_is_terminal.(c.children_len) <- is_terminal;
   c.children_len <- c.children_len + 1
+;;
+
+(* {1 Inline binary heap over parallel arrays} *)
+
+let[@inline] pq_is_empty c = c.pq_size = 0
+let[@inline] pq_size c = c.pq_size
+
+let pq_grow c =
+  let cap = Array.length c.pq_priority in
+  let new_cap = if cap = 0 then 16 else cap * 2 in
+  let new_ids = Array.create ~len:new_cap S2_cell_id.none in
+  let new_nc = Array.create ~len:new_cap 0 in
+  let new_cs = Array.create ~len:new_cap 0 in
+  let new_pr = Array.create ~len:new_cap 0 in
+  if cap > 0
+  then (
+    (Array.unsafe_blit [@kind bits64])
+      ~src:c.pq_cell_ids
+      ~src_pos:0
+      ~dst:new_ids
+      ~dst_pos:0
+      ~len:cap;
+    Array.blit ~src:c.pq_num_children ~src_pos:0 ~dst:new_nc ~dst_pos:0 ~len:cap;
+    Array.blit ~src:c.pq_children_start ~src_pos:0 ~dst:new_cs ~dst_pos:0 ~len:cap;
+    Array.blit ~src:c.pq_priority ~src_pos:0 ~dst:new_pr ~dst_pos:0 ~len:cap);
+  c.pq_cell_ids <- new_ids;
+  c.pq_num_children <- new_nc;
+  c.pq_children_start <- new_cs;
+  c.pq_priority <- new_pr
+;;
+
+let[@inline] pq_swap c i j =
+  let id = c.pq_cell_ids.(i) in
+  c.pq_cell_ids.(i) <- c.pq_cell_ids.(j);
+  c.pq_cell_ids.(j) <- id;
+  let nc = c.pq_num_children.(i) in
+  c.pq_num_children.(i) <- c.pq_num_children.(j);
+  c.pq_num_children.(j) <- nc;
+  let cs = c.pq_children_start.(i) in
+  c.pq_children_start.(i) <- c.pq_children_start.(j);
+  c.pq_children_start.(j) <- cs;
+  let pr = c.pq_priority.(i) in
+  c.pq_priority.(i) <- c.pq_priority.(j);
+  c.pq_priority.(j) <- pr
+;;
+
+let pq_sift_up c i_start =
+  let mutable i = i_start in
+  let mutable cont = true in
+  while cont && i > 0 do
+    let parent = (i - 1) / 2 in
+    if c.pq_priority.(i) > c.pq_priority.(parent)
+    then (
+      pq_swap c i parent;
+      i <- parent)
+    else cont <- false
+  done
+;;
+
+let pq_sift_down c =
+  let mutable i = 0 in
+  let n = c.pq_size in
+  let mutable cont = true in
+  while cont do
+    let l = (2 * i) + 1 in
+    let r = (2 * i) + 2 in
+    let mutable best = i in
+    if l < n && c.pq_priority.(l) > c.pq_priority.(best) then best <- l;
+    if r < n && c.pq_priority.(r) > c.pq_priority.(best) then best <- r;
+    if best <> i
+    then (
+      pq_swap c i best;
+      i <- best)
+    else cont <- false
+  done
+;;
+
+let pq_push c cell_id ~num_children ~children_start ~priority =
+  if c.pq_size >= Array.length c.pq_priority then pq_grow c;
+  let i = c.pq_size in
+  c.pq_cell_ids.(i) <- cell_id;
+  c.pq_num_children.(i) <- num_children;
+  c.pq_children_start.(i) <- children_start;
+  c.pq_priority.(i) <- priority;
+  c.pq_size <- i + 1;
+  pq_sift_up c i
 ;;
 
 (* Decide this cell's status. Returns:
    - [-1] if the region doesn't intersect [cell] (cell is rejected).
    - [0] if the cell should be added as a non-terminal candidate.
-   - [1] if the cell should be added as a terminal (leaf of the covering). This is the
-         [new_candidate] "allocate or not + is_terminal" logic split out so callers can
-         allocate the candidate directly without going through an [option] wrapper, saving
-         the [Some _] header per accepted candidate. *)
+   - [1] if the cell should be added as a terminal (leaf of the covering). *)
 let[@inline] classify_cell c cell =
   if not (S2_region.intersects_cell c.region cell)
   then -1
@@ -137,13 +231,15 @@ let[@inline] classify_cell c cell =
     else 0)
 ;;
 
-let[@inline] make_candidate cell ~is_terminal =
-  { cell; is_terminal; num_children = 0; children_start = 0; priority = 0 }
-;;
-
-let rec expand_children c cand cell num_levels =
+(* Append the four children of [cell] (or, for [num_levels > 1], the descendants
+   [num_levels] deep) to [c.children_*]. Returns [#(num_terminals, num_children)]:
+   [num_children] is the count appended (only the leaf level contributes), and
+   [num_terminals] is how many of those are terminal. The unboxed pair return keeps this
+   allocation-free. *)
+let rec expand_children c cell num_levels =
   let num_levels = num_levels - 1 in
   let mutable num_terminals = 0 in
+  let mutable num_children = 0 in
   let cell_id = S2_cell.id cell in
   for k = 0 to 3 do
     let child_id = S2_cell_id.child_exn cell_id k in
@@ -151,48 +247,47 @@ let rec expand_children c cand cell num_levels =
     if num_levels > 0
     then (
       if S2_region.intersects_cell c.region child_cell
-      then num_terminals <- num_terminals + expand_children c cand child_cell num_levels)
+      then (
+        let #(nt, nc) = expand_children c child_cell num_levels in
+        num_terminals <- num_terminals + nt;
+        num_children <- num_children + nc))
     else (
       let status = classify_cell c child_cell in
       if status >= 0
       then (
         let is_terminal = status = 1 in
-        push_child c (make_candidate child_cell ~is_terminal);
-        cand.num_children <- cand.num_children + 1;
+        push_child c child_id ~is_terminal;
+        num_children <- num_children + 1;
         if is_terminal then num_terminals <- num_terminals + 1))
   done;
-  num_terminals
+  #(num_terminals, num_children)
 ;;
 
-let rec add_candidate c cand =
-  if cand.is_terminal
-  then result_push c (S2_cell.id cand.cell)
+let rec add_candidate c cell ~is_terminal =
+  if is_terminal
+  then result_push c (S2_cell.id cell)
   else (
-    let num_levels =
-      if S2_cell.level cand.cell < c.opts.min_level then 1 else c.opts.level_mod
-    in
+    let level = S2_cell.level cell in
+    let num_levels = if level < c.opts.min_level then 1 else c.opts.level_mod in
     (* Reserve this candidate's children slice at the current end of the flat buffer, then
        expand: new children are appended in order. *)
-    cand.children_start <- c.children_len;
-    let num_terminals = expand_children c cand cand.cell num_levels in
+    let children_start = c.children_len in
+    let #(num_terminals, num_children) = expand_children c cell num_levels in
     let mcs = 2 * c.opts.level_mod in
-    if cand.num_children = 0
+    if num_children = 0
     then ()
     else if (not c.interior_covering)
             && num_terminals = 1 lsl mcs
-            && S2_cell.level cand.cell >= c.opts.min_level
-    then (
-      cand.is_terminal <- true;
-      add_candidate c cand)
+            && level >= c.opts.min_level
+    then add_candidate c cell ~is_terminal:true
     else (
-      let level = S2_cell.level cand.cell in
-      cand.priority <- -(((level lsl mcs) + cand.num_children) lsl mcs) - num_terminals;
-      Candidate_heap.add c.pq cand))
+      let priority = -(((level lsl mcs) + num_children) lsl mcs) - num_terminals in
+      pq_push c (S2_cell.id cell) ~num_children ~children_start ~priority))
 ;;
 
 let[@inline] try_add_new_candidate c cell =
   let status = classify_cell c cell in
-  if status >= 0 then add_candidate c (make_candidate cell ~is_terminal:(status = 1))
+  if status >= 0 then add_candidate c cell ~is_terminal:(status = 1)
 ;;
 
 (* Adjust cell levels for level_mod compliance. *)
@@ -442,24 +537,34 @@ and covering_internal opts (region : S2_region.t) interior_covering =
   c.interior_covering <- interior_covering;
   get_initial_candidates c;
   while
-    (not (Candidate_heap.is_empty c.pq))
-    && ((not c.interior_covering) || c.result_len < c.opts.max_cells)
+    (not (pq_is_empty c)) && ((not c.interior_covering) || c.result_len < c.opts.max_cells)
   do
-    let cand = Candidate_heap.pop_exn c.pq in
+    (* Snapshot the popped entry's fields before [pq_sift_down] may overwrite slot 0. *)
+    let cell_id = c.pq_cell_ids.(0) in
+    let num_children = c.pq_num_children.(0) in
+    let children_start = c.pq_children_start.(0) in
+    let new_size = c.pq_size - 1 in
+    c.pq_size <- new_size;
+    if new_size > 0
+    then (
+      pq_swap c 0 new_size;
+      pq_sift_down c);
+    let cell = S2_cell.of_cell_id cell_id in
     if c.interior_covering
-       || S2_cell.level cand.cell < c.opts.min_level
-       || cand.num_children = 1
-       || c.result_len + Candidate_heap.length c.pq + cand.num_children
-          <= c.opts.max_cells
+       || S2_cell.level cell < c.opts.min_level
+       || num_children = 1
+       || c.result_len + pq_size c + num_children <= c.opts.max_cells
     then
-      for i = 0 to cand.num_children - 1 do
-        let child = c.children_buf.(cand.children_start + i) in
+      for i = 0 to num_children - 1 do
+        let slot = children_start + i in
         if (not c.interior_covering) || c.result_len < c.opts.max_cells
-        then add_candidate c child
+        then
+          add_candidate
+            c
+            (S2_cell.of_cell_id c.children_cell_ids.(slot))
+            ~is_terminal:c.children_is_terminal.(slot)
       done
-    else (
-      cand.is_terminal <- true;
-      add_candidate c cand)
+    else add_candidate c cell ~is_terminal:true
   done;
   (* Normalize result. [raw_result] is freshly owned, so we can transfer it to
      [of_raw_owned] which skips the defensive copy that [create] would make. *)

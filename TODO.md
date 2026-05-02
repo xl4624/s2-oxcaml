@@ -499,6 +499,304 @@ track which types still lack Encode/Decode:
 
 ---
 
+## Quickcheck coverage gaps
+
+Modules with non-trivial invariants whose `test/quickcheck/<name>.ml` is
+missing. Each item is scoped to one or two property ideas: a generator that
+exercises real geometry, plus the law(s) the property checks. AGENTS.md
+explains the file layout and how to wire `let%test_unit` cases into the
+shared `inline_tests` stanza.
+
+### Queries
+
+- [ ] `s2_contains_point_query`: build an index over a generated polygon,
+      check that for random points, `contains` matches
+      `S2_polygon.contains_point`. Also test the three vertex models against
+      a hand-rolled brute-force "is on boundary?" classifier.
+- [ ] `s2_crossing_edge_query`: index a random polygon, query a random
+      geodesic edge, and check that `get_candidates` is a superset of the
+      brute-force list of edges that cross it. For `visit_crossings`, check
+      every emitted pair actually crosses (`S2_edge_crossings.crossing_sign
+      > 0`) and no crossing pair is missed.
+- [ ] `s2_closest_edge_query`: random polygon + random target point;
+      `closest_edge` distance must equal the brute-force minimum
+      `S2_edge_distances.distance` over all edges. Also: `is_distance_less
+      ~limit:d` matches `closest_edge < d`, and `is_distance_less_or_equal`
+      matches `<= d`.
+- [ ] `s2_convex_hull_query`: hull of a random point set must contain every
+      input point and every input point must be on the hull or interior;
+      idempotence (`hull (hull pts) = hull pts` up to vertex order).
+- [ ] `s2_region_coverer`: for random regions (cap, rect, polygon-as-region),
+      the covering must (a) contain the region per `Contains(cell)` /
+      `MayIntersect(cell)` semantics (every cell in the cover may intersect
+      the region; their union covers it), (b) honour `max_cells` for the
+      output (with the documented slack), (c) honour `min_level` /
+      `max_level` / `level_mod`. Also: `is_canonical (canonicalize_covering
+      ids)` is always true.
+
+### Shape-index regions and measures
+
+- [ ] `s2_shape_index_region`: for a random shape index, `contains_point p`
+      must match `S2_contains_point_query.contains` over the same index;
+      `contains_cell` must imply `may_intersect_cell`.
+- [ ] `s2_shape_index_buffered_region`: for a random index + radius, a point
+      `p` is contained iff there is some indexed point at most `radius`
+      away. Cross-check `contains_point` against a brute-force scan of edges
+      with `S2_edge_distances`.
+- [ ] `s2_shape_index_measures`: `area`, `perimeter`, `length`, `centroid`
+      summed over a multi-shape index must equal the per-shape sums via
+      `S2_shape_measures`.
+- [ ] `s2_shape_measures`: `chain_vertices` then `length`/`perimeter` on the
+      walked vertices must match the direct measure call. `centroid (s) +
+      centroid (s')` over disjoint chains must equal `centroid (s ++ s')`.
+
+### Polygon and boolean ops
+
+- [ ] `s2_polygon`: random polygon construction + `contains_point` must
+      match the loop-walk reference implementation. `intersects (a, b) =
+      intersects (b, a)`. `contains a a = true`.
+- [ ] `s2_boolean_operation`: idempotence (`intersects (a, a) = not
+      (is_empty a)`), commutativity, and de Morgan-style relations between
+      the four implemented predicates (`contains`, `intersects`,
+      `equals`, `disjoint`) on random pairs of polygons.
+- [ ] `s2_polygon_layer`: build a polygon with `S2_builder` and check that
+      the layer's output recovers it (round-trip), modulo expected
+      normalization (loop ordering, hole orientation).
+
+### Shape utilities
+
+- [ ] `s2_shape`: `get_reference_point` consistency: walking edges from the
+      reference point's `contained` flag and flipping on every crossing
+      lands at the same containment value as a brute-force point-in-shape
+      test for many random query points.
+- [ ] `s2_shapeutil_count_edges` / `count_vertices`: random polygon's totals
+      match `Array.fold` over per-shape `num_edges` / dimension-based vertex
+      counts.
+- [ ] `s2_shapeutil_edge_iterator`: iteration visits each `(shape_id,
+      edge_id)` exactly once across a multi-shape index, in
+      `(shape_id, edge_id)`-lexicographic order.
+- [ ] `s2_shapeutil_visit_crossing_edge_pairs`: every emitted pair `(a, b)`
+      satisfies `S2_edge_crossings.crossing_sign a.v0 a.v1 b.v0 b.v1 > 0`,
+      and the set of emitted pairs equals the brute-force enumeration on
+      small inputs (<= 200 edges).
+- [ ] `s2_shapeutil_contains_brute_force`: matches `S2_polygon.contains_point`
+      for random polygon + random points.
+- [ ] `s2_shapeutil_conversion`: `shape_to_polygon (S2_polygon.to_shape p)`
+      returns a polygon equal to `p` (modulo loop ordering).
+- [ ] `s2_shapeutil_get_reference_point`: agrees with each shape's own
+      `S2_shape.get_reference_point` on random dimension-2 shapes.
+- [ ] `s2_edge_vector_shape` / `s2_point_vector_shape`: `num_edges` matches
+      input length, `chain` accessors round-trip (chain[i]'s edge equals
+      `edge i`), reference point is fixed `not contained` by spec.
+- [ ] `s2_wrapped_shape`: every accessor delegates exactly to the wrapped
+      shape on random inputs (modulo the pinned `Type_tag.none`).
+
+### Edge tessellator and builder
+
+- [ ] `s2_edge_tessellator`: for a random projection + edge + tolerance,
+      every consecutive sample pair on the tessellated polyline is within
+      tolerance of the underlying geodesic. Output reaches both endpoints.
+
+### Region wrappers
+
+- [ ] `s2_region`: `of_cap`, `of_rect`, `of_cell`, `of_cell_union`, and
+      `Custom` all delegate to the underlying type's `contains_cell` /
+      `intersects_cell` / `contains_point` on random inputs.
+
+---
+
+## Benchmark coverage gaps
+
+`bench/bench_misc.ml` covers only `Sign` / `RobustSignSimple` / `PointArea`
+/ `PointFromLatLng` / `LatLngGetDistance`; `bench/bench_region_coverer.ml`
+covers cap / cell / cell-union coverings. The Go-vs-OxCaml comparison
+(`bench/compare_go.py`, `bench/compare.txt`) only knows about those eight
+buckets. Most query-heavy code paths and polygon/loop operations have no
+microbenchmark. Each item below is a `Bench.Test.create` (or
+`create_indexed`) skeleton and a Go-side counterpart to add to
+`compare_go.py` if the upstream Go bench exists. Land them one or two at
+a time so `compare.txt` stays interpretable.
+
+### Polygon and loop hot paths
+
+- [ ] `s2_polygon.contains_point`: random polygon (10/100/1000 vertices),
+      random query point. Index-built polygon vs index-free.
+- [ ] `s2_polygon.intersects` and `s2_polygon.contains` (polygon vs
+      polygon): same shape sizes, two random polygons.
+- [ ] `s2_polygon.area` / `s2_polygon.perimeter`: trivial pure
+      computations, but useful as a fixed point against the Go bench.
+- [ ] `s2_loop.contains_point`: random loop, random point. Compare the
+      brute-force walk path (small loops) against the
+      `S2_contains_point_query` path (large loops).
+- [ ] `s2_loop.area` / `s2_loop.centroid`.
+- [ ] `s2_lax_loop` / `s2_lax_polygon` / `s2_lax_polyline`: constructor
+      from a vertex array, plus `to_shape` + a single `S2_shape.edge`
+      access per chain. Useful to validate the `[@@unboxed]` wrappers
+      stay zero-alloc.
+
+### Indexes and queries
+
+- [ ] `s2_shape_index.build`: time-to-first-query as a function of total
+      edge count. One curve for points, one for polygons.
+- [ ] `s2_closest_edge_query`: query-ready index + random target, vary
+      target distance from "inside the index" to "far away" to exercise
+      both fast-paths and the heap-pruning path. The current
+      `Cell_queue` design is delicate enough that a bench is the only
+      way to catch perf regressions.
+- [ ] `s2_crossing_edge_query.get_candidates`: random target edge over a
+      random index. The `kMaxBruteForceEdges = 27` cutoff (lifted from
+      the upstream benchmarks) deserves an OxCaml-side sweep to confirm
+      it is still optimal under our different micro-architecture.
+- [ ] `s2_contains_point_query.contains`: random index + many random
+      point queries. The three vertex models should each get their own
+      bucket if there is meaningful divergence.
+- [ ] `s2_shape_index_region.cell_union_bound`: random index, depth and
+      `max_level` sweep. Compare against the conservative
+      `S2_cap.cell_union_bound` baseline.
+
+### Builder and boolean operations
+
+- [ ] `s2_builder.Build`: small / medium / large input edge counts,
+      varying the snap function (Identity vs IntLatLng vs CellId once
+      Tier 14's `s2_builderutil_snap_functions` lands). Tracks the
+      builder's typically-O(n log n) growth.
+- [ ] `s2_boolean_operation`: each of the four predicates
+      (`contains`, `intersects`, `equals`, `disjoint`) on representative
+      polygon-vs-polygon pairs. Important for Tier 13 work because the
+      validation query reuses these.
+
+### Edge primitives
+
+- [ ] `s2_edge_distances`: `distance` / `is_distance_less` /
+      `update_min_distance` on synthetic point + edge inputs. These are
+      called millions of times per closest-edge query; even a 5%
+      improvement in the inner loop pays off broadly.
+- [ ] `s2_predicates.expensive_sign`: dedicated bench beyond `Sign`. The
+      simple-precision and stable-sign fast paths each merit their own
+      bucket.
+- [ ] `s2_edge_clipping.clip_to_padded_face`: synthetic UV-edge stream,
+      the input shape that `s2_shape_index_region.may_intersect_cell`
+      hits in real workloads.
+
+---
+
+## Documentation / AGENTS.md compliance
+
+AGENTS.md mandates that comments in `lib/` (including `.mli` doc
+comments) must be self-contained: no upstream cross-references like
+"Mirrors X", "matches the upstream X", "see s2foo.cc:42",
+"as in S2Foo::Bar", etc. The following call sites violate that rule and
+should be reworded to explain the *reason* directly (or removed if there
+is no reason left to capture).
+
+### `.mli` doc-comment violations (user-facing)
+
+- [ ] `lib/s2_lax_polyline.mli:77`: `[type_tag]` doc references
+      `S2LaxPolylineShape::kTypeTag`. Drop the upstream name; just state
+      the integer tag and its meaning.
+- [ ] `lib/s2_lax_polygon.mli:122`: same pattern with
+      `S2LaxPolygonShape::kTypeTag`.
+- [ ] `lib/s2_shapeutil_edge_wrap.mli:26`: "Mirrors {!next_edge_wrap} ..."
+      - state the relation directly ("returns the predecessor of [edge_id]
+      ...") instead of cross-referencing.
+- [ ] `lib/s2_shapeutil_build_polygon_boundaries.mli:39`:
+      "(mirroring the upstream contract)" - drop the qualifier; the
+      invariants are already listed.
+- [ ] `lib/s2_shape_index.mli:24`: "Thread-safety matches the C++
+      library" - reword as a positive statement of what the OCaml port
+      guarantees.
+- [ ] `lib/s2_shape_index.mli:32`: "equivalent to C++
+      [MutableS2ShapeIndex]" - drop the equivalence.
+- [ ] `lib/s2_shapeutil_count_edges.mli:10`: "matching the C++
+      convention".
+- [ ] `lib/s2_shapeutil_contains_brute_force.mli:8`: "matching the C++
+      default in ...".
+- [ ] `lib/s2_shapeutil_shape_edge_id.mli:20`: "default value of an
+      uninitialised {!t} on the C++ side".
+- [ ] `lib/s2_predicates.mli:17`: "the following upstream predicates are
+      not yet ported" - the {1 Limitations} block is the right place for
+      a list, but it shouldn't say "upstream"; just name them.
+- [ ] `lib/s2_padded_cell.mli:93`: "Padded cells mirror the C++ class
+      closely" - this whole sentence can go; the API is the contract.
+- [ ] `lib/s2_pointutil.mli:4`: "the analogous C++ utilities live in" -
+      drop the cross-reference.
+- [ ] `lib/r3_vector.mli:20` and `lib/r2_point.mli:19,24`: refer to
+      "the underlying [Vector3_d] / [Vector2_d] in C++" in a Limitations
+      block. Replace with a list of the unported component-wise ops by
+      name only.
+- [ ] `lib/s2_lax_loop.mli:23`: "[S2VertexIdLaxLoopShape] from the C++
+      library" - drop the source attribution; just say what is missing.
+- [ ] `lib/s2_closest_edge_query.mli:27`: "[ShapeFilter] parameter
+      present in the C++ library" - reword without the cross-reference.
+- [ ] `lib/s2_crossing_edge_query.mli:16`: "from the C++ library
+      ([VisitCells], ...)" - just list the missing functions.
+- [ ] `lib/s2_shape.mli:181`: "The following C++ features are not
+      exposed" - reword as "Not implemented:" or similar.
+- [ ] `lib/s2_latlng_rect.mli:277`: same pattern, "The following C++
+      features are not exposed" - reword.
+- [ ] `lib/s2_projections.mli:17`: "[wrap_destination] wraps only along
+      the x axis. The C++ default wraps along any axis" - state our
+      semantics, then note the divergence as "The two-axis wrap variant
+      is not provided" without naming C++.
+
+### `.ml` implementation-comment violations
+
+- [ ] `lib/s2_crossing_edge_query.ml:11-12`: "lifted from the upstream
+      benchmarks in s2crossing_edge_query.cc:44" - replace with the
+      derivation, or just state the constant.
+- [ ] `lib/s2_crossing_edge_query.ml:142,219`: more file:line refs.
+- [ ] `lib/s2_closest_edge_query.ml:154`: "benchmark-derived constants
+      in s2closest_edge_query.cc:36-63".
+- [ ] `lib/s2_closest_edge_query.ml:165`: "ShapeFilter parameter from
+      s2closest_edge_query.h:270-289".
+- [ ] `lib/s2_loop_measures.ml:35,42`: "matches s2loop_measures.h:..."
+      and "s2loop_measures.h:258-362".
+- [ ] `lib/s2_latlng_rect_bounder.ml:19`: "see
+      s2latlng_rect_bounder.cc:AddInternal".
+- [ ] `lib/s2_lax_polygon.ml:20`: "s2lax_polygon_shape.h:270-295 for the
+      upstream reasoning".
+- [ ] `lib/s2_metrics.ml:56`: "plus Mathematica in the upstream library;
+      see s2metrics.cc for the alternative linear analysis".
+- [ ] `lib/s2_projections.ml:108`: "the upstream default also wraps
+      along [y]".
+- [ ] `lib/s2_boolean_operation.ml:3-7,250`: "this port replaces the C++
+      CrossingProcessor state machine (s2boolean_operation.cc:...)" plus
+      "(s2boolean_operation.cc:2476-2505)".
+- [ ] `lib/s2_edge_crossings.ml:10`: "from the analysis in
+      s2predicates_internal.h".
+- [ ] `lib/s2_edge_crosser.ml:9,35,115`: three file:line refs.
+- [ ] `lib/earth.ml:37`: "See s2earth.cc:52-66".
+- [ ] `lib/s2_builder.ml:383,756,760`: a few file:line refs and "1500
+      lines of C++ Voronoi machinery".
+- [ ] `lib/s2_shape_index.ml:824` and similar `(* TODO: port ... from
+      <file>:<lines> *)` comments throughout the codebase: these belong
+      in this `TODO.md` file, not in the source. Sweep them out and
+      either move the unique content here or delete it where this file
+      already covers it.
+
+---
+
+## Tooling and CI
+
+- [ ] No CI configuration is checked in. Add a GitHub Actions workflow
+      that runs `make build` and `make test` on every PR. The fixture
+      generators link against a system-installed s2geometry; document
+      that dependency in `AGENTS.md` and either install it from source
+      in CI or skip `make fixtures` and rely on the checked-in JSON.
+- [ ] `make test TEST=<module>` re-runs the *whole* shared
+      `quickcheck/` and `expect_snapshots/` libraries. As those grow
+      this will get noticeable; investigate whether dune supports a
+      single-`let%test_unit` filter so we can scope to one property at
+      a time during iteration.
+- [ ] `bench/compare_go.py` knows about a hardcoded list of eight bench
+      buckets. Once the bench coverage gaps above are addressed, the
+      bucket map and `compare.txt` formatting need to grow with them.
+      Consider auto-discovery: have each `Bench.Test.create` register
+      itself in a registry that the comparison script can read via
+      `-list`.
+
+---
+
 ## Unboxing / allocation work
 
 Opportunities to drop boxing or allocation across the library. Each item is
@@ -546,11 +844,14 @@ These wrap one value-layout field and exist only for typing. Marking them
 
 ### Growable buffers and priority queues over unboxed elements
 
-- [ ] `util/binary_heap.ml` currently requires `type t : value` for its
-      element, so `s2_closest_edge_query` and `s2_region_coverer` still box
-      their priority-queue entries. Add a ppx-templated `Make` variant
-      covering the element kinds those queues actually use (distance +
-      payload pair, typically `float64 & value`).
+- [x] `util/binary_heap.ml` retired. Both call sites went bespoke
+      because parallel arrays beat any kind-polymorphic `Make` for these
+      heaps: sift_up/sift_down compares on a single column, so keeping the
+      key column tightly packed is a bigger win than packing the full
+      record. `s2_closest_edge_query.Cell_queue` already used parallel
+      arrays for distance/cell_id/index_cell triples; `s2_region_coverer`
+      now does the same for cell_id/num_children/children_start/priority,
+      and the boxed `candidate` record plus `Binary_heap.Make` are gone.
 - [x] `s2_builder.Point_buffer` is now a `Unboxed_vec.Make` instantiation
       (parameterised at `(float64 & float64 & float64) mod external_`).
       `Unboxed_vec` gained a `clear` operation to cover the one user the
