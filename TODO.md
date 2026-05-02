@@ -161,7 +161,21 @@ pulls them out as first-class ports so callers can use them directly.
   - Go: `s2/shapeindex_region.go` | C++: `s2shape_index_region.h` (header-only, ~475 lines)
   - Deps: `s2_shape_index`, `s2_region`, `s2_contains_point_query`, `s2_edge_clipping`, `s2_cell_union`
 
-- [ ] **s2_shape_index_buffered_region** - `S2_shape_index_buffered_region`
+- [x] **s2_shape_index_buffered_region** - `S2_shape_index_buffered_region`
+      (wraps an index plus a radius as an `S2_region` whose buffered geometry
+      contains every point within [radius] of any indexed point. `cap_bound`
+      and `rect_bound` widen the unbuffered bounds; `cell_union_bound`
+      replaces each cell in the unbuffered covering with its vertex
+      neighbours at the chosen [max_level], and falls back to the six face
+      cells when the radius is larger than any cell at level 0 or when the
+      unbuffered covering already touches a face cell. `contains_cell` uses
+      the upstream cap-based heuristic; `may_intersect_cell` and
+      `contains_point` route through `S2_closest_edge_query.is_distance_less`
+      against [radius_successor] so that `radius = 0` still treats
+      coincident points as contained. The empty-index and full-polygon
+      upstream tests are exercised in expect-snapshots since the C++
+      behaviour for those cases relies on NaN-driven `std::min` which the
+      OCaml port does not reproduce.)
   - C++: `s2shape_index_buffered_region.h`, `.cc` (~130 lines)
   - Deps: `s2_shape_index_region`, `s2_closest_edge_query`
 
@@ -396,7 +410,8 @@ track which types still lack Encode/Decode:
 - [ ] `s2_polygon`: `GetDistance` / `GetDistanceToBoundary` / `Project`
 - [ ] `s2_polygon`: `ApproxContains` / `ApproxDisjoint` / `BoundaryNear`
 - [ ] `s2_latlng_rect`: exact `Intersects(const S2Cell&)`
-- [ ] `s2_latlng_rect`: `ExpandedByDistance`, `BoundaryIntersects`,
+- [ ] `s2_latlng_rect`: `ExpandedByDistance` negative-distance shrink branch
+      (positive expansion is implemented), `BoundaryIntersects`,
       `IntersectsLngEdge`, `IntersectsLatEdge`
 
 ### Predicates

@@ -161,6 +161,12 @@ val expanded : t -> S2_latlng.t -> t
     every longitude at a contained pole. *)
 val polar_closure : t -> t
 
+(** [expanded_by_distance t distance] expands [t] by the given spherical [distance]
+    measured along the surface of the sphere (rather than independently in latitude and
+    longitude). [distance] must be non-negative; the negative-distance shrink branch is
+    not yet implemented. *)
+val expanded_by_distance : t -> S1_angle.t -> t
+
 (** {1 Bounding} *)
 
 (** [cap_bound t] returns a bounding {!S2_cap} for the rectangle, chosen as the smaller of
@@ -226,7 +232,8 @@ val approx_equal_latlng : max_error:S2_latlng.t -> t -> t -> bool
 (** {1 Limitations}
 
     The following C++ features are not exposed:
-    - [ExpandedByDistance]: expansion by a spherical distance rather than by lat/lng.
+    - [ExpandedByDistance] with a negative argument (shrink): only the non-negative
+      expansion branch is currently implemented.
     - [BoundaryIntersects]: test whether a geodesic edge crosses the rectangle boundary.
     - [IntersectsLngEdge] / [IntersectsLatEdge]: lower-level edge-vs-boundary helpers.
     - [Encode] / [Decode]: binary serialization. *)

@@ -265,6 +265,30 @@ let[@inline] [@zero_alloc] from_cap c =
      })
 ;;
 
+(* Build the smallest cap centered at each rectangle vertex with the given spherical
+   radius, take the lat/lng bound of each, and union them with the original rectangle.
+   Including the original is necessary for very large rectangles, where the four vertex
+   caps may not yet cover the interior. *)
+let expanded_by_distance t distance =
+  if S1_angle.compare distance S1_angle.zero < 0
+  then (
+    match
+      raise_s
+        [%message
+          "S2_latlng_rect.expanded_by_distance: negative distance not supported"
+            ~radians:(Float_u.to_float (S1_angle.radians distance) : float)]
+    with
+    | (_ : Nothing.t) -> .)
+  else (
+    let radius = S1_chord_angle.of_angle distance in
+    let mutable r = t in
+    for k = 0 to 3 do
+      let cap = S2_cap.of_center_chord_angle (S2_latlng.to_point (vertex t k)) radius in
+      r <- union r (from_cap cap)
+    done;
+    r)
+;;
+
 let pole_min_lat =
   let open Float_u.O in
   Float_u.asin (Float_u.sqrt (#1.0 / #3.0)) - (#0.5 * Float_u.epsilon_float)
